@@ -9,7 +9,7 @@ import os
 import scipy.interpolate as interp
 
 
-def hplc_integration(folder_path=None, gaus_iterations=5000):
+def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=3, smoothing_window=12, smoothing_factor=3, gaus_iterations=4000, peak_boundary_derivative_sensitivity=0.05, peak_prominence=1):
     """
     Interactive integration of HPLC results. Steps to use.
     1. import the package
@@ -33,10 +33,13 @@ def hplc_integration(folder_path=None, gaus_iterations=5000):
     ----------
     folder_path : String, optional
         Filepath string to the .csv files output from openChrom
-    windows : Array, optional
-        Window widths (time, minute dimension) in order of: reference, isoGDGTs, brGDGTs, and OH-GDGTs.
+    windows : Boolean, optional
+        If True, chromatopy will use default windows values for window width (time, minute dimension) for figures.
+        If False, the user will be prompted to provide window widths (time, minute dimension).
+    peak_neighbrhood_n: Integer, optional
+        Maximum number of peaks that will be considered a part of the peak neighborhood.
     gaus_it : Integer, optional
-        Number of iterations to fit the (multi)gaussian curve. The default is 1000 but good results have been found with 100.
+        Number of iterations to fit the (multi)gaussian curve. The default is 5000.
 
     Returns
     -------
@@ -62,7 +65,36 @@ def hplc_integration(folder_path=None, gaus_iterations=5000):
     # Ask for GDGTs of interest
     gdgt_oi = get_gdgt_input()
     gdgt_meta_set = get_gdgt(gdgt_oi)  # get metadata for GDGT types
-    windows = gdgt_meta_set["window"]
+    # Extract default windows
+    default_windows = gdgt_meta_set["window"]
+
+    # Handle custom windows
+    if windows:
+        # Use default windows
+        windows = default_windows
+    elif windows is False:
+        # Prompt user to input custom windows
+        windows = []
+        print("\nYou have chosen to provide custom time windows for each GDGT group.")
+        print("Please provide the time windows (in minutes) for each GDGT group.")
+        print("The number of windows should match the number of GDGT groups selected.")
+        print("For reference, the default windows are:")
+        for idx, (gdgt_group, default_window) in enumerate(zip(gdgt_meta_set["names"], default_windows)):
+            print(f"{idx + 1}. {gdgt_group}: {default_window}")
+            # Prompt user for new window
+            user_input = input(f"Enter new window for {gdgt_group} as two numbers separated by a comma (e.g., 10.5,12.0): ")
+            try:
+                lower, upper = map(float, user_input.split(","))
+                windows.append([lower, upper])
+            except ValueError:
+                print("Invalid input. Please enter two numbers separated by a comma.")
+                # You might want to handle retries or set default
+                windows.append(default_window)  # Use default if invalid
+    else:
+        # Validate the provided windows
+        if len(windows) != len(gdgt_meta_set["names"]):
+            raise ValueError("The number of custom windows provided does not match the number of GDGT groups selected.")
+    # windows = gdgt_meta_set["window"]
     GDGT_dict = gdgt_meta_set["GDGT_dict"]
     trace_ids = [x for trace in gdgt_meta_set["Trace"] for x in trace]
     # get or read results path
@@ -98,7 +130,9 @@ def hplc_integration(folder_path=None, gaus_iterations=5000):
         for trace_set, trace_label, window, GDGT_dict_single in zip(trace_sets, trace_labels, windows, GDGT_dict):
             df2 = df.loc[(df["rt_corr"] > window[0]) & (df["rt_corr"] < window[1])]
             df2 = df2.reset_index(drop=True)
-            analyzer = GDGTAnalyzer(df2, trace_set, window, GDGT_dict_single, gaus_iterations, sample_name, is_reference=iref, reference_peaks=refpkhld)  # Set parameters for HPLC analysis
+            analyzer = GDGTAnalyzer(
+                df2, trace_set, window, GDGT_dict_single, gaus_iterations, sample_name, is_reference=iref, max_peaks=peak_neighborhood_n, sw=smoothing_window, sf=smoothing_factor, pk_sns=peak_boundary_derivative_sensitivity, pk_pr=peak_prominence, reference_peaks=refpkhld
+            )  # Set parameters for HPLC analysis
             print("Begin peak selection.")
             peaks, fig, ref_pk_new = analyzer.run()
             if iref:

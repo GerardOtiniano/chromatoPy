@@ -37,7 +37,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, savgol_filter
 from scipy.optimize import curve_fit
 from scipy.integrate import simpson
 from scipy.sparse import eye, diags, csc_matrix
@@ -46,7 +46,7 @@ import warnings
 
 
 class GDGTAnalyzer:
-    def __init__(self, df, traces, window_bounds, GDGT_dict, gaus_iterations, sample_name, is_reference, max_peaks=4, reference_peaks=None):
+    def __init__(self, df, traces, window_bounds, GDGT_dict, gaus_iterations, sample_name, is_reference, max_peaks, sw, sf, pk_sns, pk_pr, reference_peaks=None):
         self.fig, self.axs = None, None
         self.df = df
         self.traces = traces
@@ -67,6 +67,9 @@ class GDGTAnalyzer:
         self.gi = gaus_iterations
         self.max_peaks_for_neighborhood = max_peaks
         self.peak_properties = {}
+        self.smoothing_params = [sw, sf]
+        self.pk_sns = pk_sns
+        self.pk_pr = pk_pr
 
     def run(self):
         self.fig, self.axs = self.plot_data()
@@ -102,9 +105,9 @@ class GDGTAnalyzer:
             y += amp * np.exp(-((x - cen) ** 2) / (2 * wid**2))
         return y
 
-    def gaussian(self, x, amp, cen, wid):  # , dec):
+    def gaussian(self, x, amp, cen, wid, dec):
         """Gaussian function for a single peak with a decay parameter."""
-        return amp * np.exp(-((x - cen) ** 2) / (2 * wid**2))  # * np.exp(-dec * abs(x - cen))
+        return amp * np.exp(-((x - cen) ** 2) / (2 * wid**2)) * np.exp(-dec * abs(x - cen))
 
     def individual_gaussian(self, x, amp, cen, wid):
         """Single Gaussian function"""
@@ -149,93 +152,6 @@ class GDGTAnalyzer:
             valleys.append(np.argmin(y[peaks[poi] : peaks[poi + 1]]) + peaks[poi])
         return valleys
 
-    # def find_peak_neighborhood_boundaries(self, x, y_smooth, peaks, valleys, peak_idx, ax):
-    #     """
-    #     Find the peak neighborhood, defined as the peaks that may overlap with the peak of index.
-    #     Find index positions of neighborhood peaks within the list of all peaks i.e., a list of
-    #     index positions of index positions relative to the x coordinate.
-    #     Index positions are relative to the x coordinate.
-
-    #     Parameters
-    #     ----------
-    #     x : numpy.array
-    #         Retention times.
-    #     y_smooth : numpy.array
-    #         Smoothed and baseline-corrected signal.
-    #     peaks : numpy.arry
-    #         List of peak indices.
-    #     valleys : numpy.array
-    #         List of valley indices from find_valleys
-    #     peak_idx : numpy.array
-    #         Index position of the peak of interest
-    #     ax : matplotlib.pyplot axis object
-    #         Current axis for plotting - passed as ax.
-    #     max_peaks : int
-    #         Maximum number of peaks to consider in the neighborhood.
-
-    #     Returns
-    #     -------
-    #     left_valley_index : int
-    #         Index position of the left boundary of the peak neighborhood.
-    #     right_valley_index : int
-    #         Index position of the right boundary of the peak neighborhood.
-    #     peak_neighborhood : numpy.array
-    #         List of index positions of peaks within neighborhood.
-    #     """
-    #     peak_height = y_smooth[peak_idx]
-    #     min_valley_height = peak_height * 0.05
-
-    #     # Default values in case no valid valleys are found
-    #     # left_valley_index = None  # peak_idx - 1
-    #     # right_valley_index = None  # peak_idx + 1
-    #     properties = self.peak_properties[self.axs_to_traces[ax]]
-
-    #     left_valley_index = properties["left_bases"][np.where(peaks == peak_idx)[0]]
-    #     right_valley_index = properties["right_bases"][np.where(peaks == peak_idx)[0]]
-
-    #     def second_derivative(y, x):
-    #         dy = np.gradient(y, x)
-    #         d2y = np.gradient(dy, x)
-    #         return d2y
-
-    #     def is_deep_enough_valley(valley_idx, min_valley_height):
-    #         valley_height = y_smooth[valley_idx]
-    #         return valley_height >= min_valley_height
-
-    #     # Find the index of the valley with the smallest height to the left of the peak
-    #     if peak_idx > 0:  # Check if there are valleys to the left
-    #         # left_valley_indices = [valley for valley in valleys if x[valley] < x[peak_idx]]
-    #         left_valley_indices = [valley for valley in valleys if x[valley] < x[peak_idx] and is_deep_enough_valley(valley, min_valley_height)]
-    #         if left_valley_indices:
-    #             # Find the valley with the minimum height and get its index
-    #             left_valley_index = min(left_valley_indices, key=lambda idx: y_smooth[idx])
-    #             sd = second_derivative(y_smooth, x)
-    #             if sd[left_valley_index] <= 0:
-    #                 left_valley_index = peak_idx - 1  # Reset if not U-shaped
-
-    #     # Find the index of the valley with the smallest height to the right of the peak
-    #     if peak_idx < np.max(peaks):  # Check if there are valleys to the right
-    #         right_valley_indices = [valley for valley in valleys if x[valley] > x[peak_idx]]
-    #         # right_valley_indices = [valley for valley in valleys if x[valley] > x[peak_idx] and is_deep_enough_valley(valley, min_valley_height)]
-    #         if right_valley_indices:
-    #             # Find the valley with the minimum height and get its index
-    #             right_valley_index = min(right_valley_indices, key=lambda idx: y_smooth[idx])
-    #             sd = second_derivative(y_smooth, x)
-    #             if sd[right_valley_index] <= 0:
-    #                 right_valley_index = peak_idx + 1  # Reset if not U-shaped
-
-    #     # Determine the neighborhood peaks
-    #     peaks_array = np.array(peaks)
-    #     peak_neighborhood = peaks_array[(peaks_array >= left_valley_index) & (peaks_array <= right_valley_index)]
-
-    #     # If the neighborhood contains more peaks than max_peaks, select the closest ones
-    #     if len(peak_neighborhood) > self.max_peaks_for_neighborhood:
-    #         distances = np.abs(x[peak_neighborhood] - x[peak_idx])
-    #         sorted_indices = np.argsort(distances)
-    #         peak_neighborhood = peak_neighborhood[sorted_indices[: self.max_peaks_for_neighborhood]]
-
-    #     return left_valley_index, right_valley_index, peak_neighborhood
-
     def find_peak_neighborhood_boundaries(self, x, y_smooth, peaks, valleys, peak_idx, ax, max_peaks, trace):
         peak_distances = np.abs(x[peaks] - x[peak_idx])
         closest_peaks_indices = np.argsort(peak_distances)[:max_peaks]
@@ -243,7 +159,6 @@ class GDGTAnalyzer:
 
         overlapping_peaks = []
         extended_boundaries = {}
-
         # Analyze each of the closest peaks
         for peak in closest_peaks:
             peak_pos = np.where(peak == peaks)
@@ -253,14 +168,15 @@ class GDGTAnalyzer:
             height, mean, stddev = heights[0], means[0], stddevs[0]
 
             # Fit Gaussian and get best fit parameters
-            popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev])
-
+            popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=self.gi)
+            # popt, _ = curve_fit(self.gaussian, x, y_smooth, p0=[height, mean, stddev, 0.1], maxfev=self.gi)
             # Extend Gaussian fit limits
-            x_min, x_max = self.calculate_gaus_extension_limits(popt[1], popt[2])
-            extended_x, extended_y = self.extrapolate_gaussian(x, *popt, None, x_min - 1, x_max + 1)
-
+            x_min, x_max = self.calculate_gaus_extension_limits(popt[1], popt[2], 0, factor=3)
+            extended_x, extended_y = self.extrapolate_gaussian(x, popt[0], popt[1], popt[2], None, x_min - 1, x_max + 1)
             # Find the boundaries based on the derivative test
-            left_idx, right_idx = self.find_peak_boundaries(extended_x, extended_y, popt[1], None)
+            peak_x_value = x[peak]
+            n_peak_idx = np.argmin(np.abs(extended_x - peak_x_value))
+            left_idx, right_idx = self.calculate_boundaries(extended_x, extended_y, n_peak_idx)
             extended_boundaries[peak] = (extended_x[left_idx], extended_x[right_idx])
 
         # Determine the peak of interest boundaries
@@ -295,10 +211,9 @@ class GDGTAnalyzer:
         velocity, X1 = self.forward_derivative(x, smooth_y)
         velocity /= np.max(np.abs(velocity))
         smooth_velo = self.smoother(velocity)
-
         dt = int(np.ceil(0.025 / np.mean(np.diff(x))))
-        A = np.where(smooth_velo[: ind_peak - 3 * dt] < 0.05)[0]  # 0.05)[0]
-        B = np.where(smooth_velo[ind_peak + 3 * dt :] > -0.05)[0]  # -0.05)[0]
+        A = np.where(smooth_velo[: ind_peak - 3 * dt] < self.pk_sns)[0]  # 0.05)[0]
+        B = np.where(smooth_velo[ind_peak + 3 * dt :] > -self.pk_sns)[0]  # -0.05)[0]
 
         if A.size > 0:
             A = A[-1] + 1
@@ -310,7 +225,51 @@ class GDGTAnalyzer:
             B = len(x) - 1
         return A, B
 
-    def find_peak_boundaries(self, x, y, center, trace, threshold=0.005):
+    # def calculate_boundaries(self, x, y, ind_peak):
+    #     """
+    #     Function to find boundaries of a single peak based on the second derivative test.
+    #     Input: retention time (x) and signal (y) data. Index position of the peak of interest (ind_peak).
+    #     Output: Two integer values, denoting the index position of the left (A) and right (B) boundaries of the peak.
+    #     """
+    #     # Smooth the y-values to reduce noise
+    #     smooth_y = self.smoother(y)
+
+    #     # Calculate the first derivative (velocity)
+    #     velocity, X1 = self.forward_derivative(x, smooth_y)
+
+    #     # Now calculate the second derivative (curvature)
+    #     second_derivative = np.diff(velocity) / np.diff(X1)
+
+    #     # Normalize the second derivative for stability
+    #     second_derivative /= np.max(np.abs(second_derivative))
+
+    #     # Smooth the second derivative to reduce noise
+    #     smooth_second_deriv = second_derivative  # self.smoother(second_derivative)
+
+    #     # Ensure dt is at least 1 (based on x step sizes)
+    #     dt = max(int(np.ceil(0.025 / np.mean(np.diff(x)))), 1)
+
+    #     # Find the left boundary (where second derivative is positive)
+    #     A = np.where(smooth_second_deriv[: ind_peak - 3 * dt] > self.pk_sns)[0]  # Adjust threshold as necessary
+
+    #     # Find the right boundary (where second derivative is negative)
+    #     B = np.where(smooth_second_deriv[ind_peak + 3 * dt :] < -self.pk_sns)[0]  # originall 0.01 # CHANGED FROM ...:]<-self.pk_sns LIKELY CHANGE BACK
+
+    #     # Set the left boundary
+    #     if A.size > 0:
+    #         A = A[-1] + 1
+    #     else:
+    #         A = 1
+
+    #     # Set the right boundary
+    #     if B.size > 0:
+    #         B = B[0] + ind_peak + 3 * dt - 1
+    #     else:
+    #         B = len(x) - 1
+
+    #     return A, B
+
+    def find_peak_boundaries(self, x, y, center, trace, threshold=0.1):  # 0.005):
         # Reset index and keep the original index as a column
 
         new_ind_peak = min(range(len(x)), key=lambda i: abs(x[i] - center))
@@ -337,35 +296,35 @@ class GDGTAnalyzer:
         return int(left_boundary_index), int(right_boundary_index)
 
     def smoother(self, y, lambd=1):
-        """
+        # """
 
-        Parameters
-        ----------
-        y : TYPE
-            DESCRIPTION.
-        lambd : TYPE, optional
-            DESCRIPTION. The default is 1.
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
+        # Parameters
+        # ----------
+        # y : TYPE
+        #     DESCRIPTION.
+        # lambd : TYPE, optional
+        #     DESCRIPTION. The default is 1.
+        # Returns
+        # -------
+        # TYPE
+        #     DESCRIPTION.
 
-        """
-        # # Convert pandas Series to numpy array if necessary
-        if isinstance(y, pd.Series):
-            y = y.to_numpy()  # More modern way to convert to numpy array
+        # """
+        # # # Convert pandas Series to numpy array if necessary
+        # if isinstance(y, pd.Series):
+        #     y = y.to_numpy()  # More modern way to convert to numpy array
 
-        m = len(y)
-        I = eye(m, format="csc")  # Create an identity matrix in CSC format
-        D = diags([1, -1], [0, 1], shape=(m - 1, m), format="csc")  # Create D matrix in CSC format
+        # m = len(y)
+        # I = eye(m, format="csc")  # Create an identity matrix in CSC format
+        # D = diags([1, -1], [0, 1], shape=(m - 1, m), format="csc")  # Create D matrix in CSC format
 
-        # Factorize the matrix once if the lambda value and the size of y do not change frequently
-        A = I + lambd * (D.T @ D)  # Operations with CSC formatted matrices
-        A = csc_matrix(A)  # Ensure A is in CSC format, though it should already be
+        # # Factorize the matrix once if the lambda value and the size of y do not change frequently
+        # A = I + lambd * (D.T @ D)  # Operations with CSC formatted matrices
+        # A = csc_matrix(A)  # Ensure A is in CSC format, though it should already be
 
-        solve = factorized(A)  # Pre-factorize the matrix to speed up solving
-        return solve(y)
-        # return savgol_filter(y, 15, 2)
+        # solve = factorized(A)  # Pre-factorize the matrix to speed up solving
+        # return solve(y)
+        return savgol_filter(y, self.smoothing_params[0], self.smoothing_params[1])
 
     def forward_derivative(self, x, y):
         """
@@ -399,18 +358,19 @@ class GDGTAnalyzer:
             extended_y = self.gaussian(extended_x, amp, cen, wid, decay)
         return extended_x, extended_y
 
-    def calculate_gaus_extension_limits(self, cen, wid, factor=3):  # decay, factor=3):
+    def calculate_gaus_extension_limits(self, cen, wid, decay, factor=3):  # decay, factor=3):
         """Calculate the limits to which extend the Gaussian tails based on the 3-sigma rule."""
         sigma_effective = wid * factor  # Adjust factor for tail thinness
-        # extension_factor = 1 / decay if decay != 0 else sigma_effective  # Use decay to modify the extension if applicable
-        x_min = cen - sigma_effective  # - np.abs(extension_factor)
-        x_max = cen + sigma_effective  # + np.abs(extension_factor)
+        extension_factor = 1 / decay if decay != 0 else sigma_effective  # Use decay to modify the extension if applicable
+        x_min = cen - sigma_effective - np.abs(extension_factor)
+        x_max = cen + sigma_effective + np.abs(extension_factor)
         return x_min, x_max
 
     def fit_gaussians(self, x_full, y_full, ind_peak, trace, peaks, ax):
         # detect overlapping peaks
         current_peaks = np.array(peaks)
         current_peaks = np.append(current_peaks, ind_peak)
+        current_peaks = np.sort(current_peaks)
         iteration = 0
         best_fit_y = None
         best_x = None
@@ -420,7 +380,6 @@ class GDGTAnalyzer:
         best_idx_interest = None
         best_error = np.inf
         best_ks_stat = np.inf
-
         while len(current_peaks) > 1:
             left_boundary, _ = self.calculate_boundaries(x_full, y_full, np.min(current_peaks))
             _, right_boundary = self.calculate_boundaries(x_full, y_full, np.max(current_peaks))
@@ -431,20 +390,22 @@ class GDGTAnalyzer:
             bounds_lower = []
             bounds_upper = []
             for peak in current_peaks:
-                height, center, width = self.estimate_initial_gaussian_params(x, y, peak)
+                height, center, width = self.estimate_initial_gaussian_params(x, y, peak)  # peak)
                 height = height[0]
                 center = center[0]
                 width = width[0]
                 initial_guesses.extend([height, center, width])
                 # Bounds for peak fitting
-                bounds_lower.extend([0.1 * y_full[peak], x_full[peak] - 0.1, 0.2 * width])  # Bounds for peak fitting
-                bounds_upper.extend([y_full[peak] * 2, x_full[peak] + 0.1, 3 * width])  # Adjust as necessary
+                lw = 0.1 - width if width > 0.1 else width
+                bounds_lower.extend([0.1 * y_full[peak], x_full[peak] - 0.15, lw])  # Bounds for peak fittin
+                bounds_upper.extend([1 + y_full[peak], x_full[peak] + 0.15, 0.5 + width])  # Old amplitude was 2 * peak height, y_full[peak] * 2, width was 2+width
             bounds = (bounds_lower, bounds_upper)
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    popt, pcov = curve_fit(self.multigaussian, x, y, p0=initial_guesses, method="dogbox", bounds=bounds, maxfev=self.gi)
+                    popt, pcov = curve_fit(self.multigaussian, x, y, p0=initial_guesses, method="dogbox", bounds=bounds, maxfev=self.gi)  # , ftol=1e-4, xtol=1e-4)
                 fitted_y = self.multigaussian(x, *popt)
+                # ax.plot(x, fitted_y, c="fuchsia") # plots the multi gaussian curve
                 error = np.sqrt(((fitted_y - y) ** 2).mean())  # RMSE
                 if error < best_error:
                     best_error = error
@@ -467,12 +428,21 @@ class GDGTAnalyzer:
             x = x_full[left_boundary : right_boundary + 1]
             y = y_full[left_boundary : right_boundary + 1]
             height, center, width = self.estimate_initial_gaussian_params(x, y, ind_peak)
-            p0 = [height, center, width]
+            height = height[0]
+            center = center[0]
+            width = width[0]
+            # p0 = [height, center, width]
+            initial_decay = 0.1
+            p0 = [height, center, width, initial_decay]
+            bounds_lower = [0.9 * y_full[ind_peak], x_full[ind_peak] - 0.1, 0.5 * width, 0.01]  # modified width from 0.05
+            bounds_upper = [1 + y_full[ind_peak], x_full[ind_peak] + 0.1, width * 1.5, 2]
+            bounds = (bounds_lower, bounds_upper)
             try:
+                # Initial try with given maxfev
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid: self.individual_gaussian(x, amp, cen, wid), x, y, p0=p0, maxfev=self.gi)
-                single_fitted_y = self.individual_gaussian(x, *single_popt)
+                    single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi)
+                single_fitted_y = self.gaussian(x, *single_popt)
                 error = np.sqrt(((single_fitted_y - y) ** 2).mean())  # RMSE
                 if error < best_error:
                     multi_gauss_flag = False
@@ -480,23 +450,46 @@ class GDGTAnalyzer:
                     best_fit_params = single_popt
                     best_fit_y = single_fitted_y
                     best_x = x
-            except Exception as e:
-                print("Final fit error:", e)
+            except RuntimeError:
+                print(f"Warning: Optimal parameters could not be found with {self.gi} iterations. Increasing iterations by a factor of 100. Please be patient.")
+
+                # Increase maxfev by a factor of 10 and retry
+                try:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi * 100)
+                    single_fitted_y = self.gaussian(x, *single_popt)
+                    error = np.sqrt(((single_fitted_y - y) ** 2).mean())  # RMSE
+                    if error < best_error:
+                        multi_gauss_flag = False
+                        best_error = error
+                        best_fit_params = single_popt
+                        best_fit_y = single_fitted_y
+                        best_x = x
+                except RuntimeError:
+                    print("Error: Optimal parameters could not be found even after increasing the iterations.")
         if multi_gauss_flag == True:
             # print("picked multi", trace)
             # Determine the index of the peak of interest in the multi-Gaussian fit
             amp, cen, wid = best_fit_params[best_idx_interest * 3], best_fit_params[best_idx_interest * 3 + 1], best_fit_params[best_idx_interest * 3 + 2]
             best_fit_y = self.individual_gaussian(best_x, amp, cen, wid)
             best_x, best_fit_y = self.extrapolate_gaussian(best_x, amp, cen, wid, None, best_x.min() - 1, best_x.max() + 1, step=0.1)
-            left_boundary, right_boundary = self.find_peak_boundaries(best_x, best_fit_y, x[ind_peak], trace)
-            best_x = best_x[left_boundary : right_boundary + 1]
-            best_fit_y = best_fit_y[left_boundary : right_boundary + 1]
+
+            new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
+            left_boundary, right_boundary = self.calculate_boundaries(best_x, best_fit_y, new_ind_peak)
+            best_x = best_x[left_boundary - 1 : right_boundary + 1]
+            best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
+            # ax.plot(best_x, best_fit_y, c="blue")
+
         else:
-            x_min, x_max = self.calculate_gaus_extension_limits(best_fit_params[1], best_fit_params[2], factor=3)
-            best_x, best_fit_y = self.extrapolate_gaussian(best_x, best_fit_params[0], best_fit_params[1], best_fit_params[2], None, best_x.min() - 1, best_x.max() + 1, step=0.1)
-            left_boundary, right_boundary = self.find_peak_boundaries(np.array(best_x), best_fit_y, x[ind_peak], trace)
-            best_x = best_x[left_boundary : right_boundary + 1]
-            best_fit_y = best_fit_y[left_boundary : right_boundary + 1]
+            # print("picked single", trace)
+            x_min, x_max = self.calculate_gaus_extension_limits(best_fit_params[1], best_fit_params[2], best_fit_params[3], factor=3)
+            best_x, best_fit_y = self.extrapolate_gaussian(best_x, best_fit_params[0], best_fit_params[1], best_fit_params[2], best_fit_params[3], x_min, x_max, step=0.1)
+            new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
+            left_boundary, right_boundary = self.calculate_boundaries(best_x, best_fit_y, new_ind_peak)
+            best_x = best_x[left_boundary - 1 : right_boundary + 1]
+            best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
+            # ax.plot(best_x, best_fit_y, c="fuchsia")
         area_smooth = simpson(y=best_fit_y, x=best_x)
 
         return best_x, best_fit_y, area_smooth
@@ -544,8 +537,8 @@ class GDGTAnalyzer:
             self.peak_results[trace]["rts"].append(rt_of_peak)
             self.peak_results[trace]["areas"].append(area_smooth)  # Calculate area if needed
             #############
-        except RuntimeError as e:
-            print(f"Error - curve fitting failed: {str(e)}")
+        except RuntimeError:
+            pass
 
     ######################################################
     ################      Plot      ######################
@@ -578,21 +571,23 @@ class GDGTAnalyzer:
         return fig, axs
 
     def setup_subplot(self, ax, trace_idx):
+        x_values = self.df["rt_corr"]
+        within_xlim = (x_values >= self.window_bounds[0]) & (x_values <= self.window_bounds[1])
         trace = self.traces[trace_idx]
         y = self.df[trace]
         y_base = self.baseline(y)
-        y_bcorr = y - y.median()  # y_base
+        y_bcorr = y - y[within_xlim].median()  # y_base
         y_bcorr[y_bcorr < 0] = 0
         y_filtered = self.smoother(y_bcorr)
-        peaks_total, properties = find_peaks(y_filtered, height=10, width=0.1, prominence=5)  # find_peaks(y_filtered, height=20, width=0.1, prominence=20)
+        peaks_total, properties = find_peaks(y_filtered, height=10, width=0.05, prominence=self.pk_pr)  # find_peaks(y_filtered, height=20, width=0.1, prominence=20)
         self.peaks[trace] = peaks_total  # Storing peaks and their properties
         self.peak_properties[trace] = properties
         ax.plot(self.df["rt_corr"], y_filtered, "k")
         ax.set_ylabel(f"Trace {trace}")
         ax.set_xlim(self.window_bounds)
 
-        x_values = self.df["rt_corr"]
-        within_xlim = (x_values >= self.window_bounds[0]) & (x_values <= self.window_bounds[1])
+        # x_values = self.df["rt_corr"]
+        # within_xlim = (x_values >= self.window_bounds[0]) & (x_values <= self.window_bounds[1])
         y_within_xlim = y_filtered[within_xlim]
         if len(y_within_xlim) > 0:
             ymin, ymax = y_within_xlim.min(), y_within_xlim.max()
