@@ -575,11 +575,13 @@ class GDGTAnalyzer:
         within_xlim = (x_values >= self.window_bounds[0]) & (x_values <= self.window_bounds[1])
         trace = self.traces[trace_idx]
         y = self.df[trace]
+        trace = self.traces[trace_idx]
         y_base = self.baseline(y)
-        y_bcorr = y - y[within_xlim].median()  # y_base
+        y_bcorr = y - y_base
+        baseline = self.baseline(y_bcorr)
         y_bcorr[y_bcorr < 0] = 0
         y_filtered = self.smoother(y_bcorr)
-        peaks_total, properties = find_peaks(y_filtered, height=10, width=0.05, prominence=self.pk_pr)  # find_peaks(y_filtered, height=20, width=0.1, prominence=20)
+        peaks_total, properties = find_peaks(y_filtered, height=np.mean(y_base) * 3, width=0.05, prominence=self.pk_pr)
         self.peaks[trace] = peaks_total  # Storing peaks and their properties
         self.peak_properties[trace] = properties
         ax.plot(self.df["rt_corr"], y_filtered, "k")
@@ -602,7 +604,7 @@ class GDGTAnalyzer:
         self.peaks_indices[trace_idx] = peaks_total
 
     # def baseline(self, y, deg=400, max_it=1000, tol=1e-1):
-    def baseline(self, y, deg=6, max_it=100, tol=1e-1):
+    def baseline(self, y, deg=4, max_it=50, tol=1e-3):
         order = deg + 1
         coeffs = np.ones(order)
         cond = math.pow(abs(y).max(), 1.0 / order)
