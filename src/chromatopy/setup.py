@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="chromatopy",
+    name="chromatoPy",
     version="1.1.2",
     description="An open-source package for integrating HPLC chromatography data using a flexible multigaussian and single gaussian fitting algorithm. This package requires the user to convert raw HPLC results using openChrom, and tjem converting the openChrom results to .csv files.",
     packages=find_packages(),
