@@ -3,6 +3,39 @@ from .compounds import *
 
 
 def calculate_raberg2021(df):
+    """
+    Calculates methyl and cyclic group indices based on the methodology outlined
+    in Raberg et al. (2021). The function processes a given DataFrame to compute 
+    fractional abundances of specific compound groups and returns a DataFrame with 
+    the calculated methyl and cyclic indices.
+    
+    Raberg, J.H., Harning, D.J., Crump, S.E., de Wet, G., Blumm, A., Kopf, S., Geirsdóttir, Á., Miller, G.H., Sepúlveda, J., 2021. Revised fractional abundances and warm-season temperatures substantially improve brGDGT calibrations in lake sediments. Biogeosciences 18, 3579–3603.
+
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input DataFrame containing the compound data. Each column should represent
+        a specific compound, and the rows should represent individual samples. The 
+        function will calculate the indices only for the compounds present in the 
+        DataFrame.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame containing the calculated methyl and cyclic group indices for 
+        each sample. The output includes fractional abundances for the processed 
+        compound groups based on their availability in the input DataFrame.
+
+    Notes
+    -----
+    - Compounds missing from the DataFrame will generate warnings, and indices for 
+      those groups will be excluded from the final DataFrame.
+    - The function assumes that compound groups like "Meth_a", "Meth_b", etc., are 
+      defined globally or passed into the function.
+    - This method is based on the approach outlined in Raberg et al. (2021) for 
+      calculating specific indices from methyl and cyclic groups in brGDGTs.
+     """
     def process_group(group_name, compounds):
         present_compounds = [comp for comp in compounds if comp in df.columns]
         missing_compounds = [comp for comp in compounds if comp not in df.columns]

@@ -6,9 +6,35 @@ from .calculate_indices import *
 
 def assign_indices():
     """
-    Function to calculate fractional abundances as well as the methylation and cyclizaiton sets (Raberg et al. 2021)
-    of brGDGTs. Common indices are also calcualted. Resultant fractional abundance, methylation, cyclization, and indices
-    dataframes are saved as seperate .csv files in the location of the input folder.
+    Calculates fractional abundances, methylation, cyclization sets (Raberg et al. 2021), and common indices for brGDGTs.
+
+    The function performs the following tasks:
+    1. Prompts the user to input the location of the integrated data (CSV file).
+    2. Reads the chromatographic data from the input file.
+    3. Calculates the fractional abundance for brGDGTs.
+    4. Computes methylation and cyclization sets based on Raberg et al. 2021.
+    5. Calculates common indices for the brGDGTs based on the results from previous steps.
+    6. Saves the resulting fractional abundance, methylation set, cyclization set, and indices dataframes as separate CSV files in the same directory as the input file.
+
+    Outputs:
+    - "chromatopy_indices.csv": CSV file containing calculated indices.
+    - "chromatopy_fractional_abundance.csv": CSV file containing fractional abundances of brGDGTs.
+    - "chromatopy_meth_set.csv": CSV file containing methylation set data.
+    - "chromatopy_cyc_set.csv": CSV file containing cyclization set data.
+
+    Notes
+    -----
+    - The input file must contain integrated chromatographic data for brGDGTs in CSV format.
+    - The Raberg et al. 2021 method is used for calculating methylation and cyclization sets.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+        The function saves the results to CSV files but does not return any values.
     """
     df_path = input("Enter location of integrated data: ")
     df = pd.read_csv(df_path)

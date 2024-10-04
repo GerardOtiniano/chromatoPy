@@ -8,6 +8,21 @@ import re
 
 
 def distribute_peaks_to_gdgts(peaks, gdgt_list):
+    """
+    Distributes peak data to the corresponding GDGT compounds based on the provided list.
+
+    Parameters
+    ----------
+    peaks : dict
+        A dictionary containing peak data, where keys are compounds, and values are dictionaries with "areas" and "rts" (retention times).
+    gdgt_list : list of str
+        A list of GDGT compounds to map peaks to.
+
+    Returns
+    -------
+    gdgt_peak_map : dict
+        A dictionary mapping each GDGT to its corresponding peak data (area and retention time). If not enough peaks are found or too many are present, warnings are printed.
+    """
     gdgt_peak_map = {gdgt: {"area": 0, "rt": None} for gdgt in gdgt_list}
     peak_items = []
     for gdgt, data in peaks.items():
@@ -26,12 +41,44 @@ def distribute_peaks_to_gdgts(peaks, gdgt_list):
 
 
 def find_optimal_shift(reference, signal):
-    correlation = correlate(reference, signal, mode="full", method="auto")  # REVISE THIS
+    """
+    Finds the optimal shift between the reference and signal using cross-correlation.
+
+    Parameters
+    ----------
+    reference : numpy.ndarray
+        The reference signal (e.g., a chromatogram) to which the signal will be aligned.
+    signal : numpy.ndarray
+        The signal to be aligned to the reference.
+
+    Returns
+    -------
+    lag : int
+        The shift (lag) value that maximizes the correlation between the reference and signal.
+    """
+    correlation = correlate(reference, signal, mode="full", method="auto")
     lag = np.argmax(correlation) - (len(signal) - 1)
     return lag
 
 
 def align_samples(data, trace_ids, reference):
+    """
+    Aligns sample data based on the reference signals using the optimal shift.
+
+    Parameters
+    ----------
+    data : list of pandas.DataFrame
+        List of dataframes containing chromatographic data for each sample.
+    trace_ids : list of str
+        List of trace identifiers used to align the data.
+    reference : pandas.DataFrame
+        The reference data used for alignment.
+
+    Returns
+    -------
+    aligned_data : list of pandas.DataFrame
+        List of aligned dataframes with corrected retention times based on the reference.
+    """
     reference_signals = [reference[trace_id].dropna() for trace_id in trace_ids if trace_id in reference]
     if not reference_signals:
         print("No reference signals found. Time correction not applied.")
@@ -55,6 +102,25 @@ def align_samples(data, trace_ids, reference):
 
 
 def discrete_time_shift(refy, lower, upper, name):
+    """
+    Applies a discrete time shift based on the specified upper and lower bounds for a given reference.
+
+    Parameters
+    ----------
+    refy : pandas.DataFrame
+        The reference dataframe containing the signal to be analyzed.
+    lower : float
+        The lower bound for the time shift.
+    upper : float
+        The upper bound for the time shift.
+    name : str
+        The column name to use for the time shift.
+
+    Returns
+    -------
+    disc_time : pandas.Series
+        The time-shifted reference signal within the specified bounds.
+    """
     refy = refy.loc[(refy[name] < upper) & (refy[name] > lower)]
     refy = refy.reset_index(drop=True)
     pks, pks_meta = find_peaks(refy["744"], prominence=10, height=100)
@@ -64,7 +130,21 @@ def discrete_time_shift(refy, lower, upper, name):
 
 
 def interpolate_traces(df, trace_ids):
-    """Interpolates all traces in the dataframe using cubic interpolation and updates the DataFrame."""
+    """
+    Interpolates all traces in the dataframe using cubic interpolation and updates the DataFrame.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The dataframe containing chromatographic data, including retention times and trace signals.
+    trace_ids : list of str
+        List of trace identifiers corresponding to the traces to be interpolated.
+
+    Returns
+    -------
+    new_df : pandas.DataFrame
+        The dataframe with interpolated traces and updated retention times.
+    """
     x = df["RT(minutes) - NOT USED BY IMPORT"]
     x_new = np.linspace(x.min(), x.max(), num=len(x) * 4)  # Increase the number of x points
     new_df = pd.DataFrame(index=x_new)
@@ -82,6 +162,23 @@ def interpolate_traces(df, trace_ids):
 
 
 def read_data_concurrently(folder_path, files, trace_ids):
+    """
+    Reads and cleans data from multiple files concurrently.
+
+    Parameters
+    ----------
+    folder_path : str
+        The path to the folder containing the data files.
+    files : list of str
+        List of filenames to be read from the folder.
+    trace_ids : list of str
+        List of trace identifiers to filter the data by.
+
+    Returns
+    -------
+    results : list of pandas.DataFrame
+        List of dataframes containing cleaned data for each file.
+    """
     def load_and_clean_data(file):
         full_path = os.path.join(folder_path, file)
 
@@ -121,6 +218,23 @@ def read_data_concurrently(folder_path, files, trace_ids):
 
 
 def numerical_sort_key(filename):
-    """Extracts numbers from the filename and returns them as an integer for sorting."""
+    """
+    Extracts numbers from the filename and returns them as an integer for sorting purposes.
+
+    Parameters
+    ----------
+    filename : str
+        The filename from which to extract the numerical values for sorting.
+
+    Returns
+    -------
+    int
+        The first numerical value found in the filename as an integer. If no numbers are found, returns 0.
+
+    Notes
+    -----
+    - This function is typically used to sort files in numerical order based on the number(s) in their names.
+    - If multiple numbers are present in the filename, only the first one is considered.
+    """
     numbers = re.findall(r"\d+", filename)
     return int(numbers[0]) if numbers else 0

@@ -1,6 +1,7 @@
 from .GDGT_compounds import *
 from .chromatoPy_preprocess import *
 from .chromatoPy_base import *
+from .messages import *
 
 # from indices import *
 import pandas as pd
@@ -47,9 +48,7 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=3, smoo
 
 
     """
-    print(
-        "Welcome to chromatopy. When prompted, provide a filepath to your data (.csv output from openchrom). Select the peaks of interest from the first sample. Chromatopy will then automatically select peaks in subsequent samples. After each sample, results and figures are saved to a subfolder created in the user-provided data directory. Chromatopy will export a .csv file containing peak areas. To calculate relative abundances and common indices, run chromatopy.assign_indices(). \nFeel free to end an integration session by terminating the kernel as your resutls will not be deleted. You can revisit samples at any time. To redo a sample, delete the row containing the integration data from the results.csv output.\n1. Left click peaks for integration.\n2. 'd' to delete the last peak selected.\n3. 'r' to clear selected peaks from a subplot (navigate subplots using up and down arrow keys).\n4. 'Enter' once peak selection is satisfied.\n"
-    )
+    display_introduction_message()
     # Request folder location
     if folder_path == None:
         folder_path = input("Input folder location of converted .csv UHLPC files: ")
@@ -75,10 +74,7 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=3, smoo
     elif windows is False:
         # Prompt user to input custom windows
         windows = []
-        print("\nYou have chosen to provide custom time windows for each GDGT group.")
-        print("Please provide the time windows (in minutes) for each GDGT group.")
-        print("The number of windows should match the number of GDGT groups selected.")
-        print("For reference, the default windows are:")
+        window_instructions()
         for idx, (gdgt_group, default_window) in enumerate(zip(gdgt_meta_set["names"], default_windows)):
             print(f"{idx + 1}. {gdgt_group}: {default_window}")
             # Prompt user for new window
