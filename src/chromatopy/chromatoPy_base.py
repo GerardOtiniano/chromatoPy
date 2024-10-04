@@ -576,12 +576,14 @@ class GDGTAnalyzer:
         trace = self.traces[trace_idx]
         y = self.df[trace]
         trace = self.traces[trace_idx]
+        # Baseline correction
         y_base = self.baseline(y)
         y_bcorr = y - y_base
         baseline = self.baseline(y_bcorr)
         y_bcorr[y_bcorr < 0] = 0
         y_filtered = self.smoother(y_bcorr)
-        peaks_total, properties = find_peaks(y_filtered, height=np.mean(y_base) * 3, width=0.05, prominence=self.pk_pr)
+        # Find peaks
+        peaks_total, properties = find_peaks(y_filtered, height=np.mean(baseline) * 3, width=0.05, prominence=self.pk_pr)
         self.peaks[trace] = peaks_total  # Storing peaks and their properties
         self.peak_properties[trace] = properties
         ax.plot(self.df["rt_corr"], y_filtered, "k")
