@@ -858,7 +858,7 @@ class GDGTAnalyzer:
         y_base = self.baseline(y)
         y_bcorr = y - y_base
         baseline = self.baseline(y_bcorr)
-        if baseline < 1:
+        if baseline.mean() < 1:
             baseline = 1
         y_bcorr[y_bcorr < 0] = 0
         y_filtered = self.smoother(y_bcorr)
