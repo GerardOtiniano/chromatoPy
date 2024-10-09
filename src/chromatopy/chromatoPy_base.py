@@ -306,7 +306,7 @@ class GDGTAnalyzer:
             height, mean, stddev = heights[0], means[0], stddevs[0]
 
             # Fit Gaussian and get best fit parameters
-            popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=self.gi)
+            popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=self.gi*100)
             # popt, _ = curve_fit(self.gaussian, x, y_smooth, p0=[height, mean, stddev, 0.1], maxfev=self.gi)
             # Extend Gaussian fit limits
             x_min, x_max = self.calculate_gaus_extension_limits(popt[1], popt[2], 0, factor=3)
@@ -863,7 +863,7 @@ class GDGTAnalyzer:
         y_bcorr[y_bcorr < 0] = 0
         y_filtered = self.smoother(y_bcorr)
         # Find peaks
-        peaks_total, properties = find_peaks(y_filtered, height=np.mean(max_peak_amp), width=0.05, prominence=self.pk_pr)
+        peaks_total, properties = find_peaks(y_filtered, height=np.mean(max_peak_amp)iterm, width=0.05, prominence=self.pk_pr)
         self.peaks[trace] = peaks_total  # Storing peaks and their properties
         self.peak_properties[trace] = properties
         ax.plot(self.df["rt_corr"], y_filtered, "k")
