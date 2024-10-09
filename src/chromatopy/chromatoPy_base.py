@@ -40,8 +40,6 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, savgol_filter
 from scipy.optimize import curve_fit
 from scipy.integrate import simpson
-from scipy.sparse import eye, diags, csc_matrix
-from scipy.sparse.linalg import factorized
 import warnings
 
 
