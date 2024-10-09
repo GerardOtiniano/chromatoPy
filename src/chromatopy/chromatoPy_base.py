@@ -308,7 +308,7 @@ class GDGTAnalyzer:
             # Fit Gaussian and get best fit parameters
             print("x", x)
             print("y_smooth", y_smooth)
-            print("params", [height, mean, stdev])
+            print("params", [height, mean, stddev])
             popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=self.gi*100)
             # popt, _ = curve_fit(self.gaussian, x, y_smooth, p0=[height, mean, stddev, 0.1], maxfev=self.gi)
             # Extend Gaussian fit limits
