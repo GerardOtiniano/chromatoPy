@@ -866,7 +866,7 @@ class GDGTAnalyzer:
         y_bcorr[y_bcorr < 0] = 0
         y_filtered = self.smoother(y_bcorr)
         # Find peaks
-        peaks_total, properties = find_peaks(y_filtered, height=np.mean(max_peak_amp)iterm, width=0.05, prominence=self.pk_pr)
+        peaks_total, properties = find_peaks(y_filtered, height=np.mean(max_peak_amp), width=0.05, prominence=self.pk_pr)
         self.peaks[trace] = peaks_total  # Storing peaks and their properties
         self.peak_properties[trace] = properties
         ax.plot(self.df["rt_corr"], y_filtered, "k")
