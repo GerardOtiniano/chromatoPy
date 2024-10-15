@@ -1056,16 +1056,14 @@ class GDGTAnalyzer:
                             for ref_peak in ref_peaks["rts"]:
                                 rel_click_pos = np.abs(xdata[peaks] - ref_peak)
                                 peak_found = False
+                                trace = self.axs_to_traces[self.axs[ax_idx]]
                                 for peak_index, peak_pos in enumerate(rel_click_pos):
                                     if np.min(np.abs(xdata[peaks] - ref_peak)) < 0.2:  # Slightly higher threshold
                                         peak_found = True
                                         selected_peak = peaks[np.argmin(np.abs(xdata[peaks] - ref_peak))]
-                                        # Use trace_id from axs_to_traces to pass to handle_peak_selection
-                                        trace = self.axs_to_traces[self.axs[ax_idx]]
                                         self.handle_peak_selection(ax, ax_idx, xdata, y_bcorr, selected_peak, peaks, trace)
                                         break
                                 if not peak_found:
-                                    trace = self.axs_to_traces[self.axs[ax_idx]]
                                     peak_key = (ax_idx, None)
                                     line = ax.axvline(ref_peak, color="red", linestyle="--", alpha=0.5)
                                     text = ax.text(ref_peak + 2, ax.get_ylim()[1] * 0.5, "No peak\n" + str(np.round(ref_peak)), color="grey", fontsize=8)
