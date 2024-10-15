@@ -1123,6 +1123,8 @@ class GDGTAnalyzer:
                 self.peak_results[trace_to_clear]["rts"] = []
                 self.peak_results[trace_to_clear]["areas"] = []
             plt.draw()
+        elif event.key == "t":
+            self.clear_all_peaks()
 
     def undo_last_action(self):
         """
@@ -1182,6 +1184,37 @@ class GDGTAnalyzer:
         ax = self.axs[ax_idx]
         ax.clear()
         self.setup_subplot(ax, ax_idx)
+        plt.draw()
+    def clear_all_peaks(self):
+        """
+        Clears all peaks and resets all subplots by re-plotting the data.
+        
+        This method iterates through each subplot, clears the peaks, and removes corresponding
+        entries from the internal data structures `self.integrated_peaks` and `self.peak_results`.
+        
+        Returns
+        -------
+        None
+        """
+        for ax_idx in range(len(self.axs)):
+            # Clear peaks for each subplot
+            self.clear_peaks_subplot(ax_idx)
+            trace_to_clear = self.axs_to_traces[self.axs[ax_idx]]
+            
+            # Remove any entries in self.integrated_peaks that have a matching trace value
+            keys_to_remove = [key for key, peak_data in self.integrated_peaks.items() if "trace" in peak_data and peak_data["trace"] == trace_to_clear]
+            for key in keys_to_remove:
+                del self.integrated_peaks[key]
+            
+            # Clear the corresponding entries in self.peak_results
+            if trace_to_clear in self.peak_results:
+                self.peak_results[trace_to_clear]["rts"] = []
+                self.peak_results[trace_to_clear]["areas"] = []
+        
+        # Clear the action stack since all actions are undone
+        self.action_stack.clear()
+        
+        # Redraw the plot to reflect changes
         plt.draw()
     def collect_peak_data(self):
         """
