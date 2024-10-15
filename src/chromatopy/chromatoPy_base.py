@@ -68,8 +68,17 @@ class GDGTAnalyzer:
         self.smoothing_params = [sw, sf]
         self.pk_sns = pk_sns
         self.pk_pr = pk_pr
+        self.t_pressed = False # Flag to track if 't' was pressed
 
     def run(self):
+        """
+        Executes the peak analysis workflow.
+        Returns:
+            peaks (dict): Peak areas and related info.
+            fig (matplotlib.figure.Figure): The figure object.
+            reference_peaks (dict): Updated reference peaks.
+            t_pressed (bool): Indicates if 't' was pressed to update reference peaks.
+        """
         self.fig, self.axs = self.plot_data()
         self.current_ax_idx = 0  # Initialize current axis index
         if self.is_reference:
@@ -88,7 +97,7 @@ class GDGTAnalyzer:
             self.fig.canvas.mpl_connect("button_press_event", self.on_click)
             plt.show(block=True)  # Blocks script until plot window is closed
 
-        return self.peak_results, self.fig, self.reference_peaks
+        return self.peak_results, self.fig, self.reference_peaks, self.t_pressed
 
     ######################################################
     ################  Gaussian Fit  ######################
@@ -1124,7 +1133,9 @@ class GDGTAnalyzer:
                 self.peak_results[trace_to_clear]["areas"] = []
             plt.draw()
         elif event.key == "t":
+            print("All peaks removed. Reference peaks will be updated.")
             self.clear_all_peaks()
+            self.t_pressed = True
 
     def undo_last_action(self):
         """

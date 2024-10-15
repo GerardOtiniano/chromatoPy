@@ -1,0 +1,24 @@
+.
+├── README.md
+├── directory_structure.txt
+├── misc
+│   └── chromatoPy.png
+├── poetry.lock
+├── pyproject.toml
+├── src
+│   └── chromatopy
+│       ├── GDGT_compounds.py
+│       ├── __init__.py
+│       ├── assign_indices.py
+│       ├── calculate_indices.py
+│       ├── chromatoPy.py
+│       ├── chromatoPy_base.py
+│       ├── chromatoPy_preprocess.py
+│       ├── compounds.py
+│       ├── hplc_integration.py
+│       ├── hplc_to_csv.py
+│       └── messages.py
+└── tests
+    └── __init__.py
+
+5 directories, 17 files

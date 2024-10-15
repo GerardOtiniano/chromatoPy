@@ -127,14 +127,18 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=3, smoo
             df2 = df.loc[(df["rt_corr"] > window[0]) & (df["rt_corr"] < window[1])]
             df2 = df2.reset_index(drop=True)
             analyzer = GDGTAnalyzer(
-                df2, trace_set, window, GDGT_dict_single, gaus_iterations, sample_name, is_reference=iref, max_peaks=peak_neighborhood_n, sw=smoothing_window, sf=smoothing_factor, pk_sns=peak_boundary_derivative_sensitivity, pk_pr=peak_prominence, reference_peaks=refpkhld
+                df2, trace_set, window, GDGT_dict_single, gaus_iterations, sample_name, is_reference=iref, 
+                max_peaks=peak_neighborhood_n, sw=smoothing_window, sf=smoothing_factor, 
+                pk_sns=peak_boundary_derivative_sensitivity, pk_pr=peak_prominence, reference_peaks=refpkhld
             )  # Set parameters for HPLC analysis
-            print("Begin peak selection.")
-            peaks, fig, ref_pk_new = analyzer.run()
+            print(f"Begin peak selection for {sample_name}.")
+            peaks, fig, ref_pk_new, t_pressed = analyzer.run()
             if iref:
                 ref_pk.update(ref_pk_new)
+            elif t_pressed:
+                ref_pk.update(peaks)
+                print(f"Reference peaks updated using {sample_name}.")
             all_gdgt_names = [item for sublist in GDGT_dict_single.values() for item in (sublist if isinstance(sublist, list) else [sublist])]
-
             # Iterate over all possible GDGTs
             for gdgt in all_gdgt_names:
                 if gdgt in peaks:
