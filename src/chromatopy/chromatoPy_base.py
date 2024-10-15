@@ -925,6 +925,8 @@ class GDGTAnalyzer:
             base = np.dot(vander, coeffs)
             y = np.minimum(y, base)
             #y[y < 0] = 0
+        print("minimum baseline value", base.min())
+        print("maximum baseline value", base.max())
         max_peak_amp = (base*3)-y
         return base, max_peak_amp # return base
 
