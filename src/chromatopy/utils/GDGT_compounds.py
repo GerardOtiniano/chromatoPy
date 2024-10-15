@@ -1,4 +1,40 @@
+# src/chromatopy/utils/folder_handling.py
 def get_gdgt(gdgt_oi):
+    """
+    Retrieves metadata for GDGT (Glycerol Dialkyl Glycerol Tetraethers) types based on user selection.
+    
+    This function constructs and returns a structure containing GDGT group metadata, including compound names, trace IDs, and retention time windows. The user selects which GDGT groups they want to include, and the corresponding data structures are aggregated.
+    
+    Parameters
+    ----------
+    gdgt_oi : str
+        A string indicating the user's selection of GDGT groups. 
+        - "1" for isoGDGTs.
+        - "2" for brGDGTs.
+        - "3" for OH-GDGTs.
+        - "4" or "1,2,3" for all GDGT types (isoGDGTs, brGDGTs, OH-GDGTs).
+        Multiple selections can be provided as a comma-separated string (e.g., "1,2").
+    
+    Returns
+    -------
+    dict
+        A dictionary containing metadata for the selected GDGT groups, with the following keys:
+        - "names" (list): A list of names for each GDGT group.
+        - "GDGT_dict" (list): A list of dictionaries, where each dictionary maps trace IDs to compound names.
+        - "Trace" (list): A list of trace IDs for each GDGT group.
+        - "window" (list): A list of retention time windows (in minutes) for each GDGT group.
+    
+    Notes
+    -----
+    - The default reference structure is always included, containing the reference trace (744).
+    - When all GDGT types are selected (gdgt_oi == "4"), isoGDGTs, brGDGTs, and OH-GDGTs are included.
+    - The function builds the final structure by appending metadata for the selected GDGT groups from predefined data structures.
+    
+    Example
+    -------
+    If the user selects "1,2", the function will return a combined structure containing metadata for isoGDGTs and brGDGTs, along with the reference trace.
+    
+    """
     # Define the data structures
     ref_struct = {"name": ["Reference"], "GDGT_dict": {"744": "Standard"}, "Trace": ["744"], "window": [10, 30]}
     iso_struct = {"name": ["isoGDGTs"], "GDGT_dict": {"1302": "GDGT-0", "1300": "GDGT-1", "1298": "GDGT-2", "1296": "GDGT-3", "1292": ["GDGT-4", "GDGT-4'"]}, "Trace": ["1302", "1300", "1298", "1296", "1292"], "window": [10, 35]}
@@ -48,6 +84,37 @@ def get_gdgt(gdgt_oi):
 
 
 def get_gdgt_input():
+    """
+    Prompts the user to input their selection of GDGT (Glycerol Dialkyl Glycerol Tetraethers) types of interest.
+    
+    This function repeatedly prompts the user for a valid input until they provide a valid combination of GDGT types.
+    The user can select from isoGDGTs, brGDGTs, OH-GDGTs, or all GDGTs.
+    
+    Valid selections:
+    - "1": isoGDGTs
+    - "2": brGDGTs
+    - "3": OH-GDGTs
+    - "4": All GDGTs
+    - Combinations can also be provided, such as "1,2" for isoGDGTs and brGDGTs or "1,2,3" for all types.
+    
+    Returns
+    -------
+    str
+        A string representing the user's selection, such as "1", "1,2", "1,2,3", or "4".
+    
+    Raises
+    ------
+    ValueError
+        If the input does not match one of the valid combinations, a ValueError is raised, and the user is prompted again.
+    
+    Example
+    -------
+    User input:
+    "1,2"
+    
+    Returns:
+    "1,2"
+    """
     # Set of valid combinations
     valid_combinations = {"1", "1,2", "1,2,3", "2", "2,3", "3", "1,3", "4"}
 

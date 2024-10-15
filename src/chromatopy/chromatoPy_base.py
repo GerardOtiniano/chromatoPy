@@ -1,37 +1,4 @@
-"""
-Created on Tue Apr 23 23:59:05 2024
-A translation of origami, developed by Jess Tierney in matlab,
-and modified for GDGT chromatography. Developed with
-Dr. Elizbaeth Thomas, OSIBL lab group at the University
-at Buffalo.
-
-Input: path to the sample .csv files output from openChrom.
-
-Output: An output folder in the user-defined path (input)
-        containing a .csv file with GDGT peak areas and a
-        subfolder with sample-specific chromatograms that
-        include integration area.
-
-Instructions: provide the path to the directory containing
-        the .csv files from openChrom and select the peaks
-        in the chromatogram. Any peaks can be picked with
-        a left click. The code expects the correct number
-        of peaks for each trace (e.g., 5- and 6-methyl).
-        Left click to pick the peak. "d" key to delete the
-        last picked peak. Hit enter once finished selecting
-        to move onto the next traceset/sample. If a sample
-        needs to be rerun, go into the results output and delete
-        the row with the sample name. The code will identify
-        that the sample is not in the output and include it in
-        the run. The output is saved after each sample so
-        processing does not need to be done at one time.
-
-
-@author: ~GAO~
-@date: 04102024
-
-"""
-
+# src/chromatopy/chromatoPy_base.py
 import math
 import numpy as np
 import pandas as pd
@@ -1133,7 +1100,7 @@ class GDGTAnalyzer:
                 self.peak_results[trace_to_clear]["areas"] = []
             plt.draw()
         elif event.key == "t":
-            print("All peaks removed. Reference peaks will be updated.")
+            print(f"All peaks removed from {self.sample_name}. Reference peaks will be updated.")
             self.clear_all_peaks()
             self.t_pressed = True
 

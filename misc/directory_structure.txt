@@ -2,23 +2,29 @@
 ├── README.md
 ├── directory_structure.txt
 ├── misc
-│   └── chromatoPy.png
+│   ├── chromatoPy.png
+│   └── directory_structure.txt
 ├── poetry.lock
 ├── pyproject.toml
 ├── src
 │   └── chromatopy
-│       ├── GDGT_compounds.py
 │       ├── __init__.py
 │       ├── assign_indices.py
-│       ├── calculate_indices.py
 │       ├── chromatoPy.py
 │       ├── chromatoPy_base.py
-│       ├── chromatoPy_preprocess.py
-│       ├── compounds.py
 │       ├── hplc_integration.py
 │       ├── hplc_to_csv.py
-│       └── messages.py
+│       └── utils
+│           ├── GDGT_compounds.py
+│           ├── calculate_indices.py
+│           ├── chromatoPy_preprocess.py
+│           ├── compounds.py
+│           ├── folder_handling.py
+│           ├── handle_window_params.py
+│           ├── import_data.py
+│           ├── messages.py
+│           └── time_normalization.py
 └── tests
     └── __init__.py
 
-5 directories, 17 files
+6 directories, 22 files

@@ -1,7 +1,8 @@
+# src/chromatopy/assign_indices.py
 import os
 import pandas as pd
-from .compounds import *
-from .calculate_indices import *
+from .utils.compounds import *
+from .utils.calculate_indices import *
 
 
 def assign_indices():

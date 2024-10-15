@@ -1,3 +1,4 @@
+# src/chromatopy/utils/compounds.py
 """
 Compound dictinoaries for calculating indices.
 """

@@ -1,3 +1,4 @@
+# src/chromatopy/chromatoPy.py
 from .hplc_integration import hplc_integration
 from .assign_indices import assign_indices
 from .hplc_to_csv import hplc_to_csv

@@ -1,9 +1,11 @@
-from .GDGT_compounds import *
-from .chromatoPy_preprocess import *
+from .utils.GDGT_compounds import *
+from .utils.folder_handling import *
+from .utils.messages import *
+from .utils.handle_window_params import *
+from .utils.import_data import *
+from .utils.time_normalization import *
 from .chromatoPy_base import *
-from .messages import *
 
-# from indices import *
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
@@ -48,70 +50,39 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=3, smoo
 
 
     """
+    # Display introduction message
     display_introduction_message()
-    # Request folder location
-    if folder_path == None:
-        folder_path = input("Input folder location of converted .csv UHLPC files: ")
-    folder_path = folder_path.replace('"', "")  # Remove quotations from filepath
-    folder_path = folder_path.replace("'", "")
-    csv_files = sorted([f for f in os.listdir(folder_path) if f.endswith(".csv")], key=numerical_sort_key)  # Find gdgt signal files (csv) from openChrom output
-    # Set names of output folders and files
-    output_folder = os.path.join(folder_path, "Output_chromatoPy")
-    figures_folder = os.path.join(output_folder, "Figures_chromatoPy")
-    results_file_path = os.path.join(output_folder, "results_peak_area.csv")
-    os.makedirs(figures_folder, exist_ok=True)  # make figure subfolder
-    ref_pk = {}
-    # Ask for GDGTs of interest
-    gdgt_oi = get_gdgt_input()
-    gdgt_meta_set = get_gdgt(gdgt_oi)  # get metadata for GDGT types
-    # Extract default windows
-    default_windows = gdgt_meta_set["window"]
+    
+    # Handle folder-related operations
+    folder_info       = folder_handling(folder_path)
+    folder_path       = folder_info["folder_path"]
+    csv_files         = folder_info["csv_files"]
+    output_folder     = folder_info["output_folder"]
+    figures_folder    = folder_info["figures_folder"]
+    results_file_path = folder_info["results_file_path"]
+    ref_pk            = folder_info["ref_pk"]
+    gdgt_oi           = folder_info["gdgt_oi"]
+    gdgt_meta_set     = folder_info["gdgt_meta_set"]
+    default_windows   = folder_info["default_windows"]
+    
+    # Handle window operations
+    window_info = hand_window_params(windows, default_windows, gdgt_meta_set)
+    windows     = window_info["windows"]
+    GDGT_dict   = window_info["GDGT_dict"]
+    trace_ids   = window_info["trace_ids"]
+    
+    # Handle data input
+    data_info  = import_data(results_file_path, folder_path, csv_files, trace_ids)
+    data       = data_info["data"]
+    reference  = data_info["reference"]
+    results_df = data_info["results_df"]
 
-    # Handle custom windows
-    if windows:
-        # Use default windows
-        windows = default_windows
-    elif windows is False:
-        # Prompt user to input custom windows
-        windows = []
-        window_instructions()
-        for idx, (gdgt_group, default_window) in enumerate(zip(gdgt_meta_set["names"], default_windows)):
-            print(f"{idx + 1}. {gdgt_group}: {default_window}")
-            # Prompt user for new window
-            user_input = input(f"Enter new window for {gdgt_group} as two numbers separated by a comma (e.g., 10.5,12.0): ")
-            try:
-                lower, upper = map(float, user_input.split(","))
-                windows.append([lower, upper])
-            except ValueError:
-                print("Invalid input. Please enter two numbers separated by a comma.")
-                # You might want to handle retries or set default
-                windows.append(default_window)  # Use default if invalid
-    else:
-        # Validate the provided windows
-        if len(windows) != len(gdgt_meta_set["names"]):
-            raise ValueError("The number of custom windows provided does not match the number of GDGT groups selected.")
-    # windows = gdgt_meta_set["window"]
-    GDGT_dict = gdgt_meta_set["GDGT_dict"]
-    trace_ids = [x for trace in gdgt_meta_set["Trace"] for x in trace]
-    # get or read results path
-    if os.path.exists(results_file_path):
-        results_df = pd.read_csv(results_file_path)
-    else:
-        results_df = pd.DataFrame(columns=["Sample Name"])
-
-    print("Reading data...")
-    data = read_data_concurrently(folder_path, csv_files, trace_ids)
-
-    reference = data[0]
     # Normalize time accross different samples
-    for d in data:
-        time_change = discrete_time_shift(d, lower=10, upper=60, name="RT (min)")  # "RT(minutes) - NOT USED BY IMPORT")
-        d["rt_corr"] = d["RT (min)"] - time_change.iloc[0] + 20  # "RT(minutes) - NOT USED BY IMPORT"] - time_change.iloc[0] + 20
-    iref = True  # Flag to indicate the first sample (reference sample)
-    if os.path.exists(results_file_path):
-        results_df = pd.read_csv(results_file_path)
-    else:
-        results_df = pd.DataFrame(columns=["Sample Name"])
+    time_norm = time_normalization(data)
+    data      = time_norm["data"]
+    iref      = time_norm["iref"]
+    
+    # Process samples
     for df in data:
         sample_name = df["Sample Name"].iloc[0]
         if sample_name in results_df["Sample Name"].values:
