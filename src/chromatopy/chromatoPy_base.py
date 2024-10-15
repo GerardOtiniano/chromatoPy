@@ -1065,6 +1065,7 @@ class GDGTAnalyzer:
                                         self.handle_peak_selection(ax, ax_idx, xdata, y_bcorr, selected_peak, peaks, trace)
                                         break
                                 if not peak_found:
+                                    trace = self.axs_to_traces[self.axs[ax_idx]]
                                     peak_key = (ax_idx, None)
                                     line = ax.axvline(ref_peak, color="red", linestyle="--", alpha=0.5)
                                     text = ax.text(ref_peak + 2, ax.get_ylim()[1] * 0.5, "No peak\n" + str(np.round(ref_peak)), color="grey", fontsize=8)
