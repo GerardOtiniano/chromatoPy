@@ -853,15 +853,12 @@ class GDGTAnalyzer:
         y = self.df[trace]
         trace = self.traces[trace_idx]
         # Baseline correction
-        y_base, max_peak_amp = self.baseline(y) # y_base = self.baseline(y)
+        y_base, min_peak_amp = self.baseline(y) # y_base = self.baseline(y)
         y_bcorr = y - y_base
-        # baseline  = self.baseline(y_bcorr)
-        # if baseline.mean() < 1:
-           # baseline = 1
         y_bcorr[y_bcorr < 0] = 0
         y_filtered = self.smoother(y_bcorr)
         # Find peaks
-        peaks_total, properties = find_peaks(y_filtered, height=np.mean(max_peak_amp), width=0.05, prominence=self.pk_pr)
+        peaks_total, properties = find_peaks(y_filtered, height=min_peak_amp, width=0.05, prominence=self.pk_pr)
         self.peaks[trace] = peaks_total  # Storing peaks and their properties
         self.peak_properties[trace] = properties
         ax.plot(self.df["rt_corr"], y_filtered, "k")
@@ -924,11 +921,9 @@ class GDGTAnalyzer:
             coeffs = coeffs_new
             base = np.dot(vander, coeffs)
             y = np.minimum(y, base)
-            #y[y < 0] = 0
-        print("minimum baseline value", base.min())
-        print("maximum baseline value", base.max())
-        max_peak_amp = (base*3)-y
-        return base, max_peak_amp # return base
+        # Calculate maximum peak amplitude (3 x baseline amplitude)            
+        min_peak_amp = (base.max()-base.min())*3
+        return base, min_peak_amp # return base
 
     ######################################################
     #################  Peak Select  ######################
