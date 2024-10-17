@@ -284,7 +284,7 @@ class GDGTAnalyzer:
             # popt, _ = curve_fit(self.gaussian, x, y_smooth, p0=[height, mean, stddev, 0.1], maxfev=self.gi)
             # Extend Gaussian fit limits
             x_min, x_max = self.calculate_gaus_extension_limits(popt[1], popt[2], 0, factor=3)
-            extended_x, extended_y = self.extrapolate_gaussian(x, popt[0], popt[1], popt[2], None, x_min - 1, x_max + 1)
+            extended_x, extended_y = self.extrapolate_gaussian(x, popt[0], popt[1], popt[2], None, x_min - 2, x_max + 2)
             # Find the boundaries based on the derivative test
             peak_x_value = x[peak]
             n_peak_idx = np.argmin(np.abs(extended_x - peak_x_value))
