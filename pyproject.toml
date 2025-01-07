@@ -2,7 +2,7 @@
 name = "chromatopy"
 version = "1.3.3"
 description = "Peak integration software."
-authors = ["Dr. Gerard Otinianno <gerardotiniano@gmail.com>", "Dr. Elizabeth Thomas"]
+authors = ["Dr. Gerard Otiniano <gerardotiniano@gmail.com>", "Dr. Elizabeth Thomas"]
 readme = "README.md"
 packages = [{include = "chromatopy", from = "src"}]
 
