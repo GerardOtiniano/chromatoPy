@@ -9,7 +9,6 @@ from scipy.optimize import curve_fit
 from scipy.integrate import simpson
 import warnings
 
-
 class GDGTAnalyzer:
     def __init__(self, df, traces, window_bounds, GDGT_dict, gaus_iterations, sample_name, is_reference, max_peaks, sw, sf, pk_sns, pk_pr, reference_peaks=None):
         self.fig, self.axs = None, None
@@ -78,7 +77,7 @@ class GDGTAnalyzer:
             Array of x-values where the Gaussian functions will be evaluated.
         *params : tuple of floats
             Variable-length argument list containing parameters for the Gaussian functions.
-            Every three consecutive values represent the amplitude, center, and width 
+            Every three consecutive values represent the amplitude, center, and width
             of a Gaussian, in that order (amp, cen, wid).
         Returns
         -------
@@ -93,7 +92,7 @@ class GDGTAnalyzer:
             y += amp * np.exp(-((x - cen) ** 2) / (2 * wid**2))
         return y
 
-    def gaussian(self, x, amp, cen, wid, dec):
+    def gaussian_decay(self, x, amp, cen, wid, dec):
         """
         Computes a Gaussian function with an added exponential decay term.
         Parameters
@@ -128,7 +127,7 @@ class GDGTAnalyzer:
             Center of the Gaussian function (peak position).
         wid : float
             Width of the Gaussian function (standard deviation of the distribution).
-        
+
         Returns
         -------
         numpy.ndarray
@@ -138,9 +137,9 @@ class GDGTAnalyzer:
 
     def estimate_initial_gaussian_params(self, x, y, peak):
         """
-        Estimates initial parameters for a Gaussian function, including height, mean, and standard deviation, 
+        Estimates initial parameters for a Gaussian function, including height, mean, and standard deviation,
         based on the given x and y data and the specified peak.
-        
+
         Parameters
         ----------
         x : pandas.Series or numpy.ndarray
@@ -149,7 +148,7 @@ class GDGTAnalyzer:
             Array or series of y-values (typically the dependent variable, e.g., intensity or absorbance).
         peak : int
             Index of the peak in the x and y data around which to estimate the Gaussian parameters.
-        
+
         Returns
         -------
         heights : list of float
@@ -158,7 +157,7 @@ class GDGTAnalyzer:
             Estimated means (centers) of the Gaussian peaks.
         stddevs : list of float
             Estimated standard deviations (widths) of the Gaussian peaks.
-        
+
         Notes
         -----
         - The height is taken as the y-value at the peak index.
@@ -193,7 +192,7 @@ class GDGTAnalyzer:
     def find_valleys(self, y, peaks, peak_oi=None):
         """
         Identifies valleys (lowest points) between peaks in the given data.
-        
+
         Parameters
         ----------
         y : numpy.ndarray or pandas.Series
@@ -201,14 +200,14 @@ class GDGTAnalyzer:
         peaks : numpy.ndarray or list of int
             List of indices representing the positions of the peaks in the data.
         peak_oi : int, optional
-            Specific peak of interest. If provided, valleys adjacent to this peak will be identified; 
+            Specific peak of interest. If provided, valleys adjacent to this peak will be identified;
             otherwise, valleys between all consecutive peaks will be identified.
-        
+
         Returns
         -------
         valleys : list of int
             List of indices representing the positions of the valleys in the data.
-        
+
         Notes
         -----
         - If `peak_oi` is None, the function finds valleys between all consecutive peaks in the dataset.
@@ -229,7 +228,7 @@ class GDGTAnalyzer:
     def find_peak_neighborhood_boundaries(self, x, y_smooth, peaks, valleys, peak_idx, ax, max_peaks, trace):
         """
         Finds the extended boundaries of a peak's neighborhood by analyzing the closest peaks and their overlaps.
-        
+
         Parameters
         ----------
         x : numpy.ndarray or pandas.Series
@@ -248,7 +247,7 @@ class GDGTAnalyzer:
             Maximum number of nearby peaks to consider when determining the neighborhood.
         trace : str
             Identifier for the trace being analyzed (e.g., which sample or dataset the peaks belong to).
-        
+
         Returns
         -------
         neighborhood_left_boundary : float
@@ -257,7 +256,7 @@ class GDGTAnalyzer:
             The x-value of the right boundary of the peak's neighborhood.
         overlapping_peaks : list of int
             List of peaks that overlap with the peak of interest based on their extended boundaries.
-        
+
         Notes
         -----
         - The function calculates Gaussian fits for nearby peaks to extend their boundaries and check for overlaps.
@@ -316,7 +315,7 @@ class GDGTAnalyzer:
     def calculate_boundaries(self, x, y, ind_peak):
         """
          Calculates the left and right boundaries of a single peak based on the first derivative test.
-         
+
          Parameters
          ----------
          x : numpy.ndarray or pandas.Series
@@ -325,23 +324,23 @@ class GDGTAnalyzer:
              Array of y-values (e.g., intensity or absorbance) corresponding to the x-values.
          ind_peak : int
              Index of the peak of interest in the x and y data for which the boundaries are to be determined.
-         
+
          Returns
          -------
          A : int
              The index of the left boundary of the peak.
          B : int
              The index of the right boundary of the peak.
-         
+
          Notes
          -----
          - This method uses the first derivative of the signal to detect the peak's boundaries.
          - The signal is smoothed before calculating the derivative to reduce noise.
-         - The left boundary (`A`) is found by searching for the first point before the peak where the derivative 
+         - The left boundary (`A`) is found by searching for the first point before the peak where the derivative
            is smaller than a specified sensitivity threshold (`self.pk_sns`).
-         - The right boundary (`B`) is found by searching for the first point after the peak where the derivative 
+         - The right boundary (`B`) is found by searching for the first point after the peak where the derivative
            becomes larger than the negative of the same sensitivity threshold.
-         - If no left boundary is found, the function defaults to the start of the signal (index 1). 
+         - If no left boundary is found, the function defaults to the start of the signal (index 1).
            If no right boundary is found, the function defaults to the end of the signal.
          """
         smooth_y = self.smoother(y)
@@ -365,7 +364,7 @@ class GDGTAnalyzer:
     def find_peak_boundaries(self, x, y, center, trace, threshold=0.1):
         """
         Finds the left and right boundaries of a peak based on the first derivative test and a threshold value.
-    
+
         Parameters
         ----------
         x : numpy.ndarray or pandas.Series
@@ -378,14 +377,14 @@ class GDGTAnalyzer:
             Identifier for the trace being analyzed (e.g., which sample or dataset the peak belongs to).
         threshold : float, optional
             Threshold value for the derivative used to determine the boundaries. Default is 0.1.
-    
+
         Returns
         -------
         left_boundary_index : int
             Index of the left boundary of the peak.
         right_boundary_index : int
             Index of the right boundary of the peak.
-    
+
         Notes
         -----
         - The function calculates the first derivative of the y-values with respect to the x-values to detect changes in slope.
@@ -394,7 +393,7 @@ class GDGTAnalyzer:
         - If no suitable right boundary is found, the function defaults to the end of the x-array.
         - The small epsilon value is added to the denominator to avoid division by zero during derivative calculation.
         """
-        
+
         # Reset index and keep the original index as a column
         new_ind_peak = min(range(len(x)), key=lambda i: abs(x[i] - center))
         dx = np.diff(x)
@@ -422,17 +421,17 @@ class GDGTAnalyzer:
     def smoother(self, y):
         """
         Applies a Savitzky-Golay filter to smooth the given data.
-    
+
         Parameters
         ----------
         y : numpy.ndarray or pandas.Series
             Array or series of y-values (e.g., signal intensities) that will be smoothed.
-    
+
         Returns
         -------
         numpy.ndarray
             The smoothed y-values after applying the Savitzky-Golay filter.
-    
+
         Notes
         -----
         - This function uses the `savgol_filter` from `scipy.signal`, which applies a Savitzky-Golay filter to smooth the data.
@@ -441,25 +440,25 @@ class GDGTAnalyzer:
             - `self.smoothing_params[1]`: Polynomial order for the filter.
         """
         return savgol_filter(y, self.smoothing_params[0], self.smoothing_params[1])
-    
+
     def forward_derivative(self, x, y):
         """
         Computes the forward first derivative of the y-values with respect to the x-values.
-    
+
         Parameters
         ----------
         x : numpy.ndarray or pandas.Series
             Array or series of x-values (e.g., time, retention time) corresponding to the data points.
         y : numpy.ndarray or pandas.Series
             Array or series of y-values (e.g., signal intensities) corresponding to the x-values.
-    
+
         Returns
         -------
         fd : numpy.ndarray
             The first derivative of the y-values with respect to the x-values (forward difference).
         x_n : numpy.ndarray
             The x-values corresponding to the first derivative, excluding the last element of the original x array.
-    
+
         Notes
         -----
         - The forward difference method is used to calculate the derivative, which approximates the slope between consecutive points.
@@ -473,7 +472,7 @@ class GDGTAnalyzer:
     def extrapolate_gaussian(self, x, amp, cen, wid, decay, x_min, x_max, step=0.1):
         """
         Extends the Gaussian function by extrapolating its tails between x_min and x_max with a specified step size.
-        
+
         Parameters
         ----------
         x : numpy.ndarray or pandas.Series
@@ -492,14 +491,14 @@ class GDGTAnalyzer:
             The maximum x-value for the extrapolation range.
         step : float, optional
             Step size for generating new x-values between x_min and x_max. Default is 0.1.
-        
+
         Returns
         -------
         extended_x : numpy.ndarray
             Array of x-values extended from x_min to x_max with the given step size.
         extended_y : numpy.ndarray
             Array of y-values corresponding to the extrapolated Gaussian function over the extended x-values.
-        
+
         Notes
         -----
         - If `decay` is `None`, the function will apply a simple Gaussian using `self.individual_gaussian`.
@@ -509,13 +508,13 @@ class GDGTAnalyzer:
         if decay is None:
             extended_y = self.individual_gaussian(extended_x, amp, cen, wid)
         else:
-            extended_y = self.gaussian(extended_x, amp, cen, wid, decay)
+            extended_y = self.gaussian_decay(extended_x, amp, cen, wid, decay)
         return extended_x, extended_y
 
     def calculate_gaus_extension_limits(self, cen, wid, decay, factor=3):  # decay, factor=3):
         """
         Calculates the extension limits for the Gaussian tails based on the 3-sigma rule, optionally accounting for decay.
-        
+
         Parameters
         ----------
         cen : float
@@ -526,14 +525,14 @@ class GDGTAnalyzer:
             Decay factor to modify the extension of the Gaussian tails. If decay is 0, it will be ignored.
         factor : float, optional
             Factor to extend the Gaussian tails, typically 3 to represent the 3-sigma rule. Default is 3.
-        
+
         Returns
         -------
         x_min : float
             The lower limit (x-value) to which the Gaussian tail is extended.
         x_max : float
             The upper limit (x-value) to which the Gaussian tail is extended.
-        
+
         Notes
         -----
         - The function uses the 3-sigma rule to calculate the limits for Gaussian tail extension, scaling by the `factor`.
@@ -549,7 +548,7 @@ class GDGTAnalyzer:
     def fit_gaussians(self, x_full, y_full, ind_peak, trace, peaks, ax):
         """
         Fits single or multi-Gaussian models to the provided data to determine the best-fit parameters for the peaks of interest.
-        
+
         Parameters
         ----------
         x_full : numpy.ndarray or pandas.Series
@@ -564,7 +563,7 @@ class GDGTAnalyzer:
             List of indices representing the detected peaks in the data.
         ax : matplotlib.axes.Axes
             The axis object used for plotting the Gaussian fits.
-        
+
         Returns
         -------
         best_x : numpy.ndarray
@@ -573,7 +572,7 @@ class GDGTAnalyzer:
             Array of y-values corresponding to the best Gaussian fit (single or multi-Gaussian) for the peak of interest.
         area_smooth : float
             The area under the curve for the best-fit Gaussian model, calculated using Simpson's rule.
-        
+
         Notes
         -----
         - The function iteratively fits multi-Gaussian models to detect overlapping peaks and determine the best fit.
@@ -657,8 +656,8 @@ class GDGTAnalyzer:
                 # Initial try with given maxfev
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi)
-                single_fitted_y = self.gaussian(x, *single_popt)
+                    single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian_decay(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi)
+                single_fitted_y = self.gaussian_decay(x, *single_popt)
                 error = np.sqrt(((single_fitted_y - y) ** 2).mean())  # RMSE
                 if error < best_error:
                     multi_gauss_flag = False
@@ -673,8 +672,8 @@ class GDGTAnalyzer:
                 try:
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
-                        single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi * 100)
-                    single_fitted_y = self.gaussian(x, *single_popt)
+                        single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian_decay(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi * 100)
+                    single_fitted_y = self.gaussian_decay(x, *single_popt)
                     error = np.sqrt(((single_fitted_y - y) ** 2).mean())  # RMSE
                     if error < best_error:
                         multi_gauss_flag = False
@@ -713,7 +712,7 @@ class GDGTAnalyzer:
     def handle_peak_selection(self, ax, ax_idx, xdata, y_bcorr, peak_idx, peaks, trace):
         """
         Handles the selection of a peak, fits a Gaussian to the selected peak, and updates the plot and internal data structures.
-    
+
         Parameters
         ----------
         ax : matplotlib.axes.Axes
@@ -730,12 +729,12 @@ class GDGTAnalyzer:
             List of indices representing the detected peaks in the data.
         trace : str
             Identifier for the trace being analyzed (e.g., which sample or dataset the peak belongs to).
-    
+
         Returns
         -------
         None
             This function updates the plot and internal data structures but does not return any values.
-    
+
         Notes
         -----
         - The function identifies valleys around the selected peak and determines the neighborhood boundaries for peak fitting.
@@ -767,14 +766,14 @@ class GDGTAnalyzer:
     def plot_data(self):
         """
         Creates and configures subplots for visualizing the chromatographic data for each trace.
-    
+
         Returns
         -------
         fig : matplotlib.figure.Figure
             The figure object containing the created subplots.
         axs : list of matplotlib.axes.Axes
             A list of axis objects corresponding to each subplot, one for each trace.
-    
+
         Notes
         -----
         - If there is only one trace, a single subplot is created and returned in a list to maintain consistency.
@@ -801,19 +800,19 @@ class GDGTAnalyzer:
     def setup_subplot(self, ax, trace_idx):
         """
         Configures a single subplot for the given trace, including baseline correction, peak detection, and plotting the filtered data.
-        
+
         Parameters
         ----------
         ax : matplotlib.axes.Axes
             The axis object where the trace will be plotted.
         trace_idx : int
             Index of the trace in the dataset to be plotted.
-        
+
         Returns
         -------
         None
             This function modifies the axis object in place and updates internal data structures.
-        
+
         Notes
         -----
         - Performs baseline correction on the trace data and applies a smoothing filter to remove noise.
@@ -859,7 +858,7 @@ class GDGTAnalyzer:
     def baseline(self, y, deg=5, max_it=50, tol=1e-4):
         """
         Performs baseline correction on the input signal using an iterative polynomial fitting approach.
-        
+
         Parameters
         ----------
         y : numpy.ndarray or pandas.Series
@@ -870,15 +869,15 @@ class GDGTAnalyzer:
             The maximum number of iterations for the baseline fitting process. Default is 50.
         tol : float, optional
             The tolerance for stopping the iteration when the change in coefficients becomes small. Default is 1e-4.
-        
+
         Returns
         -------
         base : numpy.ndarray
             The estimated baseline for the input signal.
-        
+
         Notes
         -----
-        - The function iteratively fits a polynomial baseline to the input signal, adjusting the coefficients until convergence 
+        - The function iteratively fits a polynomial baseline to the input signal, adjusting the coefficients until convergence
           based on the specified tolerance (`tol`).
         - If the difference between the old and new coefficients becomes smaller than the tolerance, the iteration stops early.
         - Negative values in the baseline-corrected signal are set to zero to avoid unrealistic baseline values.
@@ -897,7 +896,7 @@ class GDGTAnalyzer:
             coeffs = coeffs_new
             base = np.dot(vander, coeffs)
             y = np.minimum(y, base)
-        # Calculate maximum peak amplitude (3 x baseline amplitude)            
+        # Calculate maximum peak amplitude (3 x baseline amplitude)
         min_peak_amp = (base.max()-base.min())*3
         return base, min_peak_amp # return base
 
@@ -908,12 +907,12 @@ class GDGTAnalyzer:
     def highlight_subplot(self):
         """
         Highlights the current subplot by changing its border color to red, while resetting all other subplots' borders to default.
-        
+
         Returns
         -------
         None
             This function modifies the subplot borders in place and updates the plot display.
-        
+
         Notes
         -----
         - The function first resets all subplot borders to black.
@@ -940,18 +939,18 @@ class GDGTAnalyzer:
     def on_click(self, event):
         """
         Handles mouse click events within the plot area to select peaks or mark positions where no peak is found.
-    
+
         Parameters
         ----------
         event : matplotlib.backend_bases.MouseEvent
             The mouse event object containing information about the click, including the x and y coordinates,
             the axis in which the click occurred, and other metadata.
-    
+
         Returns
         -------
         None
             This function updates the plot and internal data structures based on the click action.
-    
+
         Notes
         -----
         - If the click occurs within a plot axis (`event.inaxes`), the function retrieves the corresponding trace and dataset.
@@ -998,12 +997,12 @@ class GDGTAnalyzer:
     def auto_select_peaks(self):
         """
         Automatically selects peaks based on reference retention times for each compound in the dataset.
-    
+
         Returns
         -------
         None
             This function updates the plot and internal data structures based on the reference peak positions.
-    
+
         Notes
         -----
         - The function iterates through the `self.reference_peaks` dictionary, where each compound is associated with a list of reference retention times (RTs).
@@ -1052,17 +1051,17 @@ class GDGTAnalyzer:
     def on_key(self, event):
         """
         Handles keyboard input events for controlling the peak selection and plot interactions.
-    
+
         Parameters
         ----------
         event : matplotlib.backend_bases.KeyEvent
             The key event object containing information about the key pressed and the current state of the plot.
-    
+
         Returns
         -------
         None
             This function performs actions based on the key pressed and updates internal states or the plot accordingly.
-    
+
         Notes
         -----
         - "Enter": Calls `collect_peak_data()` to finalize peak selection and closes the figure to resume script execution.
@@ -1107,15 +1106,15 @@ class GDGTAnalyzer:
     def undo_last_action(self):
         """
         Undoes the last action performed during peak selection, removing the corresponding graphical objects from the plot.
-    
+
         Returns
         -------
         None
             This function updates the plot and internal data structures by undoing the last peak-related action.
-    
+
         Notes
         -----
-        - The function checks the `self.action_stack` for the most recent action and removes the corresponding graphical objects 
+        - The function checks the `self.action_stack` for the most recent action and removes the corresponding graphical objects
           (lines, fills, text annotations) from the plot.
         - If a valid peak is found in `self.integrated_peaks`, its graphical components (line, fill, text) are removed.
         - If no graphical components are found for the given key, a message is printed.
@@ -1142,17 +1141,17 @@ class GDGTAnalyzer:
     def clear_peaks_subplot(self, ax_idx):
         """
         Clears the peaks and resets the specified subplot by re-plotting the data.
-    
+
         Parameters
         ----------
         ax_idx : int
             The index of the subplot (axis) to be cleared and reset.
-    
+
         Returns
         -------
         None
             This function modifies the specified subplot in place and redraws the plot.
-    
+
         Notes
         -----
         - The function clears the selected subplot using `ax.clear()`.
@@ -1166,10 +1165,10 @@ class GDGTAnalyzer:
     def clear_all_peaks(self):
         """
         Clears all peaks and resets all subplots by re-plotting the data.
-        
+
         This method iterates through each subplot, clears the peaks, and removes corresponding
         entries from the internal data structures `self.integrated_peaks` and `self.peak_results`.
-        
+
         Returns
         -------
         None
@@ -1178,31 +1177,31 @@ class GDGTAnalyzer:
             # Clear peaks for each subplot
             self.clear_peaks_subplot(ax_idx)
             trace_to_clear = self.axs_to_traces[self.axs[ax_idx]]
-            
+
             # Remove any entries in self.integrated_peaks that have a matching trace value
             keys_to_remove = [key for key, peak_data in self.integrated_peaks.items() if "trace" in peak_data and peak_data["trace"] == trace_to_clear]
             for key in keys_to_remove:
                 del self.integrated_peaks[key]
-            
+
             # Clear the corresponding entries in self.peak_results
             if trace_to_clear in self.peak_results:
                 self.peak_results[trace_to_clear]["rts"] = []
                 self.peak_results[trace_to_clear]["areas"] = []
-        
+
         # Clear the action stack since all actions are undone
         self.action_stack.clear()
-        
+
         # Redraw the plot to reflect changes
         plt.draw()
     def collect_peak_data(self):
         """
         Collects and organizes peak data based on the GDGT (Glycerol Dialkyl Glycerol Tetraether) type provided.
-    
+
         Returns
         -------
         None
             This function updates the `self.peak_results` dictionary with peak data for each trace.
-    
+
         Notes
         -----
         - The function retrieves the appropriate GDGT dictionary (`self.GDGT_dict`) to determine the compounds for each trace.
@@ -1240,7 +1239,7 @@ class GDGTAnalyzer:
     def _append_peak_data(self, compound, peak_data):
         """
         Helper function to append peak data to the `peak_results` dictionary.
-    
+
         Parameters
         ----------
         compound : str
@@ -1248,12 +1247,12 @@ class GDGTAnalyzer:
         peak_data : dict
             A dictionary containing peak data, which includes the area under the peak and the retention time (rt).
             Example: {"area": float, "rt": float}
-    
+
         Returns
         -------
         None
             This function updates the `self.peak_results` dictionary by appending the peak area and retention time for the given compound.
-    
+
         Notes
         -----
         - If the compound is not already in `self.peak_results`, a new entry is created with empty lists for "areas" and "rts".
