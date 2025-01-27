@@ -882,6 +882,7 @@ class GDGTAnalyzer:
         - If the difference between the old and new coefficients becomes smaller than the tolerance, the iteration stops early.
         - Negative values in the baseline-corrected signal are set to zero to avoid unrealistic baseline values.
         """
+        original_y = y.copy()
         order = deg + 1
         coeffs = np.ones(order)
         cond = math.pow(abs(y).max(), 1.0 / order)
@@ -897,7 +898,8 @@ class GDGTAnalyzer:
             base = np.dot(vander, coeffs)
             y = np.minimum(y, base)
         # Calculate maximum peak amplitude (3 x baseline amplitude)
-        min_peak_amp = (base.max()-base.min())*3
+        # min_peak_amp = (base.max()-base.min())*3
+        min_peak_amp = np.baseline(original_y-base)*3
         return base, min_peak_amp # return base
 
     ######################################################
