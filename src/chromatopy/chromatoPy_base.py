@@ -899,7 +899,7 @@ class GDGTAnalyzer:
             y = np.minimum(y, base)
         # Calculate maximum peak amplitude (3 x baseline amplitude)
         # min_peak_amp = (base.max()-base.min())*3
-        min_peak_amp = np.baseline(original_y-base)*3
+        min_peak_amp = np.std(original_y-base)*3
         return base, min_peak_amp # return base
 
     ######################################################
