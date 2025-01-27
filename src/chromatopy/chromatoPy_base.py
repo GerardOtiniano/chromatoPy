@@ -902,7 +902,7 @@ class GDGTAnalyzer:
         baseline_fitter = Baseline(x)
         fit, params_mask = baseline_fitter.std_distribution(y, 45, smooth_half_window=10)
         mask = params_mask['mask'] #  Mask for regions of signal without peaks
-        min_peak_amp = (y[mask].max()-y[mask].min())*3
+        min_peak_amp = (np.std(y[mask]))*3
         # min_peak_amp = (base.max()-base.min())*3
         # min_peak_amp = np.std(original_y-base)*3
         return base, min_peak_amp # return base
