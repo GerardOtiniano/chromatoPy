@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, savgol_filter
 from scipy.optimize import curve_fit
 from scipy.integrate import simpson
+from pybaselines import Baseline
 import warnings
 
 class GDGTAnalyzer:
@@ -828,7 +829,7 @@ class GDGTAnalyzer:
         y = self.df[trace]
         trace = self.traces[trace_idx]
         # Baseline correction
-        y_base, min_peak_amp = self.baseline(y) # y_base = self.baseline(y)
+        y_base, min_peak_amp = self.baseline(x_values, y) # y_base = self.baseline(y)
         y_bcorr = y - y_base
         y_bcorr[y_bcorr < 0] = 0
         y_filtered = self.smoother(y_bcorr)
@@ -855,53 +856,65 @@ class GDGTAnalyzer:
         self.datasets[trace_idx] = (self.df["rt_corr"], y_bcorr)  # y_bcorr)
         self.peaks_indices[trace_idx] = peaks_total
 
-    def baseline(self, y, deg=5, max_it=50, tol=1e-4):
-        """
-        Performs baseline correction on the input signal using an iterative polynomial fitting approach.
+    # def baseline(self, y, deg=5, max_it=50, tol=1e-4):
+    #     """
+    #     Performs baseline correction on the input signal using an iterative polynomial fitting approach.
 
-        Parameters
-        ----------
-        y : numpy.ndarray or pandas.Series
-            The input signal (e.g., chromatographic data) that requires baseline correction.
-        deg : int, optional
-            The degree of the polynomial used for fitting the baseline. Default is 5.
-        max_it : int, optional
-            The maximum number of iterations for the baseline fitting process. Default is 50.
-        tol : float, optional
-            The tolerance for stopping the iteration when the change in coefficients becomes small. Default is 1e-4.
+    #     Parameters
+    #     ----------
+    #     y : numpy.ndarray or pandas.Series
+    #         The input signal (e.g., chromatographic data) that requires baseline correction.
+    #     deg : int, optional
+    #         The degree of the polynomial used for fitting the baseline. Default is 5.
+    #     max_it : int, optional
+    #         The maximum number of iterations for the baseline fitting process. Default is 50.
+    #     tol : float, optional
+    #         The tolerance for stopping the iteration when the change in coefficients becomes small. Default is 1e-4.
 
-        Returns
-        -------
-        base : numpy.ndarray
-            The estimated baseline for the input signal.
+    #     Returns
+    #     -------
+    #     base : numpy.ndarray
+    #         The estimated baseline for the input signal.
 
-        Notes
-        -----
-        - The function iteratively fits a polynomial baseline to the input signal, adjusting the coefficients until convergence
-          based on the specified tolerance (`tol`).
-        - If the difference between the old and new coefficients becomes smaller than the tolerance, the iteration stops early.
-        - Negative values in the baseline-corrected signal are set to zero to avoid unrealistic baseline values.
-        """
-        original_y = y.copy()
-        order = deg + 1
-        coeffs = np.ones(order)
-        cond = math.pow(abs(y).max(), 1.0 / order)
-        x = np.linspace(0.0, cond, y.size)  # Ensure this generates the expected range
-        base = y.copy()
-        vander = np.vander(x, order)  # Could potentially generate huge matrix if misconfigured
-        vander_pinv = np.linalg.pinv(vander)
-        for _ in range(max_it):
-            coeffs_new = np.dot(vander_pinv, y)
-            if np.linalg.norm(coeffs_new - coeffs) / np.linalg.norm(coeffs) < tol:
-                break
-            coeffs = coeffs_new
-            base = np.dot(vander, coeffs)
-            y = np.minimum(y, base)
-        # Calculate maximum peak amplitude (3 x baseline amplitude)
-        # min_peak_amp = (base.max()-base.min())*3
-        min_peak_amp = np.std(original_y-base)*3
-        return base, min_peak_amp # return base
-
+    #     Notes
+    #     -----
+    #     - The function iteratively fits a polynomial baseline to the input signal, adjusting the coefficients until convergence
+    #       based on the specified tolerance (`tol`).
+    #     - If the difference between the old and new coefficients becomes smaller than the tolerance, the iteration stops early.
+    #     - Negative values in the baseline-corrected signal are set to zero to avoid unrealistic baseline values.
+    #     """
+    #     original_y = y.copy()
+    #     order = deg + 1
+    #     coeffs = np.ones(order)
+    #     cond = math.pow(abs(y).max(), 1.0 / order)
+    #     x = np.linspace(0.0, cond, y.size)  # Ensure this generates the expected range
+    #     base = y.copy()
+    #     vander = np.vander(x, order)  # Could potentially generate huge matrix if misconfigured
+    #     vander_pinv = np.linalg.pinv(vander)
+    #     for _ in range(max_it):
+    #         coeffs_new = np.dot(vander_pinv, y)
+    #         if np.linalg.norm(coeffs_new - coeffs) / np.linalg.norm(coeffs) < tol:
+    #             break
+    #         coeffs = coeffs_new
+    #         base = np.dot(vander, coeffs)
+    #         y = np.minimum(y, base)
+    #     # Calculate maximum peak amplitude (3 x baseline amplitude)
+    #     # min_peak_amp = (base.max()-base.min())*3
+    #     min_peak_amp = np.std(original_y-base)*3
+    #     return base, min_peak_amp # return base
+    def baseline(self, x, y):
+        # setup baseline package
+        baseline_fitter = Baseline(x)
+        
+        # Fit filter to identify areas without peaks
+        fit, params_mask = baseline_fitter.std_distribution(y, 45, smooth_half_window=10)
+        mask = params_mask['mask'] #  Mask for regions of signal without peaks
+        min_peak_amp = (y[mask].max()-y[mask].min())*3
+        
+        # Calculate baseline
+        base, params = baseline_fitter.modpoly(y, poly_order=50, use_original=True)
+        return base, min_peak_amp
+    
     ######################################################
     #################  Peak Select  ######################
     ######################################################

@@ -1,6 +1,6 @@
 [![ChromatoPy Logo](misc/chromatoPy.png)](https://github.com/GerardOtiniano/chromatoPy/blob/2b36a74ed639d5c30ae1e143843c1532b0a84237/misc/chromatoPy.png)
 
-# chromatoPy (1.4.0)
+# chromatoPy (1.5.0)
 
  chromatoPy is an open-source Python package designed to streamline the integration and analysis of High-Performance Liquid Chromatography (HPLC) data. It features flexible multi-Gaussian and single Gaussian fitting algorithms to detect, fit, and integrate peaks from chromatographic data, enabling efficient analysis and processing of complex datasets. Note, interactive integration requires internal spike standard (Trace 744).
 
@@ -28,6 +28,7 @@ pip install chromatopy
 - scipy==1.13.1
 - matplotlib==3.8.4
 - rainbow-api==1.0.9
+- pybaselines==1.1.0
 
 ## Note on Development and Testing
 
