@@ -470,7 +470,7 @@ class GDGTAnalyzer:
         x_n = x[:-1]
         return fd, x_n
 
-    def extrapolate_gaussian(self, x, amp, cen, wid, decay, x_min, x_max, step=0.1):
+    def extrapolate_gaussian(self, x, amp, cen, wid, decay, x_min, x_max, step=0.01):
         """
         Extends the Gaussian function by extrapolating its tails between x_min and x_max with a specified step size.
 
@@ -689,7 +689,7 @@ class GDGTAnalyzer:
             # Determine the index of the peak of interest in the multi-Gaussian fit
             amp, cen, wid = best_fit_params[best_idx_interest * 3], best_fit_params[best_idx_interest * 3 + 1], best_fit_params[best_idx_interest * 3 + 2]
             best_fit_y = self.individual_gaussian(best_x, amp, cen, wid)
-            best_x, best_fit_y = self.extrapolate_gaussian(best_x, amp, cen, wid, None, best_x.min() - 1, best_x.max() + 1, step=0.1)
+            best_x, best_fit_y = self.extrapolate_gaussian(best_x, amp, cen, wid, None, best_x.min() - 1, best_x.max() + 1, step=0.01)
 
             new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
             left_boundary, right_boundary = self.calculate_boundaries(best_x, best_fit_y, new_ind_peak)
@@ -700,7 +700,7 @@ class GDGTAnalyzer:
         else:
             # print("picked single", trace)
             x_min, x_max = self.calculate_gaus_extension_limits(best_fit_params[1], best_fit_params[2], best_fit_params[3], factor=3)
-            best_x, best_fit_y = self.extrapolate_gaussian(best_x, best_fit_params[0], best_fit_params[1], best_fit_params[2], best_fit_params[3], x_min, x_max, step=0.1)
+            best_x, best_fit_y = self.extrapolate_gaussian(best_x, best_fit_params[0], best_fit_params[1], best_fit_params[2], best_fit_params[3], x_min, x_max, step=0.01)
             new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
             left_boundary, right_boundary = self.calculate_boundaries(best_x, best_fit_y, new_ind_peak)
             best_x = best_x[left_boundary - 1 : right_boundary + 1]
