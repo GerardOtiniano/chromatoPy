@@ -116,8 +116,12 @@ def import_data(results_file_path, folder_path, csv_files, trace_ids):
     # get or read results path
     if os.path.exists(results_file_path):
         results_df = pd.read_csv(results_file_path)
+        # results_rts_df = pd.read_csv(results_rts_path)
+        # results_area_unc_df = pd.read_csv(results_area_unc_path)
     else:
         results_df = pd.DataFrame(columns=["Sample Name"])
+        # results_rts_df = pd.DataFrame(columns=["Sample Name"])
+        # results_area_unc_df = pd.DataFrame(columns=["Sample Name"])
 
     print("Reading data...")
     data = read_data_concurrently(folder_path, csv_files, trace_ids)
@@ -126,4 +130,9 @@ def import_data(results_file_path, folder_path, csv_files, trace_ids):
     return {
         "data": data,
         "reference": reference,
-        "results_df": results_df}
+        "results_df": results_df,}
+        # "results_rts_df": results_rts_df,
+        # "results_area_unc_df": results_area_unc_df}
+
+
+

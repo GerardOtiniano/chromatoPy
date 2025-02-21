@@ -31,7 +31,9 @@ def folder_handling(folder_path):
     output_folder = os.path.join(folder_path, "Output_chromatoPy")
     figures_folder = os.path.join(output_folder, "Figures_chromatoPy")
     results_file_path = os.path.join(output_folder, "results_peak_area.csv")
-    
+    sample_path = os.path.join(output_folder, "Individual Samples")
+    # results_rts_path = os.path.join(output_folder, "results_rts.csv")
+    # results_area_unc_path = os.path.join(output_folder, "results_area_uncertainty.csv")
     # Create figures folder if it doesn't exist
     os.makedirs(figures_folder, exist_ok=True)
     
@@ -42,17 +44,22 @@ def folder_handling(folder_path):
     gdgt_oi = get_gdgt_input()  # Ensure get_gdgt_input is defined or imported
     gdgt_meta_set = get_gdgt(gdgt_oi)  # Ensure get_gdgt is defined or imported
     
-    # Extract default windows
+    # Extract needed information
     default_windows = gdgt_meta_set["window"]
+    names = gdgt_meta_set["names"]
     
     return {
         "folder_path": folder_path,
         "csv_files": csv_files,
         "output_folder": output_folder,
+        "sample_path": sample_path,
         "figures_folder": figures_folder,
         "results_file_path": results_file_path,
+        # "results_rts_path": results_rts_path,
+        # "results_area_unc_path": results_area_unc_path,
         "ref_pk": ref_pk,
         "gdgt_oi": gdgt_oi,
         "gdgt_meta_set": gdgt_meta_set,
-        "default_windows": default_windows
+        "default_windows": default_windows,
+        "names": names
     }

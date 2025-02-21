@@ -15,6 +15,8 @@ def hplc_to_csv(base_path=None):
     # Ensure the output directory exists
     if base_path is None:
         base_path = input("Enter parent folder pathway to raw HPLC data: ")
+        
+    print()
     output_base_path = os.path.join(base_path, "chromatopy - raw hplc csv")
     os.makedirs(output_base_path, exist_ok=True)
     # Iterate over all items in base_path assuming they are directories ending with .D

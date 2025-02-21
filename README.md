@@ -1,15 +1,16 @@
 [![ChromatoPy Logo](misc/chromatoPy.png)](https://github.com/GerardOtiniano/chromatoPy/blob/2b36a74ed639d5c30ae1e143843c1532b0a84237/misc/chromatoPy.png)
 
-# chromatoPy (1.5.0)
+# chromatoPy (1.6.0)
 
  chromatoPy is an open-source Python package designed to streamline the integration and analysis of High-Performance Liquid Chromatography (HPLC) data. It features flexible multi-Gaussian and single Gaussian fitting algorithms to detect, fit, and integrate peaks from chromatographic data, enabling efficient analysis and processing of complex datasets. Note, interactive integration requires internal spike standard (Trace 744).
 
 ## Features
 
 - **Flexible Gaussian Fitting**: Supports both single and multi-Gaussian peak fitting algorithms.
+-- **Fit Uncertainty**: An ensemble peak areas are calculated using uncertainty in fitting parameters (peak width, height, and centre).
 - **Data Integration**: Integrates chromatographic peak data for precise quantification.
 - **Customizable Analysis**: Allows for the adjustment of fitting parameters to accommodate various peak shapes.
-- **Input Support**: Works with HPLC data converted to .csv format using a built in function that utilizes the package "rainbow". 
+- **Input Support**: Works with HPLC data converted to .csv format using a built in function that utilizes the package "rainbow".
 
 ## Installation
 
