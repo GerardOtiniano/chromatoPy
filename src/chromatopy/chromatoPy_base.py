@@ -281,7 +281,10 @@ class GDGTAnalyzer:
             height, mean, stddev = heights[0], means[0], stddevs[0]
 
             # Fit Gaussian and get best fit parameters
-            popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=self.gi)
+            try:
+                popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=self.gi)
+            except RuntimeError:
+                popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=self.gi*100)
             # popt, _ = curve_fit(self.gaussian, x, y_smooth, p0=[height, mean, stddev, 0.1], maxfev=self.gi)
             # Extend Gaussian fit limits
             x_min, x_max = self.calculate_gaus_extension_limits(popt[1], popt[2], 0, factor=3)
@@ -883,7 +886,6 @@ class GDGTAnalyzer:
                 # For each subplot, update the line data based on the new window.
                 for i, ax in enumerate(axs):
                     x_full, y_full = self.full_data[i]
-                    print(x_full)
                     # Option 1: Just update x-limits and y-limits
                     ax.set_xlim(self.window_bounds)
                     
@@ -893,7 +895,7 @@ class GDGTAnalyzer:
                     y_subset = y_full[mask]
                     
                     # Optionally, update the line to show only the subset:
-                    # self.line_objects[i].set_data(x_subset, y_subset)
+                    self.line_objects[i].set_data(x_subset, y_subset)
                     # If you want to show the full data but zoom in, skip setting new data.
                     
                     # Update y-axis limits based on the subset data:
@@ -970,6 +972,8 @@ class GDGTAnalyzer:
     #     self.axs_to_traces[ax] = trace
     #     self.datasets[trace_idx] = (self.df["rt_corr"], y_bcorr)  # y_bcorr)
     #     self.peaks_indices[trace_idx] = peaks_total
+    
+
     def setup_subplot(self, ax, trace_idx):
         """
         Configures a single subplot for the given trace, computes and stores the full
@@ -1012,7 +1016,7 @@ class GDGTAnalyzer:
         
         # Store additional info for peak selection, etc.
         self.axs_to_traces[ax] = trace
-        self.datasets[trace_idx] = (x_values, y_bcorr)
+        self.datasets[trace_idx] = (x_values, y_bcorr) 
         peaks_total, properties = find_peaks(y_filtered, height=min_peak_amp, width=0.05, prominence=self.pk_pr)
         self.peaks[trace] = peaks_total
         self.peak_properties[trace] = properties
@@ -1147,7 +1151,7 @@ class GDGTAnalyzer:
         self.y_full = []
         if event.inaxes not in self.axs_to_traces:
             return
-        print("Click registered!")
+        # print("Click registered!")
         ax = event.inaxes
         # Assuming axs_to_traces maps axes to trace identifiers directly
         trace = self.axs_to_traces[ax]
@@ -1157,6 +1161,8 @@ class GDGTAnalyzer:
         self.x_full = xdata
         self.y_full = y_bcorr
         peaks = self.peaks_indices[ax_idx]
+        for i in peaks:
+            plt.draw()
         rel_click_pos = np.abs(xdata[peaks] - event.xdata)
         peak_found = False
         for peak_index, peak_pos in enumerate(rel_click_pos):
@@ -1169,6 +1175,7 @@ class GDGTAnalyzer:
                 self.action_stack.append(("select_peak", ax, (ax_idx, selected_peak)))
                 break
         if not peak_found:
+            print("didn't find peak")
             peak_key = (ax_idx, None)  # Using ax_idx to keep consistent with non-peak-specific actions
             line = ax.axvline(event.xdata, color="grey", linestyle="--", zorder=-1)
             text = ax.text(event.xdata + 2, (ax.get_ylim()[1] / 10) * 0.7, "No peak\n" + str(np.round(event.xdata)), color="grey", fontsize=8)
