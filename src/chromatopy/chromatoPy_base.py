@@ -38,6 +38,7 @@ class GDGTAnalyzer:
         self.pk_sns = pk_sns
         self.pk_pr = pk_pr
         self.t_pressed = False # Flag to track if 't' was pressed
+        self.called = False
 
     def run(self):
         """
@@ -423,7 +424,7 @@ class GDGTAnalyzer:
             right_boundary_index = len(x) - 1  # End of the array if no suitable point is found
         return int(left_boundary_index), int(right_boundary_index)
 
-    def smoother(self, y):
+    def smoother(self, y, param_0 = None, param_1 = None):
         """
         Applies a Savitzky-Golay filter to smooth the given data.
 
@@ -444,7 +445,12 @@ class GDGTAnalyzer:
             - `self.smoothing_params[0]`: Window length (must be odd).
             - `self.smoothing_params[1]`: Polynomial order for the filter.
         """
-        return savgol_filter(y, self.smoothing_params[0], self.smoothing_params[1], deriv=0, mode='interp')
+        if param_0 == None:
+            param_0 = self.smoothing_params[0]
+        if param_1 == None:
+            param_1 = self.smoothing_params[1]
+        # return savgol_filter(y, self.smoothing_params[0], self.smoothing_params[1], deriv=0, mode='interp')
+        return savgol_filter(y, param_0, param_1)
 
     def forward_derivative(self, x, y):
         """
@@ -843,6 +849,45 @@ class GDGTAnalyzer:
     #     # print(f"Begin peak selection for {self.sample_name}.")
     #     return fig, axs
     
+    def add_window_controls(self):
+        """
+        Adds interactive TextBox widgets to the existing figure so that the user can change the x-window.
+        This method does not re-create the entire plot.
+        """
+        # If controls already exist, do nothing or toggle visibility.
+        if hasattr(self, "window_controls_added") and self.window_controls_added:
+            return
+    
+        fig = self.fig  # Use the stored figure
+    
+        # Create new axes for the text boxes in normalized coordinates
+        axbox_min = fig.add_axes([0.25, 0.025, 0.05, 0.02])
+        axbox_max = fig.add_axes([0.65, 0.025, 0.05, 0.02])
+        text_box_min = TextBox(axbox_min, 'Window start: ', initial=str(self.window_bounds[0]))
+        text_box_max = TextBox(axbox_max, 'Window end: ', initial=str(self.window_bounds[1]))
+        
+        def submit_callback(text):
+            try:
+                new_xmin = float(text_box_min.text)
+                new_xmax = float(text_box_max.text)
+                self.window_bounds = [new_xmin, new_xmax]
+                # For each subplot, update the x-limits (and update y-limits if desired)
+                for i, ax in enumerate(self.axs):
+                    # If you are updating data based on window bounds, you can filter your full data here.
+                    # Otherwise, simply update the limits.
+                    ax.set_xlim(self.window_bounds)
+                    # Optionally, update y-limits based on filtered data.
+                fig.canvas.draw_idle()
+            except Exception as e:
+                print("Invalid input for window boundaries:", e)
+        
+        text_box_min.on_submit(submit_callback)
+        text_box_max.on_submit(submit_callback)
+        
+        # Mark that we've added controls
+        self.window_controls_added = True
+        plt.draw()
+    
     def plot_data(self):
         """
         Creates subplots for each trace and adds two text boxes to allow the user to update the x-window boundaries.
@@ -866,52 +911,6 @@ class GDGTAnalyzer:
                 ax.set_xlabel("Corrected Retention Time (minutes)")
         
         fig.suptitle(f"Sample: {self.sample_name}", fontsize=16, fontweight="bold")
-        
-        # --- Add TextBox widgets for new x-window boundaries ---
-        axbox_min = plt.axes([0.25, 0.02, 0.05, 0.02])
-        axbox_max = plt.axes([0.65, 0.02, 0.05, 0.02])
-        
-        text_box_min = TextBox(axbox_min, 'Window start: ', initial=str(self.window_bounds[0]))
-        text_box_max = TextBox(axbox_max, 'Window end: ', initial=str(self.window_bounds[1]))
-        
-        def submit_callback(text):
-            """
-            Callback for when the window boundaries are changed.
-            """
-            try:
-                new_xmin = float(text_box_min.text)
-                new_xmax = float(text_box_max.text)
-                self.window_bounds = [new_xmin, new_xmax]
-                
-                # For each subplot, update the line data based on the new window.
-                for i, ax in enumerate(axs):
-                    x_full, y_full = self.full_data[i]
-                    # Option 1: Just update x-limits and y-limits
-                    ax.set_xlim(self.window_bounds)
-                    
-                    # Option 2: If you want to actually re-filter the data for the new window:
-                    mask = (x_full >= new_xmin) & (x_full <= new_xmax)
-                    x_subset = x_full[mask]
-                    y_subset = y_full[mask]
-                    
-                    # Optionally, update the line to show only the subset:
-                    self.line_objects[i].set_data(x_subset, y_subset)
-                    # If you want to show the full data but zoom in, skip setting new data.
-                    
-                    # Update y-axis limits based on the subset data:
-                    if len(y_subset) > 0:
-                        ymin, ymax = y_subset.min(), y_subset.max()
-                        y_margin = (ymax - ymin) * 0.1
-                        ax.set_ylim(0, ymax + y_margin)
-                    else:
-                        ax.set_ylim(0, 1)
-                
-                fig.canvas.draw_idle()
-            except Exception as e:
-                print("Invalid input for x window boundaries:", e)
-        
-        text_box_min.on_submit(submit_callback)
-        text_box_max.on_submit(submit_callback)
         
         return fig, axs
 
@@ -1175,7 +1174,6 @@ class GDGTAnalyzer:
                 self.action_stack.append(("select_peak", ax, (ax_idx, selected_peak)))
                 break
         if not peak_found:
-            print("didn't find peak")
             peak_key = (ax_idx, None)  # Using ax_idx to keep consistent with non-peak-specific actions
             line = ax.axvline(event.xdata, color="grey", linestyle="--", zorder=-1)
             text = ax.text(event.xdata + 2, (ax.get_ylim()[1] / 10) * 0.7, "No peak\n" + str(np.round(event.xdata)), color="grey", fontsize=8)
@@ -1305,8 +1303,6 @@ class GDGTAnalyzer:
             plt.close(self.fig)  # Close the figure to resume script execution
         elif event.key == "d":
             self.undo_last_action()
-        elif event.key == "e":
-            pass
         elif event.key in ["up", "down"]:
             # Handle subplot navigation with up and down arrow keys
             if event.key == "up":
@@ -1330,6 +1326,9 @@ class GDGTAnalyzer:
             print(f"All peaks removed from {self.sample_name}. Reference peaks will be updated.")
             self.clear_all_peaks()
             self.t_pressed = True
+        elif event.key == "w":
+            print("A new view!")
+            self.add_window_controls()
 
     def undo_last_action(self):
         """

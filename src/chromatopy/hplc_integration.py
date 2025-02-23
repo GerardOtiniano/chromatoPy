@@ -14,7 +14,7 @@ import scipy.interpolate as interp
 import json
 
 
-def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoothing_window=12, smoothing_factor=3, gaus_iterations=4000, peak_boundary_derivative_sensitivity=0.0001, peak_prominence=0.001): # peak_boundary_derivative_sensitivity=0.01
+def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoothing_window=12, smoothing_factor=3, gaus_iterations=4000, peak_boundary_derivative_sensitivity=0.01, peak_prominence=0.001): # peak_boundary_derivative_sensitivity=0.01
     """
     Interactive integration of HPLC results. Steps to use.
     1. import the package
