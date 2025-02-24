@@ -14,7 +14,7 @@ import scipy.interpolate as interp
 import json
 
 
-def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoothing_window=12, smoothing_factor=3, gaus_iterations=4000, peak_boundary_derivative_sensitivity=0.01, peak_prominence=0.001): # peak_boundary_derivative_sensitivity=0.01
+def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoothing_window=12, smoothing_factor=3, gaus_iterations=4000, maximum_peak_amplitude=None, peak_boundary_derivative_sensitivity=0.01, peak_prominence=0.001): # peak_boundary_derivative_sensitivity=0.01
     """
     Interactive integration of HPLC results. Steps to use.
     1. import the package
@@ -113,11 +113,9 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
         else:
             refpkhld = ref_pk
         for trace_set, trace_label, window, GDGT_dict_single, gdgt_group in zip(trace_sets, trace_labels, windows, GDGT_dict, gdgt_groups):
-            # df2 = df.loc[(df["rt_corr"] > window[0]) & (df["rt_corr"] < window[1])]
-            df2 = df#2.reset_index(drop=True)
             analyzer = GDGTAnalyzer(
-                df2, trace_set, window, GDGT_dict_single, gaus_iterations, sample_name, is_reference=iref, 
-                max_peaks=peak_neighborhood_n, sw=smoothing_window, sf=smoothing_factor, 
+                df, trace_set, window, GDGT_dict_single, gaus_iterations, sample_name, is_reference=iref, 
+                max_peaks=peak_neighborhood_n, sw=smoothing_window, sf=smoothing_factor, max_PA = None,
                 pk_sns=peak_boundary_derivative_sensitivity, pk_pr=peak_prominence, reference_peaks=refpkhld)
             # print(f"Begin peak selection for {sample_name}.")
             peaks, fig, ref_pk_new, t_pressed = analyzer.run()

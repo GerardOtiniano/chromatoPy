@@ -12,7 +12,7 @@ from pybaselines import Baseline
 import warnings
 
 class GDGTAnalyzer:
-    def __init__(self, df, traces, window_bounds, GDGT_dict, gaus_iterations, sample_name, is_reference, max_peaks, sw, sf, pk_sns, pk_pr, reference_peaks=None):
+    def __init__(self, df, traces, window_bounds, GDGT_dict, gaus_iterations, sample_name, is_reference, max_peaks, sw, sf, pk_sns, pk_pr, max_PA, reference_peaks=None):
         self.fig, self.axs = None, None
         self.df = df
         self.traces = traces
@@ -39,6 +39,7 @@ class GDGTAnalyzer:
         self.pk_pr = pk_pr
         self.t_pressed = False # Flag to track if 't' was pressed
         self.called = False
+        self.max_peak_amp = max_PA
 
     def run(self):
         """
@@ -1015,8 +1016,11 @@ class GDGTAnalyzer:
         
         # Store additional info for peak selection, etc.
         self.axs_to_traces[ax] = trace
-        self.datasets[trace_idx] = (x_values, y_bcorr) 
-        peaks_total, properties = find_peaks(y_filtered, height=min_peak_amp, width=0.05, prominence=self.pk_pr)
+        self.datasets[trace_idx] = (x_values, y_bcorr)
+        if self.max_peak_amp is not None:
+            peaks_total, properties = find_peaks(y_filtered, height=(min_peak_amp, self.max_peak_amp), width=0.05, prominence=self.pk_pr)
+        else:
+            peaks_total, properties = find_peaks(y_filtered, height=min_peak_amp, width=0.05, prominence=self.pk_pr)
         self.peaks[trace] = peaks_total
         self.peak_properties[trace] = properties
         self.peaks_indices[trace_idx] = peaks_total

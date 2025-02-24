@@ -216,116 +216,71 @@ def ensemble_fractional_abundances(folder_path):
         output_path = os.path.join(folder_path, filename)
         with open(output_path, 'w') as f:
             json.dump(sample_data, f, indent=4)
-folder_path = indv_samples
+folder_path = '/Users/gerard/Desktop/UB/GDGT Raw Data/LeLe/chromatopy - raw hplc csv/Output_chromatoPy/Individual Samples'
 ensemble_fractional_abundances(folder_path)
 
+# %% FA csv output 
+import os
+import json
+import glob
+import pandas as pd
+
+def compile_fa_dataframe(folder_path):
+    """
+    Reads each JSON file in folder_path, extracts the computed fractional abundances 
+    (mean, lower, and upper) for each GDGT type, and compiles them into a DataFrame.
+    
+    Each row corresponds to one sample, and for each GDGT (e.g., 'Ia') three columns are created:
+      - Ia (the mean fractional abundance)
+      - Ia_lower (the lower confidence bound)
+      - Ia_upper (the upper confidence bound)
+    
+    Parameters
+    ----------
+    folder_path : str
+        The folder containing the JSON files.
+    
+    Returns
+    -------
+    df : pandas.DataFrame
+        A DataFrame with one row per sample and columns for each GDGT's FA and uncertainty.
+    """
+    rows = []
+    # Get all JSON files
+    json_files = glob.glob(os.path.join(folder_path, "*.json"))
+    
+    for file_path in json_files:
+        with open(file_path, 'r') as f:
+            sample_data = json.load(f)
+        
+        # Use sample name from the JSON or the filename as a fallback
+        sample_name = sample_data.get("Sample Name", os.path.basename(file_path))
+        row = {"Sample Name": sample_name}
+        
+        # Process each GDGT group (modify groups as needed)
+        for group in ["isoGDGTs", "brGDGTs"]:
+            if group in sample_data:
+                group_dict = sample_data[group]
+                for gdgt_key, gdgt_info in group_dict.items():
+                    # We expect the computed FA values to have been added by your earlier function.
+                    if isinstance(gdgt_info, dict) and "mean_fa" in gdgt_info:
+                        row[gdgt_key] = gdgt_info["mean_fa"]
+                        row[f"{gdgt_key}_lower"] = gdgt_info["fa_lower_bound"]
+                        row[f"{gdgt_key}_upper"] = gdgt_info["fa_upper_bound"]
+                    else:
+                        # Optionally, warn if expected keys are not found
+                        print(f"Warning: FA data not found for {group} {gdgt_key} in sample {sample_name}.")
+        rows.append(row)
+    
+    # Create a DataFrame from the list of dictionaries
+    df = pd.DataFrame(rows)
+    return df
+
+# Example usage:
+folder_path = '/Users/gerard/Desktop/UB/GDGT Raw Data/LeLe/chromatopy - raw hplc csv/Output_chromatoPy/Individual Samples'
+df_fa = compile_fa_dataframe(folder_path)
+print(df_fa.head())
 # %% Output as csv
-
-# import os
-# import glob
-# import json
-# import numpy as np
-# import pandas as pd
-
-# def bootstrap_stats(data, n_bootstrap=1000, ci=95):
-#     """
-#     Performs bootstrap resampling on the given data (a list or numpy array) 
-#     and returns a dictionary with keys: "mean", "lower_ci", and "upper_ci".
-#     If the input data is empty, returns zeros.
-#     """
-#     data = np.array(data)
-#     if data.size == 0:
-#         return {"mean": 0, "lower_ci": 0, "upper_ci": 0}
-#     boot_means = []
-#     for i in range(n_bootstrap):
-#         sample = np.random.choice(data, size=len(data), replace=True)
-#         boot_means.append(np.mean(sample))
-#     boot_means = np.array(boot_means)
-#     mean_val = np.mean(data)
-#     lower_bound = np.percentile(boot_means, (100 - ci) / 2)
-#     upper_bound = np.percentile(boot_means, 100 - (100 - ci) / 2)
-#     return {"mean": mean_val, "lower_ci": lower_bound, "upper_ci": upper_bound}
-
-# def compile_mean_ci_peak_areas(folder_path):
-#     """
-#     Processes all JSON files in folder_path and compiles a CSV file
-#     with the sample name in the first column and, for each GDGT type found in
-#     groups "Reference", "isoGDGTs", and "brGDGTs", the mean peak area and its
-#     lower and upper limits as calculated by bootstrap_stats.
-
-#     The output CSV will have columns named:
-#       - Sample Name
-#       - <group>_<GDGT>_mean
-#       - <group>_<GDGT>_lower_ci
-#       - <group>_<GDGT>_upper_ci
-
-#     Parameters:
-#       folder_path (str): Folder containing the JSON files.
-
-#     Returns:
-#       DataFrame: A Pandas DataFrame with the compiled data.
-#     """
-#     # List to hold one dictionary per sample.
-#     rows = []
-#     # Find all JSON files in the folder.
-#     json_files = glob.glob(os.path.join(folder_path, "*.json"))
-    
-#     for file_path in json_files:
-#         with open(file_path, 'r') as f:
-#             sample_data = json.load(f)
-        
-#         # Create a row dict starting with the sample name.
-#         row = {}
-#         sample_name = sample_data.get("Sample Name", os.path.basename(file_path))
-#         row["Sample Name"] = sample_name
-        
-#         # Process each group: "Reference", "isoGDGTs", "brGDGTs".
-#         for group in ["Reference", "isoGDGTs", "brGDGTs"]:
-#             if group in sample_data:
-#                 for gdgt_key, gdgt_info in sample_data[group].items():
-#                     if isinstance(gdgt_info, dict) and "area_ensemble" in gdgt_info:
-#                         ensemble = gdgt_info["area_ensemble"]
-#                         # Check if ensemble is non-empty; assume it might be stored as [list] or directly a list.
-#                         if ensemble and len(ensemble) > 0:
-#                             # If the first element is itself a list, use it; otherwise, use ensemble.
-#                             if isinstance(ensemble[0], list):
-#                                 data = ensemble[0]
-#                             else:
-#                                 data = ensemble
-#                         else:
-#                             data = []
-#                         # Compute the statistics.
-#                         stats = bootstrap_stats(data, n_bootstrap=1000, ci=97.5)
-#                         # Define column names based on group and gdgt key.
-#                         col_mean  = f"{gdgt_key}"
-#                         col_lower = f"{gdgt_key}_lower_ci"
-#                         col_upper = f"{gdgt_key}_upper_ci"
-#                         row[col_mean]  = stats["mean"]
-#                         row[col_lower] = stats["lower_ci"]
-#                         row[col_upper] = stats["upper_ci"]
-#                     else:
-#                         print(f"Warning: 'area_ensemble' not found for {group} {gdgt_key} in sample {sample_name}.")
-        
-#         rows.append(row)
-    
-#     # Create a DataFrame from the list of rows.
-#     df = pd.DataFrame(rows)
-#     return df
-
-# # -------------------------
-# # Example usage:
-# # -------------------------
-# folder_path = "/Users/gerard/Desktop/UB/GDGT Raw Data/Chromatopy/combined dataset for manuscript"  # <-- Update this to your JSON files folder
-# output_csv = os.path.join(folder_path, "/Users/gerard/Desktop/UB/GDGT Raw Data/Chromatopy/combined dataset for manuscript/compiled_mean_peak_areas_updated.csv")
-
-# # Compile the data from the JSON files into a DataFrame.
-# df_compiled = compile_mean_ci_peak_areas(folder_path)
-# # Save the DataFrame to CSV.
-# df_compiled.to_csv(output_csv, index=False)
-
-# print("CSV file created:", output_csv)
-
-
 import os
 import glob
 import json
