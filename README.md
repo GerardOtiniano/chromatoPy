@@ -2,12 +2,12 @@
 
 # chromatoPy (1.7.0)
 
- chromatoPy is an open-source Python package designed to streamline the integration and analysis of High-Performance Liquid Chromatography (HPLC) data. It features flexible multi-Gaussian and single Gaussian fitting algorithms to detect, fit, and integrate peaks from chromatographic data, enabling efficient analysis and processing of complex datasets. Note, interactive integration requires internal spike standard (Trace 744).
+chromatoPy is an open-source Python package designed to streamline the integration and analysis of High-Performance Liquid Chromatography (HPLC) data. It features flexible multi-Gaussian and single Gaussian fitting algorithms to detect, fit, and integrate peaks from chromatographic data, enabling efficient analysis and processing of complex datasets. Note, interactive integration requires internal spike standard (Trace 744).
 
 ## Features
 
 - **Flexible Gaussian Fitting**: Supports both single and multi-Gaussian peak fitting algorithms.
--- **Fit Uncertainty**: An ensemble peak areas are calculated using uncertainty in fitting parameters (peak width, height, and centre).
+  -- **Fit Uncertainty**: An ensemble peak areas are calculated using uncertainty in fitting parameters (peak width, height, and centre).
 - **Data Integration**: Integrates chromatographic peak data for precise quantification.
 - **Customizable Analysis**: Allows for the adjustment of fitting parameters to accommodate various peak shapes.
 - **Input Support**: Works with HPLC data converted to .csv format using a built in function that utilizes the package "rainbow".
@@ -15,6 +15,7 @@
 ## Installation
 
 To install chromatoPy from the GitHub repository, you can use the following pip command:
+
 ```bash
 pip install chromatopy
 ```
@@ -59,10 +60,12 @@ chromatopy.assign_indices()
 chromatoPy expects HPLC data to be in **.csv** format. You can convert your raw HPLC results using the hplc_to_csv() function.
 
 ## Versioning
-Version numbers are reported in an "X.Y.Z" format. 
-- **X (Major version):** changes that would require the user to adapt their usage of the package (e.g., removing or renaming functions or methods, introducing new functions that change functionality). 
-- **Y (Minor version):**  modifications to functions or new features that are backward-compatible.
-- **Z (Patch version):** minor bug fixes or enhancements that do not affect the core interface/method. 
+
+Version numbers are reported in an "X.Y.Z" format.
+
+- **X (Major version):** changes that would require the user to adapt their usage of the package (e.g., removing or renaming functions or methods, introducing new functions that change functionality).
+- **Y (Minor version):** modifications to functions or new features that are backward-compatible.
+- **Z (Patch version):** minor bug fixes or enhancements that do not affect the core interface/method.
 
 ## Contributing
 

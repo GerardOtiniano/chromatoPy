@@ -4,7 +4,7 @@ import json
 import glob
 import numpy as np
 
-indv_samples = '/Users/gerard/Desktop/UB/GDGT Raw Data/Chromatopy/combined dataset for manuscript'
+indv_samples = '/path/to/individual/samples'
 
 def bootstrap_stats(data, n_bootstrap=1000, ci=99):
     """
@@ -22,10 +22,8 @@ def bootstrap_stats(data, n_bootstrap=1000, ci=99):
       - A dictionary with keys 'mean', 'lower_ci', and 'upper_ci'.
     """
     data = np.array(data)
-    # If the ensemble is empty, return zeros.
     if data.size == 1:
         return {"mean": 0, "lower_ci": 0, "upper_ci": 0}
-    
     boot_means = []
     n = len(data)
     for i in range(n_bootstrap):
@@ -34,8 +32,6 @@ def bootstrap_stats(data, n_bootstrap=1000, ci=99):
     boot_means = np.array(boot_means)
     
     mean_val = np.mean(data)
-    # lower_bound = np.percentile(boot_means, (100 - ci) / 2)
-    # upper_bound = np.percentile(boot_means, 100 - (100 - ci) / 2)
     sigma = sigma = np.std(data)
     lower_bound = mean_val - 2 * sigma
     upper_bound = mean_val + 2 * sigma
@@ -55,7 +51,7 @@ def mean_ci_pa(folder_path):
             if x in sample_data:
                 for gdgt_key, gdgt_info in sample_data[x].items():
                     if isinstance(gdgt_info, dict) and "area_ensemble" in gdgt_info:
-                        print(gdgt_info['area_ensemble'])
+                        print(gdgt_info)
                         stats = bootstrap_stats(gdgt_info["area_ensemble"][0], n_bootstrap=1000, ci=95)
                         # Save the computed statistics into the dictionary for this GDGT
                         gdgt_info["mean"] = stats["mean"]
@@ -105,7 +101,6 @@ def ensemble_fractional_abundances(folder_path):
           - A dictionary mapping each GDGT to a dictionary with keys:
               "mean_fa", "fa_lower_bound", and "fa_upper_bound".
         """
-        # First, compute the mean and standard error for each GDGT.
         means = {}
         ses = {}
         for gdgt, values in gdgt_data.items():
@@ -123,11 +118,9 @@ def ensemble_fractional_abundances(folder_path):
                 means[gdgt] = mu
                 ses[gdgt] = se
     
-        # Total mean over all GDGTs.
         T = sum(means.values())
         
         results = {}
-        # If total is zero, assign all fractional abundances to 0.
         if T == 0:
             for gdgt in gdgt_data.keys():
                 results[gdgt] = {
@@ -136,8 +129,6 @@ def ensemble_fractional_abundances(folder_path):
                     "fa_upper_bound": 0
                 }
             return results
-    
-        # Compute fractional abundances and propagate uncertainty via the delta method.
         for i, gdgt in enumerate(means.keys()):
             mu_i = means[gdgt]
             f_i = mu_i / T
@@ -146,9 +137,6 @@ def ensemble_fractional_abundances(folder_path):
             # Compute the partial derivative for mu_i:
             # d(f_i)/d(mu_i) = (T - mu_i) / T^2.
             dfi_dmui = (T - mu_i) / (T**2)
-            
-            # For j ≠ i, the partial derivative is: d(f_i)/d(mu_j) = -mu_i/T^2.
-            # Thus, the contribution from all other GDGTs is:
             var_other = 0
             for other_gdgt, mu_j in means.items():
                 if other_gdgt == gdgt:
@@ -156,53 +144,39 @@ def ensemble_fractional_abundances(folder_path):
                 se_j = ses[other_gdgt]
                 dfi_dmuj = -mu_i / (T**2)
                 var_other += (dfi_dmuj**2) * (se_j**2)
-            
-            # Variance for f_i using the delta method:
             var_fi = (dfi_dmui**2) * (se_i**2) + var_other
             std_fi = np.sqrt(var_fi)
-            
-            # Define bounds as mean_fa ± 2*std_fi.
             results[gdgt] = {
                 "mean_fa": f_i,
                 "fa_lower_bound": f_i - 2*std_fi,
                 "fa_upper_bound": f_i + 2*std_fi
             }
-        
         return results
     
-    # Get all JSON files in the folder
     json_files = glob.glob(os.path.join(folder_path, "*.json"))
     
-    # Process each JSON file
     for file_path in json_files:
         with open(file_path, 'r') as f:
             sample_data = json.load(f)
         
         sample_name = sample_data.get("Sample Name", os.path.basename(file_path))
         
-        # Process each group separately: isoGDGTs and brGDGTs.
         for group in ["isoGDGTs", "brGDGTs"]:
             if group in sample_data:
                 group_dict = sample_data[group]
-                # Build a dictionary with GDGT names and their ensemble_area lists.
                 gdgt_values = {}
                 for gdgt_key, gdgt_info in group_dict.items():
-                    # Use the key "area_ensemble" for the replicate measurements.
                     if isinstance(gdgt_info, dict) and "area_ensemble" in gdgt_info:
                         ensemble = gdgt_info["area_ensemble"]
                         if ensemble and len(ensemble) > 0:
-                            # Use the first element if your structure wraps the actual list inside another list.
                             gdgt_values[gdgt_key] = ensemble
                         else:
-                            # If the ensemble is empty, assign an empty list.
                             gdgt_values[gdgt_key] = []
                     else:
                         print(f"Warning: 'area_ensemble' not found for {group} {gdgt_key} in sample {sample_name}.")
                 
                 if gdgt_values:
-                    # Compute the fractional abundances (FA) for this group.
                     fa_results = compute_fractional_abundances(gdgt_values)
-                    # Save the computed FA values back into the corresponding GDGT's dictionary.
                     for gdgt_key, fa_stats in fa_results.items():
                         if gdgt_key in group_dict and isinstance(group_dict[gdgt_key], dict):
                             group_dict[gdgt_key]["mean_fa"] = fa_stats["mean_fa"]
@@ -210,14 +184,12 @@ def ensemble_fractional_abundances(folder_path):
                             group_dict[gdgt_key]["fa_upper_bound"] = fa_stats["fa_upper_bound"]
                 else:
                     print(f"No valid area_ensemble data found in group {group} for sample {sample_name}.")
-        
-        # Save the updated sample_data to a new JSON file in the output folder.
         filename = os.path.basename(file_path)
         output_path = os.path.join(folder_path, filename)
         with open(output_path, 'w') as f:
             json.dump(sample_data, f, indent=4)
-folder_path = '/Users/gerard/Desktop/UB/GDGT Raw Data/LeLe/chromatopy - raw hplc csv/Output_chromatoPy/Individual Samples'
-ensemble_fractional_abundances(folder_path)
+folder_path = 'path/to/files'
+test = ensemble_fractional_abundances(folder_path)
 
 # %% FA csv output 
 import os
@@ -277,9 +249,10 @@ def compile_fa_dataframe(folder_path):
     return df
 
 # Example usage:
-folder_path = '/Users/gerard/Desktop/UB/GDGT Raw Data/LeLe/chromatopy - raw hplc csv/Output_chromatoPy/Individual Samples'
+folder_path = '/folder/to/individual/sample'
 df_fa = compile_fa_dataframe(folder_path)
 print(df_fa.head())
+
 # %% Output as csv
 import os
 import glob
@@ -356,13 +329,9 @@ def compile_mean_ci_peak_areas(folder_path, n_bootstrap=1000, ci=95, bound_type=
     for file_path in json_files:
         with open(file_path, 'r') as f:
             sample_data = json.load(f)
-        
-        # Create a row dict starting with the sample name.
         row = {}
         sample_name = sample_data.get("Sample Name", os.path.basename(file_path))
         row["Sample Name"] = sample_name
-        
-        # Process each group: "Reference", "isoGDGTs", "brGDGTs".
         for group in ["Reference", "isoGDGTs", "brGDGTs"]:
             if group in sample_data:
                 for gdgt_key, gdgt_info in sample_data[group].items():
@@ -377,9 +346,7 @@ def compile_mean_ci_peak_areas(folder_path, n_bootstrap=1000, ci=95, bound_type=
                                 data = ensemble
                         else:
                             data = []
-                        # Compute the statistics.
                         stats = bootstrap_stats(data, n_bootstrap=n_bootstrap, ci=ci, bound_type=bound_type)
-                        # Define column names based on gdgt key.
                         col_mean  = f"{gdgt_key}"
                         col_lower = f"{gdgt_key}_lower_ci"
                         col_upper = f"{gdgt_key}_upper_ci"
@@ -396,18 +363,8 @@ def compile_mean_ci_peak_areas(folder_path, n_bootstrap=1000, ci=95, bound_type=
     return df
 
 
-folder_path = "/Users/gerard/Desktop/UB/GDGT Raw Data/Chromatopy/combined dataset for manuscript"  # <-- Update this to your JSON files folder
-output_csv = os.path.join(folder_path, "/Users/gerard/Desktop/UB/GDGT Raw Data/Chromatopy/combined dataset for manuscript/compiled_mean_peak_areas_updated.csv")
-
-# Compile the data from the JSON files into a DataFrame.
-# To use traditional confidence intervals (e.g., 2.5th/97.5th percentiles for 95% CI):
-# df_compiled = compile_mean_ci_peak_areas(folder_path, n_bootstrap=100, ci=95, bound_type="ci")
-
-# To use the 5th and 95th percentiles instead, change bound_type:
+folder_path = 'path/to/json/files/'
+output_csv = os.path.join(folder_path, "output.csv")
 df_compiled = compile_mean_ci_peak_areas(folder_path, n_bootstrap=100, ci=95, bound_type="percentile")
-
-# Save the DataFrame to CSV.
 df_compiled.to_csv(output_csv, index=False)
-
-print("CSV file created:", output_csv)
 

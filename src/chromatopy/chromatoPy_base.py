@@ -719,12 +719,6 @@ class GDGTAnalyzer:
             best_x = best_x[left_boundary - 1 : right_boundary + 1]
             best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
             area_smooth, area_ensemble = self.peak_area_distribution(best_fit_params, best_fit_params_error, best_idx_interest, best_x, x_full, ax, ind_peak, multi = False)
-            # self.peak_area_distribution(best_fit_params, best_fit_params_error, best_idx_interest, multi=False)
-            # parameter_error = best_params_error
-            # ax.plot(best_x, best_fit_y, c="fuchsia")
-        # Calculate mean and 2 sigma peak area
-        # area_smooth = simpson(y=best_fit_y, x=best_x) # Calculate area
-         # Random sample of fitting parameters
 
         return best_x, best_fit_y, area_smooth, area_ensemble
 
@@ -758,8 +752,8 @@ class GDGTAnalyzer:
                 best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
                 area_ensemble.append(simpson(y=best_fit_y, x=best_x))
             return np.mean(area_ensemble), area_ensemble
-                
-                
+
+
     def handle_peak_selection(self, ax, ax_idx, xdata, y_bcorr, peak_idx, peaks, trace):
         """
         Handles the selection of a peak, fits a Gaussian to the selected peak, and updates the plot and internal data structures.
@@ -815,41 +809,6 @@ class GDGTAnalyzer:
     ######################################################
     ################      Plot      ######################
     ######################################################
-    # def plot_data(self):
-    #     """
-    #     Creates and configures subplots for visualizing the chromatographic data for each trace.
-
-    #     Returns
-    #     -------
-    #     fig : matplotlib.figure.Figure
-    #         The figure object containing the created subplots.
-    #     axs : list of matplotlib.axes.Axes
-    #         A list of axis objects corresponding to each subplot, one for each trace.
-
-    #     Notes
-    #     -----
-    #     - If there is only one trace, a single subplot is created and returned in a list to maintain consistency.
-    #     - If there are multiple traces, one subplot is created for each trace, and the x-axis is shared across all plots.
-    #     - The x-axis label "Corrected Retention Time (minutes)" is added to the last subplot.
-    #     - The figure title is set based on the sample name (`self.sample_name`).
-    #     """
-    #     # Create subplots
-    #     if len(self.traces) == 1:
-    #         fig, ax = plt.subplots(figsize=(8, 10))
-    #         axs = [ax]  # Ensure axs is iterable even when there's only one plot
-    #     else:
-    #         fig, axs = plt.subplots(len(self.traces), 1, figsize=(8, 10), sharex=True)
-    #         axs = axs.ravel()  # Ensure axs is iterable
-    #     self.datasets = [None] * len(self.traces)
-    #     self.peaks_indices = [None] * len(self.traces)
-    #     for i, ax in enumerate(axs):
-    #         self.setup_subplot(ax, i)
-    #         if i == len(self.traces) - 1:
-    #             ax.set_xlabel("Corrected Retention Time (minutes)")
-    #     fig.suptitle(f"Sample: {self.sample_name}", fontsize=16, fontweight="bold")
-    #     # print(f"Begin peak selection for {self.sample_name}.")
-    #     return fig, axs
-    
     def add_window_controls(self):
         """
         Adds interactive TextBox widgets to the existing figure so that the user can change the x-window.
@@ -858,15 +817,15 @@ class GDGTAnalyzer:
         # If controls already exist, do nothing or toggle visibility.
         if hasattr(self, "window_controls_added") and self.window_controls_added:
             return
-    
+
         fig = self.fig  # Use the stored figure
-    
+
         # Create new axes for the text boxes in normalized coordinates
         axbox_min = fig.add_axes([0.25, 0.025, 0.05, 0.02])
         axbox_max = fig.add_axes([0.65, 0.025, 0.05, 0.02])
         text_box_min = TextBox(axbox_min, 'Window start: ', initial=str(self.window_bounds[0]))
         text_box_max = TextBox(axbox_max, 'Window end: ', initial=str(self.window_bounds[1]))
-        
+
         def submit_callback(text):
             try:
                 new_xmin = float(text_box_min.text)
@@ -881,14 +840,14 @@ class GDGTAnalyzer:
                 fig.canvas.draw_idle()
             except Exception as e:
                 print("Invalid input for window boundaries:", e)
-        
+
         text_box_min.on_submit(submit_callback)
         text_box_max.on_submit(submit_callback)
-        
+
         # Mark that we've added controls
         self.window_controls_added = True
         plt.draw()
-    
+
     def plot_data(self):
         """
         Creates subplots for each trace and adds two text boxes to allow the user to update the x-window boundaries.
@@ -900,79 +859,20 @@ class GDGTAnalyzer:
         else:
             fig, axs = plt.subplots(len(self.traces), 1, figsize=(8, 10), sharex=True)
             axs = axs.ravel()
-        
+
         # Initialize storage for datasets and peak indices if not already
         self.datasets = [None] * len(self.traces)
         self.peaks_indices = [None] * len(self.traces)
-        
+
         # Create the subplots and store the full data and line objects
         for i, ax in enumerate(axs):
             self.setup_subplot(ax, i)
             if i == len(self.traces) - 1:
                 ax.set_xlabel("Corrected Retention Time (minutes)")
-        
+
         fig.suptitle(f"Sample: {self.sample_name}", fontsize=16, fontweight="bold")
-        
+
         return fig, axs
-
-    # def setup_subplot(self, ax, trace_idx):
-    #     """
-    #     Configures a single subplot for the given trace, including baseline correction, peak detection, and plotting the filtered data.
-
-    #     Parameters
-    #     ----------
-    #     ax : matplotlib.axes.Axes
-    #         The axis object where the trace will be plotted.
-    #     trace_idx : int
-    #         Index of the trace in the dataset to be plotted.
-
-    #     Returns
-    #     -------
-    #     None
-    #         This function modifies the axis object in place and updates internal data structures.
-
-    #     Notes
-    #     -----
-    #     - Performs baseline correction on the trace data and applies a smoothing filter to remove noise.
-    #     - Detects peaks in the filtered trace using `find_peaks` with height, width, and prominence criteria.
-    #     - The filtered data and detected peaks are plotted on the provided axis (`ax`).
-    #     - The function adjusts the y-axis limits based on the filtered data within the specified x-axis window.
-    #     - Internal data structures `self.peaks`, `self.peak_properties`, `self.datasets`, and `self.peaks_indices` are updated with the trace's peak information and baseline-corrected data.
-    #     - The x-axis is set to "Corrected Retention Time (minutes)" and the y-axis to "Trace {trace}".
-    #     """
-    #     x_values = self.df["rt_corr"]
-    #     within_xlim = (x_values >= self.window_bounds[0]) & (x_values <= self.window_bounds[1])
-    #     trace = self.traces[trace_idx]
-    #     y = self.df[trace]
-    #     trace = self.traces[trace_idx]
-    #     # Baseline correction
-    #     y_base, min_peak_amp = self.baseline(x_values, y) # y_base = self.baseline(y)
-    #     y_bcorr = y - y_base
-    #     y_bcorr[y_bcorr < 0] = 0
-    #     y_filtered = self.smoother(y_bcorr)
-    #     # Find peaks
-    #     peaks_total, properties = find_peaks(y_filtered, height=min_peak_amp, width=0.05, prominence=self.pk_pr)
-    #     self.peaks[trace] = peaks_total  # Storing peaks and their properties
-    #     self.peak_properties[trace] = properties
-    #     ax.plot(self.df["rt_corr"], y_filtered, "k")
-    #     ax.set_ylabel(f"Trace {trace}")
-    #     ax.set_xlim(self.window_bounds)
-
-    #     # x_values = self.df["rt_corr"]
-    #     # within_xlim = (x_values >= self.window_bounds[0]) & (x_values <= self.window_bounds[1])
-    #     y_within_xlim = y_filtered[within_xlim]
-    #     if len(y_within_xlim) > 0:
-    #         ymin, ymax = y_within_xlim.min(), y_within_xlim.max()
-    #         y_margin = (ymax - ymin) * 0.1  # Add 10% margin to the top and bottom
-    #         ax.set_ylim(0, ymax + y_margin)
-    #     else:
-    #         ax.set_ylim(0, 1)  # Default limits if no data within xlim
-
-    #     # Store or update dataset and peak indices
-    #     self.axs_to_traces[ax] = trace
-    #     self.datasets[trace_idx] = (self.df["rt_corr"], y_bcorr)  # y_bcorr)
-    #     self.peaks_indices[trace_idx] = peaks_total
-    
 
     def setup_subplot(self, ax, trace_idx):
         """
@@ -983,27 +883,27 @@ class GDGTAnalyzer:
         x_values = self.df["rt_corr"]
         trace = self.traces[trace_idx]
         y = self.df[trace]
-        
+
         # Baseline correction and smoothing on the full dataset
         y_base, min_peak_amp = self.baseline(x_values, y)
         y_bcorr = y - y_base
         y_bcorr[y_bcorr < 0] = 0
         y_filtered = self.smoother(y_bcorr)
-        
+
         # Store the full processed data for later updates
         if not hasattr(self, "full_data"):
             self.full_data = {}
         self.full_data[trace_idx] = (x_values, y_filtered)
-        
+
         # Plot the full data; even if the current x-limits are restricted, we plot everything
         line, = ax.plot(x_values, y_filtered, "k")
         if not hasattr(self, "line_objects"):
             self.line_objects = {}
         self.line_objects[trace_idx] = line
-        
+
         # Set the current x-limits based on the current window_bounds
         ax.set_xlim(self.window_bounds)
-        
+
         # Adjust y-limits based on data within the current window
         within_xlim = (x_values >= self.window_bounds[0]) & (x_values <= self.window_bounds[1])
         y_within = y_filtered[within_xlim]
@@ -1013,7 +913,7 @@ class GDGTAnalyzer:
             ax.set_ylim(0, ymax + y_margin)
         else:
             ax.set_ylim(0, 1)
-        
+
         # Store additional info for peak selection, etc.
         self.axs_to_traces[ax] = trace
         self.datasets[trace_idx] = (x_values, y_bcorr)
@@ -1024,7 +924,7 @@ class GDGTAnalyzer:
         self.peaks[trace] = peaks_total
         self.peak_properties[trace] = properties
         self.peaks_indices[trace_idx] = peaks_total
-        
+
     def baseline(self, x, y, deg=5, max_it=1000, tol=1e-4):
         """
         Performs baseline correction on the input signal using an iterative polynomial fitting approach.
@@ -1067,7 +967,7 @@ class GDGTAnalyzer:
             coeffs = coeffs_new
             base = np.dot(vander, coeffs)
             y = np.minimum(y, base)
-            
+
         # Calculate maximum peak amplitude (3 x baseline amplitude)
         baseline_fitter = Baseline(x)
         fit, params_mask = baseline_fitter.std_distribution(y, 45)#, smooth_half_window=10)
@@ -1077,20 +977,8 @@ class GDGTAnalyzer:
         # min_peak_amp = (base.max()-base.min())*3
         # min_peak_amp = np.std(original_y-base)*3
         return base, min_peak_amp # return base
-    
-    # def baseline(self, x, y):
-    #     # setup baseline package
-    #     baseline_fitter = Baseline(x)
-        
-    #     # Fit filter to identify areas without peaks
-    #     fit, params_mask = baseline_fitter.std_distribution(y, 45, smooth_half_window=10)
-    #     mask = params_mask['mask'] #  Mask for regions of signal without peaks
-    #     min_peak_amp = (y[mask].max()-y[mask].min())*3
-        
-    #     # Calculate baseline
-    #     base, params = baseline_fitter.modpoly(y, poly_order=50, use_original=True)
-    #     return base, min_peak_amp
-    
+
+
     ######################################################
     #################  Peak Select  ######################
     ######################################################
@@ -1187,42 +1075,6 @@ class GDGTAnalyzer:
             self.action_stack.append(("add_line", ax, no_peak_key))
             plt.grid(False)
             plt.draw()
-
-        # if event.inaxes:
-        #     # print("Click registered!")
-        #     ax = event.inaxes
-        #     # Assuming axs_to_traces maps axes to trace identifiers directly
-        #     trace = self.axs_to_traces[ax]
-        #     ax_idx = list(ax.figure.axes).index(ax)  # Retrieve the index of ax in the figure's list of axes
-
-        #     xdata, y_bcorr = self.datasets[ax_idx]
-        #     self.x_full = xdata
-        #     self.y_full = y_bcorr
-        #     peaks = self.peaks_indices[ax_idx]
-        #     rel_click_pos = np.abs(xdata[peaks] - event.xdata)
-        #     peak_found = False
-        #     for peak_index, peak_pos in enumerate(rel_click_pos):
-        #         if peak_pos < 0.15:  # Threshold to consider a click close enough to a peak
-        #             peak_found = True
-        #             selected_peak = peaks[np.argmin(np.abs(xdata[peaks] - event.xdata))]
-        #             # Correctly pass the trace identifier to handle_peak_selection
-        #             self.handle_peak_selection(ax, ax_idx, xdata, y_bcorr, selected_peak, peaks, trace)
-        #             # Store the action for undoing
-        #             self.action_stack.append(("select_peak", ax, (ax_idx, selected_peak)))
-        #             break
-        #     if not peak_found:
-        #         peak_key = (ax_idx, None)  # Using ax_idx to keep consistent with non-peak-specific actions
-        #         line = ax.axvline(event.xdata, color="grey", linestyle="--", zorder=-1)
-        #         text = ax.text(event.xdata + 2, (ax.get_ylim()[1] / 10) * 0.7, "No peak\n" + str(np.round(event.xdata)), color="grey", fontsize=8)
-        #         no_peak_key = peak_key
-        #         self.no_peak_lines[no_peak_key] = (line, text)
-        #         self.integrated_peaks[peak_key] = {"area": 0, "rt": event.xdata, "text": text, "line": [line], "trace": trace, "area_ensemble": 0}
-        #         self.action_stack.append(("add_line", ax, no_peak_key))
-        #         plt.grid(False)
-        #         plt.draw()
-        # elif event not in self.axs_to_traces:
-        #     print("not in axis")
-        #     return
 
     def auto_select_peaks(self):
         """
