@@ -395,7 +395,7 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
     # Setup data
     xdata = data['Samples'][key]['raw data'][data['Integration Metadata']['time_column']]
     ydata = data['Samples'][key]['raw data'][data['Integration Metadata']['signal_column']]
-    # ydata = smoother(ydata, smoothing_params[0], smoothing_params[1])
+    ydata = smoother(ydata, smoothing_params[0], smoothing_params[1])
     ydata = pd.Series(ydata, index=xdata.index)
     ydata[ydata<0] = 0
     peak_timing = data['Integration Metadata']['peak dictionary'].values()
@@ -447,15 +447,17 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
             print(f"[Warning] Failed to fit {label} in {key}: {e}")
             data['Samples'][key]['Processed Data'][label] = [np.nan]
         
-   
+    
     peak_times = list(data['Integration Metadata']['peak dictionary'].values())
     mean_val = np.mean(peak_times)
     xmin = min(peak_times) - mean_val * 0.1
     xmax = max(peak_times) + mean_val * 0.1
-    ax = plt.gca()
-    ax.set_xlim(xmin, xmax)
-    ax.relim()
-    ax.autoscale_view(scalex=False, scaley=True)
+    
+    # new y max
+    mask = (xdata >= xmin) & (xdata <= xmax)
+    y_max = ydata[mask].max()
+    plt.xlim(xmin, xmax)
+    plt.ylim(0, y_max+y_max*0.1)
     plt.ylabel(data['Integration Metadata']['signal_column'])
     plt.xlabel(data['Integration Metadata']['time_column'])
     plt.savefig(str(fp)+f"/{key}.png", dpi=300)
