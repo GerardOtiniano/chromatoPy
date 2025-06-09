@@ -122,7 +122,10 @@ def calculate_boundaries( x, y, ind_peak, smoothing_params, pk_sns):
     smooth_y = smoother(y, smoothing_params[0], smoothing_params[1])
     velocity, X1 = forward_derivative(x, smooth_y)
     velocity /= np.max(np.abs(velocity))
-    smooth_velo = smoother(velocity, smoothing_params[0], smoothing_params[1])
+    if smoothing_params[0] > len(velocity):
+        smoother_val = len(velocity)-1
+    else: smoother_val = smoothing_params[0]
+    smooth_velo = smoother(velocity, smoother_val, smoothing_params[1])
     dt = int(np.ceil(0.025 / np.mean(np.diff(x))))
     A = np.where(smooth_velo[: ind_peak - 3 * dt] < pk_sns)[0]  # 0.05)[0]
     B = np.where(smooth_velo[ind_peak + 3 * dt :] > -pk_sns)[0]  # -0.05)[0]
@@ -392,12 +395,13 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
     # Setup data
     xdata = data['Samples'][key]['raw data'][data['Integration Metadata']['time_column']]
     ydata = data['Samples'][key]['raw data'][data['Integration Metadata']['signal_column']]
-    ydata = smoother(ydata, smoothing_params[0], smoothing_params[1])
+    # ydata = smoother(ydata, smoothing_params[0], smoothing_params[1])
     ydata = pd.Series(ydata, index=xdata.index)
+    ydata[ydata<0] = 0
     peak_timing = data['Integration Metadata']['peak dictionary'].values()
     data['Samples'][key]['Processed Data'] = {}
     
-    base, min_peak_amp = baseline(xdata, ydata, deg=100, max_it=1000, tol=1e-4)
+    base, min_peak_amp = baseline(xdata, ydata, deg=5, max_it=1000, tol=1e-4)
     y_bcorr = ydata-base
     peak_indices, peak_properties = find_peaks(y_bcorr, height=min_peak_amp, prominence=0.01)
     matched_indices, presence_flags = zip(*[
@@ -413,40 +417,46 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
     peak_labels = list(data['Integration Metadata']['peak dictionary'])
     for label, peak_idx in zip(peak_labels, matched_indices):
         if peak_idx is None:          # in case some peaks weren’t matched
+            data['Samples'][key]['Processed Data'][label] = [np.nan]
             continue
-    
-        A, B, peak_neighborhood = find_peak_neighborhood_boundaries(
-            x=xdata, y_smooth=y_bcorr, peaks=peak_indices, valleys=valleys,
-            peak_idx=peak_idx, max_peaks=max_peaks_for_neighborhood,
-            peak_properties=peak_properties, gi=gi,
-            smoothing_params=smoothing_params, pk_sns=pk_sns)
-    
-        x_fit, y_fit_smooth, area_smooth, area_ensemble = fit_gaussians(
-            xdata, y_bcorr, peak_idx, peak_neighborhood,
-            smoothing_params, pk_sns, gi=gi)
-    
-        plt.fill_between(x_fit, 0, y_fit_smooth, color="red", alpha=0.5, zorder=1)
+        try:
+            A, B, peak_neighborhood = find_peak_neighborhood_boundaries(
+                x=xdata, y_smooth=y_bcorr, peaks=peak_indices, valleys=valleys,
+                peak_idx=peak_idx, max_peaks=max_peaks_for_neighborhood,
+                peak_properties=peak_properties, gi=gi,
+                smoothing_params=smoothing_params, pk_sns=pk_sns)
         
-        # Label
-        x_peak_label = x_fit[np.argmax(y_fit_smooth)]
-        y_peak_label = max(y_fit_smooth)
-        plt.text(x_peak_label, y_peak_label * 1.05, label,
-        ha='center', va='bottom',
-        fontsize=8, color='black', rotation=0,
-        zorder=2, bbox=dict(facecolor='white', edgecolor='none', alpha=0))
-        plt.axhline(0, c = 'k')
+            x_fit, y_fit_smooth, area_smooth, area_ensemble = fit_gaussians(
+                xdata, y_bcorr, peak_idx, peak_neighborhood,
+                smoothing_params, pk_sns, gi=gi)
         
-        # Assign data to output
-        data['Samples'][key]['Processed Data'][label] = list(area_ensemble)
+            plt.fill_between(x_fit, 0, y_fit_smooth, color="red", alpha=0.5, zorder=1)
+            
+            # Label
+            x_peak_label = x_fit[np.argmax(y_fit_smooth)]
+            y_peak_label = max(y_fit_smooth)
+            plt.text(x_peak_label, y_peak_label * 1.05, label,
+            ha='center', va='bottom',
+            fontsize=8, color='black', rotation=0,
+            zorder=2, bbox=dict(facecolor='white', edgecolor='none', alpha=0))
+            # plt.axhline(0, c = 'k')
+            
+            # Assign data to output
+            data['Samples'][key]['Processed Data'][label] = list(area_ensemble)
+        except Exception as e:
+            print(f"[Warning] Failed to fit {label} in {key}: {e}")
+            data['Samples'][key]['Processed Data'][label] = [np.nan]
         
    
     peak_times = list(data['Integration Metadata']['peak dictionary'].values())
     mean_val = np.mean(peak_times)
     xmin = min(peak_times) - mean_val * 0.1
     xmax = max(peak_times) + mean_val * 0.1
-    plt.xlim(xmin, xmax)
+    ax = plt.gca()
+    ax.set_xlim(xmin, xmax)
+    ax.relim()
+    ax.autoscale_view(scalex=False, scaley=True)
     plt.ylabel(data['Integration Metadata']['signal_column'])
     plt.xlabel(data['Integration Metadata']['time_column'])
     plt.savefig(str(fp)+f"/{key}.png", dpi=300)
-    plt.show()
     return data

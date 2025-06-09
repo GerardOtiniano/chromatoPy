@@ -28,10 +28,13 @@ from PyQt5.QtWidgets import (
 # ─── Peak Integration ─────────────────────────────────────────────────────────
 from FID_Integration_functions import *
 
-def FID_integration(folder_path=None, peak_neighborhood_n=5, smoothing_window=15, smoothing_factor=3, gaus_iterations=4000, maximum_peak_amplitude=None, peak_boundary_derivative_sensitivity=0.01, peak_prominence=0.001, selection_method="nearest"):
+def FID_integration(folder_path=None, peak_neighborhood_n=5, smoothing_window=11, smoothing_factor=3, gaus_iterations=4000, maximum_peak_amplitude=None, peak_boundary_derivative_sensitivity=0.01, peak_prominence=0.001, selection_method="nearest"):
     # Import Data
     data, no_time_col, no_signal_col, time_column, signal_column = import_data(folder_path)
     output_path, figures_path = create_output_folders(folder_path)
+    
+    # Instructions
+    print("Click the location of peaks and enter the chain length of interest (e.g., C22).\nUse 'shift+delete' to remove the last peak.\n'Select 'Finished' once satisfied.")
 
     # Identify peak locations
     app = QApplication.instance() or QApplication(sys.argv)
