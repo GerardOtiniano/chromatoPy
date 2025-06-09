@@ -112,6 +112,10 @@ def calculate_indices(df_fa, meth_df, cyc_df):
     bit_denom = df_fa.get("Ia", 0) + df_fa.get("IIa", 0) + df_fa.get("IIIa", 0) + df_fa.get("GDGT-4", 1)
     df["BIT"] = np.where(bit_denom != 0, (df_fa.get("Ia", 0) + df_fa.get("IIa", 0) + df_fa.get("IIIa", 0)) / bit_denom, np.nan)
 
+    ir_denom = df_fa.get("Ia", 0) + df_fa.get("IIa", 0) + df_fa.get("IIIa", 0) +df_fa.get("Ib", 0) + df_fa.get("IIb", 0) + df_fa.get("IIIb", 0) +df_fa.get("Ic", 0) + df_fa.get("IIc", 0) + df_fa.get("IIIc", 0) +  df_fa.get("IIa'", 0) + df_fa.get("IIIa'", 0) + df_fa.get("IIb'", 0) + df_fa.get("IIIb'", 0) + df_fa.get("IIc'", 0) + df_fa.get("IIIc'", 0)
+    ir_numer =  df_fa.get("IIa'", 0) + df_fa.get("IIIa'", 0) + df_fa.get("IIb'", 0) + df_fa.get("IIIb'", 0) + df_fa.get("IIc'", 0) + df_fa.get("IIIc'", 0)
+    df['IR6Me'] = np.where(ir_denom !=0, (ir_numer)/(ir_denom))
+    
     fc_denom = (
         df_fa.get("Ia", 0)
         + df_fa.get("Ib", 0)

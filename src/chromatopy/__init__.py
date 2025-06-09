@@ -1,1 +1,2 @@
-from .chromatoPy import hplc_integration, hplc_to_csv, assign_indices__all__ = ["hplc_integration", "hplc_to_csv", "assign_indices"]name = "chromatoPy"
+from .chromatoPy import hplc_integration, hplc_to_csv, assign_indices
+from .FID.FID_integration import FID_integration__all__ = ["hplc_integration", "hplc_to_csv", "assign_indices", "FID_integration"]name = "chromatoPy"

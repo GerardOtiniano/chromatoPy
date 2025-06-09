@@ -1,8 +1,8 @@
 [![ChromatoPy Logo](misc/chromatoPy.png)](https://github.com/GerardOtiniano/chromatoPy/blob/2b36a74ed639d5c30ae1e143843c1532b0a84237/misc/chromatoPy.png)
 
-# chromatoPy (1.7.0)
+# chromatoPy (1.8.0)
 
-chromatoPy is an open-source Python package designed to streamline the integration and analysis of High-Performance Liquid Chromatography (HPLC) data. It features flexible multi-Gaussian and single Gaussian fitting algorithms to detect, fit, and integrate peaks from chromatographic data, enabling efficient analysis and processing of complex datasets. Note, interactive integration requires internal spike standard (Trace 744).
+chromatoPy is an open-source Python package designed to streamline the integration and analysis of High-Performance Liquid Chromatography (HPLC) and Gas Chromatograph Flame Ionization Detector (GC-FID) data. It features flexible multi-Gaussian and single Gaussian fitting algorithms to detect, fit, and integrate peaks from chromatographic data, enabling efficient analysis and processing of complex datasets. Note, interactive integration requires internal spike standard (Trace 744).
 
 ## Features
 
@@ -31,6 +31,7 @@ pip install chromatopy
 - matplotlib==3.8.4
 - rainbow-api==1.0.9
 - pybaselines==1.1.0
+- tqdm
 
 ## Note on Development and Testing
 
@@ -38,7 +39,7 @@ This package has been developed and tested using the Spyder IDE. While it is exp
 
 ## Usage
 
-Once installed, you can start using chromatoPy to analyze your HPLC chromatographic data. Below is a basic example demonstrating how to use the package to load and analyze data:
+Once installed, you can start using chromatoPy to analyze your HPLC and GC-FID chromatographic data. Below is a basic example demonstrating how to use the package to load and analyze data:
 
 ## Example
 
@@ -53,11 +54,15 @@ chromatopy.hplc_integration()
 
 # Calculate and assign indices
 chromatopy.assign_indices()
+
+# Run FID integration
+chromatopy.FID_integration()
 ```
 
 ## Input Data Requirements
 
-chromatoPy expects HPLC data to be in **.csv** format. You can convert your raw HPLC results using the hplc_to_csv() function.
+chromatoPy expects HPLC data to be in **.csv** format. You can convert your raw HPLC results using the hplc_to_csv() function. FID data are assumed to derive from the software Chromeleon (i.e. a .txt file with raw data following the line "Chromatogram Data Information:"
+
 
 ## Versioning
 
