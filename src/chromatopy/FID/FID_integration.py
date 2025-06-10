@@ -32,7 +32,7 @@ def FID_integration(folder_path=None, peak_neighborhood_n=5, smoothing_window=11
     # Import Data
     data, no_time_col, no_signal_col, time_column, signal_column = import_data(folder_path)
     output_path, figures_path = create_output_folders(folder_path)
-    
+
     # Instructions
     print("Click the location of peaks and enter the chain length of interest (e.g., C22).\nUse 'shift+delete' to remove the last peak.\n'Select 'Finished' once satisfied.")
 
@@ -40,7 +40,7 @@ def FID_integration(folder_path=None, peak_neighborhood_n=5, smoothing_window=11
     app = QApplication.instance() or QApplication(sys.argv)
     time = data['Samples'][list(data['Samples'].keys())[0]]['raw data'][time_column]
     signal = data['Samples'][list(data['Samples'].keys())[0]]['raw data'][signal_column]
-    
+
     # Identify peak positions
     if selection_method == "nearest":
         peak_positions, _ = find_peaks(signal)
@@ -53,12 +53,12 @@ def FID_integration(folder_path=None, peak_neighborhood_n=5, smoothing_window=11
     data['Integration Metadata']['time_column'] = time_column
     data['Integration Metadata']['signal_column'] = signal_column
     # print(f"Results from Integradtion Metadata: {peak_identifier.result}")
-    
+
     # Integrate peaks
     for key in tqdm(data['Samples'].keys(), desc="Integrating samples", unit="sample"):
         # peak_timing = list(data['Integration Metadata'].values())
         tqdm.write(f"Processing: {key}")
-        run_peak_integrator(data, key, gi = gaus_iterations, pk_sns = peak_boundary_derivative_sensitivity, 
+        run_peak_integrator(data, key, gi = gaus_iterations, pk_sns = peak_boundary_derivative_sensitivity,
                             smoothing_params=[smoothing_window, smoothing_factor], max_peaks_for_neighborhood = peak_neighborhood_n, fp=figures_path)
     js_file = f"{output_path}/FID_output.json"
     os.makedirs(os.path.dirname(js_file), exist_ok=True)
@@ -158,17 +158,17 @@ def import_data(folder_path=None):
         signal_keywords = ['signal', 'value', 'intensity', 'amplitude', '(pa)', '(a)']
         headers = lines[table_start].strip().split('\t')
         header_map = {h.lower(): h for h in headers}
-        
+
         time_column = next((header_map[h] for h in header_map if any(key in h for key in time_keywords)), None)
         has_time = time_column is not None
         signal_column = next((header_map[h] for h in header_map if any(key in h for key in signal_keywords)), None)
         has_signal = signal_column is not None
-        
+
         # Numeric dataframe
         df[time_column] = pd.to_numeric(df[time_column], errors='coerce')
         df[signal_column] = pd.to_numeric(df[signal_column], errors='coerce')
         df[signal_column] = df[signal_column].fillna(0)
-        
+
         if not has_time:
             no_time_col.append(filename)
         if not has_signal:
@@ -195,12 +195,12 @@ class FID_Peak_ID:
         self.x = x
         self.y = y
         self.selection_method = selection_method
-        self.lines = []           
-        self.labels = []          
-        self.positions = set()   
-        self.peak_dict = {}       
-        self.peak_order = []      
-        
+        self.lines = []
+        self.labels = []
+        self.positions = set()
+        self.peak_dict = {}
+        self.peak_order = []
+
         if peak_positions is None:
             self.peak_positions = []
         else:
@@ -242,18 +242,18 @@ class FID_Peak_ID:
         self.fig.canvas.mpl_connect('key_press_event', self.on_key)
 
         plt.show()
-        
+
         # Focus - permits seeing key events
         self.fig.canvas.setFocusPolicy(Qt.StrongFocus)
         self.fig.canvas.setFocus()
-        
+
     def on_click(self, event):
             if event.inaxes != self.ax:
                 return
             # x_click = round(event.xdata, 5)
             # if x_click in self.positions:
             #     return
-            
+
             if self.selection_method == "nearest" and self.peak_positions:
                 raw_x = event.xdata
                 # find the peak position closest to where they clicked
@@ -262,14 +262,14 @@ class FID_Peak_ID:
                 x_click = min(peak_times, key=lambda t: abs(t - raw_x))
             else:
                 x_click = round(event.xdata, 5)
-    
+
             if x_click in self.positions:
                 return
-    
+
             # 1) draw the line immediately (so user sees it)
             line = self.ax.axvline(x_click, color='red', linestyle='--', alpha=0.7)
             self.lines.append(line)
-    
+
             # 2) ask for the label via our Qt dialog
             prompt = f"Label for peak at x = {x_click:.2f}"
             dlg = LabelDialog(prompt=prompt, initial="peak", parent=self.fig.canvas)
@@ -284,12 +284,12 @@ class FID_Peak_ID:
                     # undo that line
                     self.lines.pop().remove()
                     return
-    
+
                 # 3) record & draw the annotation
                 self.positions.add(x_click)
                 self.peak_order.append(text)
                 self.peak_dict[text] = x_click
-    
+
                 y_top = self.ax.get_ylim()[1]
                 txt = self.ax.text(
                     x_click + 0.05, y_top * 0.95, text, #rotation=90,
@@ -299,12 +299,12 @@ class FID_Peak_ID:
                 )
                 self.labels.append(txt)
                 self.fig.canvas.draw_idle()
-    
+
             else:
                 # user cancelled → remove that line
                 self.lines.pop().remove()
                 self.fig.canvas.draw_idle()
-        
+
     def on_key(self, event):
         qt_ev = getattr(event, "guiEvent", None)
         if not qt_ev:
@@ -315,20 +315,20 @@ class FID_Peak_ID:
         if (qt_ev.modifiers() & Qt.ShiftModifier) and keycode in (Qt.Key_Backspace, Qt.Key_Delete):
             if not self.peak_order:
                 return
-    
+
             # 1) remove last vertical line
             line = self.lines.pop()
             line.remove()
-    
+
             # 2) remove last text annotation
             txt = self.labels.pop()
             txt.remove()
-    
+
             # 3) clean up bookkeeping
             last_label = self.peak_order.pop()
             x_removed = self.peak_dict.pop(last_label)
             self.positions.discard(x_removed)
-    
+
             # 4) redraw
             self.fig.canvas.draw_idle()
 
@@ -375,5 +375,3 @@ class LabelDialog(QDialog):
 
     def value(self):
         return self.edit.text().strip()
-# %%
-dat = FID_integration(folder_path='/Users/gerard/Desktop/Emanda_FID/test' , selection_method="nearest")

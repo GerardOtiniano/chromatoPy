@@ -1,6 +1,6 @@
 [![ChromatoPy Logo](misc/chromatoPy.png)](https://github.com/GerardOtiniano/chromatoPy/blob/2b36a74ed639d5c30ae1e143843c1532b0a84237/misc/chromatoPy.png)
 
-# chromatoPy (1.8.0)
+# chromatoPy (1.9.0)
 
 chromatoPy is an open-source Python package designed to streamline the integration and analysis of High-Performance Liquid Chromatography (HPLC) and Gas Chromatograph Flame Ionization Detector (GC-FID) data. It features flexible multi-Gaussian and single Gaussian fitting algorithms to detect, fit, and integrate peaks from chromatographic data, enabling efficient analysis and processing of complex datasets. Note, interactive integration requires internal spike standard (Trace 744).
 
@@ -62,7 +62,6 @@ chromatopy.FID_integration()
 ## Input Data Requirements
 
 chromatoPy expects HPLC data to be in **.csv** format. You can convert your raw HPLC results using the hplc_to_csv() function. FID data are assumed to derive from the software Chromeleon (i.e. a .txt file with raw data following the line "Chromatogram Data Information:"
-
 
 ## Versioning
 
