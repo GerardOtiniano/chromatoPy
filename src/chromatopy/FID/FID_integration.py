@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use('Qt5Agg')
+from matplotlib.widgets import TextBox, Button
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from tqdm import tqdm
@@ -26,44 +27,252 @@ from PyQt5.QtWidgets import (
     QMessageBox)
 
 # ─── Peak Integration ─────────────────────────────────────────────────────────
-from FID_Integration_functions import *
+from FID_Integration_functions import run_peak_integrator
+from bouqueter import get_cluster_labels
+from manual_peak_integration import run_peak_integrator_manual
 
-def FID_integration(folder_path=None, peak_neighborhood_n=5, smoothing_window=11, smoothing_factor=3, gaus_iterations=4000, maximum_peak_amplitude=None, peak_boundary_derivative_sensitivity=0.01, peak_prominence=0.001, selection_method="nearest"):
-    # Import Data
-    data, no_time_col, no_signal_col, time_column, signal_column = import_data(folder_path)
+
+def integration(
+        categorized=None, selection_method="nearest",
+        peak_neighborhood_n=3, smoothing_window=13, 
+        smoothing_factor=3, gaus_iterations=1000, maximum_peak_amplitude=None, 
+        peak_boundary_derivative_sensitivity=0.01, peak_prominence=1,
+        gaussian_fit_mode='single', manual_peak_integration=False,
+        peak_labels=False):
+    """
+    Main integration function for processing chromatographic samples.
+
+    Parameters:
+    - categorized: Dictionary of pre-categorized data. If None, raw data is imported.
+    - selection_method: 'click' or 'nearest' for peak selection.
+    - gaussian_fit_mode: 'single', 'multi', or 'both' for Gaussian fitting strategy.
+    - peak_neighborhood_n: Maximum number of peaks in a neighborhood.
+    - smoothing_window: Savitzky-Golay filter window size.
+    - smoothing_factor: Savitzky-Golay polynomial order.
+    - gaus_iterations: Max iterations for curve fitting.
+    - maximum_peak_amplitude: Optional peak amplitude cap.
+    - peak_boundary_derivative_sensitivity: Derivative threshold for boundary detection.
+    - peak_prominence: Prominence threshold for peak finding.
+    - peak_labels: If True, load peak label config from 'peak_labels.json'
+    """
+    if peak_labels and manual_peak_integration:
+        json_path = os.path.join(os.path.dirname(__file__), "peak_labels.json")
+        if os.path.exists(json_path):
+            with open(json_path, 'r') as f:
+                peak_labels_data = json.load(f)
+        else:
+            raise FileNotFoundError(f"Expected peak_labels.json in {json_path}")
+    else: peak_labels_data=None
+            
+    def process_data(data, time_column, signal_column, folder_path):
+        data, output_path, figures_path = check_load_json(data, folder_path)
+        FID_integration_backend(
+            data, time_column, signal_column,
+            folder_path, output_path, figures_path,
+            selection_method, gaussian_fit_mode,
+            peak_neighborhood_n, smoothing_window, 
+            smoothing_factor, gaus_iterations,
+            maximum_peak_amplitude, peak_boundary_derivative_sensitivity,
+            peak_prominence, manual = manual_peak_integration,
+            peak_labels=peak_labels_data)
+        return data
+
+    if categorized is not None:
+        tqdm.write("Pre-categorized data.")
+        data = categorized 
+        _, no_time_col, no_signal_col, time_column, signal_column, folder_path = import_data()
+        data, output_path, figures_path = check_load_json(data, folder_path)
+        cluster_labels = get_cluster_labels(data)
+        for i in cluster_labels:
+            cluster_subset = {
+                'Samples': {
+                    key: value for key, value in data['Samples'].items()
+                    if value.get('cluster') == i
+                },
+                'Integration Metadata': {}
+            }
+            FID_integration_backend(
+                cluster_subset, time_column, signal_column,
+                folder_path, output_path, figures_path,
+                selection_method, gaussian_fit_mode,
+                peak_neighborhood_n, smoothing_window,
+                smoothing_factor, gaus_iterations,
+                maximum_peak_amplitude, peak_boundary_derivative_sensitivity,
+                peak_prominence,
+                manual = manual_peak_integration,
+                peak_labels=peak_labels_data)
+    else:
+        data, no_time_col, no_signal_col, time_column, signal_column, folder_path = import_data()
+        data = process_data(data, time_column, signal_column, folder_path)
+
+    return data
+    
+    
+def check_load_json(data, folder_path):
     output_path, figures_path = create_output_folders(folder_path)
+    existing_data = load_json(output_path)
+    new_samples = {}
+    if existing_data is not None:
+        for sample_name, sample in data["Samples"].items():
+            if sample_name not in existing_data["Samples"]:
+                existing_data["Samples"][sample_name] = sample
+        data = existing_data
+    save_json(data, output_path)
+    return data, output_path, figures_path
+    
+    
+    
+    
+# def FID_integration_backend(data, time_column, signal_column, folder_path, 
+#                             output_path, figures_path, sm, gaussian_fit_mode,
+#                             peak_neighborhood_n=3, smoothing_window=35, smoothing_factor=3, 
+#                             gaus_iterations=4000, maximum_peak_amplitude=None, 
+#                             peak_boundary_derivative_sensitivity=0.01, peak_prominence=1, 
+#                             manual = False, peak_labels=None):
+#     if manual and peak_labels is not None:
+#         tqdm.write("Using stored peak labels for manual integration.")
+#         data['Integration Metadata'] = {
+#             "peak dictionary": peak_labels["Peak Labels"],
+#             "x limits": peak_labels["x limits"],
+#             "time_column": time_column,
+#             "signal_column": signal_column
+#         }
+#     else:
+#         # Get unprocessed samples only
+#         unprocessed_keys = [k for k in data["Samples"].keys() if 'Processed Data' not in data["Samples"][k].keys()]
+#         if not unprocessed_keys:
+#             tqdm.write("No unprocessed samples to integrate.")
+#             return
+    
+#         # Instructions
+#         tqdm.write("Click the location of peaks and enter the chain length of interest (e.g., C22).\nUse 'shift+delete' to remove the last peak.\n'Select 'Finished' once satisfied.")
+    
+#         # Identify peak locations
+#         app = QApplication.instance() or QApplication(sys.argv)
+#         first_key = unprocessed_keys[0]
+#         time = data['Samples'][first_key]['Raw Data'][time_column]
+#         signal = data['Samples'][first_key]['Raw Data'][signal_column]
+        
+#         # Identify peak positions
+#         if sm == "nearest":
+#             peak_positions, _ = find_peaks(signal)
+#         elif sm == "click":
+#             peak_positions = None
+#         peak_identifier = FID_Peak_ID(x=time, y = signal, selection_method=sm, peak_positions=peak_positions)
+#         app.exec_()
+#         data['Integration Metadata'] = {}
+#         data['Integration Metadata']['peak dictionary'] = peak_identifier.result
+#         data['Integration Metadata']['time_column'] = time_column
+#         data['Integration Metadata']['signal_column'] = signal_column
+#         # tqdm.write(f"Results from Integradtion Metadata: {peak_identifier.result}")
+    
+#         # Integrate peaks
+#         for key in tqdm(unprocessed_keys, desc="Integrating samples", unit="sample"):
+#             # peak_timing = list(data['Integration Metadata'].values())
+#             if "Integratoin Result" in data['Samples'][key].keys():
+#                 tqdm.write(f" {key} already processed")
+#                 continue
+#             if manual:
+#                 run_peak_integrator_manual(data, key, gi = gaus_iterations, 
+#                                     pk_sns = peak_boundary_derivative_sensitivity,
+#                                     smoothing_params=[smoothing_window, smoothing_factor], 
+#                                     max_peaks_for_neighborhood = peak_neighborhood_n, 
+#                                     fp=figures_path, gaussian_fit_mode=gaussian_fit_mode)
+#             else:
+#                 run_peak_integrator(data, key, gi = gaus_iterations, 
+#                                     pk_sns = peak_boundary_derivative_sensitivity,
+#                                     smoothing_params=[smoothing_window, smoothing_factor], 
+#                                     max_peaks_for_neighborhood = peak_neighborhood_n, 
+#                                     fp=figures_path, gaussian_fit_mode=gaussian_fit_mode)   
+#             save_json(data, output_path)
 
-    # Instructions
-    print("Click the location of peaks and enter the chain length of interest (e.g., C22).\nUse 'shift+delete' to remove the last peak.\n'Select 'Finished' once satisfied.")
+def FID_integration_backend(data, time_column, signal_column, folder_path, 
+                            output_path, figures_path, sm, gaussian_fit_mode,
+                            peak_neighborhood_n=3, smoothing_window=35, smoothing_factor=3, 
+                            gaus_iterations=4000, maximum_peak_amplitude=None, 
+                            peak_boundary_derivative_sensitivity=0.01, peak_prominence=1, 
+                            manual=False, peak_labels=None):
+
+    # Get unprocessed samples only
+    unprocessed_keys = [k for k in data["Samples"].keys() if 'Processed Data' not in data["Samples"][k].keys()]
+    if not unprocessed_keys:
+        tqdm.write("No unprocessed samples to integrate.")
+        return
 
     # Identify peak locations
-    app = QApplication.instance() or QApplication(sys.argv)
-    time = data['Samples'][list(data['Samples'].keys())[0]]['raw data'][time_column]
-    signal = data['Samples'][list(data['Samples'].keys())[0]]['raw data'][signal_column]
+    if manual and peak_labels is not None:
+        tqdm.write("Using stored peak labels for manual integration.")
+        data['Integration Metadata'] = {
+            "peak dictionary": peak_labels["Peak Labels"],
+            "x limits": peak_labels["x limits"],
+            "time_column": time_column,
+            "signal_column": signal_column
+        }
+        print(data['Integration Metadata'])
+    else:
+        tqdm.write("Click the location of peaks and enter the chain length of interest (e.g., C22).\nUse 'shift+delete' to remove the last peak.\n'Select 'Finished' once satisfied.")
+        app = QApplication.instance() or QApplication(sys.argv)
+        first_key = unprocessed_keys[0]
+        time = data['Samples'][first_key]['Raw Data'][time_column]
+        signal = data['Samples'][first_key]['Raw Data'][signal_column]
 
-    # Identify peak positions
-    if selection_method == "nearest":
-        peak_positions, _ = find_peaks(signal)
-    elif selection_method == "click":
-        peak_positions = None
-    peak_identifier = FID_Peak_ID(x=time, y = signal, selection_method=selection_method, peak_positions=peak_positions)
-    app.exec_()
-    data['Integration Metadata'] = {}
-    data['Integration Metadata']['peak dictionary'] = peak_identifier.result
-    data['Integration Metadata']['time_column'] = time_column
-    data['Integration Metadata']['signal_column'] = signal_column
-    # print(f"Results from Integradtion Metadata: {peak_identifier.result}")
+        if sm == "nearest":
+            peak_positions, _ = find_peaks(signal)
+        elif sm == "click":
+            peak_positions = None
 
-    # Integrate peaks
-    for key in tqdm(data['Samples'].keys(), desc="Integrating samples", unit="sample"):
-        # peak_timing = list(data['Integration Metadata'].values())
-        tqdm.write(f"Processing: {key}")
-        run_peak_integrator(data, key, gi = gaus_iterations, pk_sns = peak_boundary_derivative_sensitivity,
-                            smoothing_params=[smoothing_window, smoothing_factor], max_peaks_for_neighborhood = peak_neighborhood_n, fp=figures_path)
+        peak_identifier = FID_Peak_ID(x=time, y=signal, selection_method=sm, peak_positions=peak_positions)
+        app.exec_()
+
+        data['Integration Metadata'] = {
+            "peak dictionary": peak_identifier.result,
+            "time_column": time_column,
+            "signal_column": signal_column
+        }
+
+    # --- Run integration ---
+    for key in tqdm(unprocessed_keys, desc="Integrating samples", unit="sample"):
+        if "Integratoin Result" in data['Samples'][key].keys():
+            tqdm.write(f"{key} already processed")
+            continue
+
+        if manual:
+            run_peak_integrator_manual(data, key, gi=gaus_iterations,
+                                       pk_sns=peak_boundary_derivative_sensitivity,
+                                       smoothing_params=[smoothing_window, smoothing_factor],
+                                       max_peaks_for_neighborhood=peak_neighborhood_n,
+                                       fp=figures_path,
+                                       gaussian_fit_mode=gaussian_fit_mode)
+        else:
+            run_peak_integrator(data, key, gi=gaus_iterations,
+                                pk_sns=peak_boundary_derivative_sensitivity,
+                                smoothing_params=[smoothing_window, smoothing_factor],
+                                max_peaks_for_neighborhood=peak_neighborhood_n,
+                                fp=figures_path,
+                                gaussian_fit_mode=gaussian_fit_mode)
+
+        save_json(data, output_path)
+
+
+def save_json(data, output_path):
     js_file = f"{output_path}/FID_output.json"
     os.makedirs(os.path.dirname(js_file), exist_ok=True)
-    with open(js_file, "w") as f:
-        json.dump(clean_for_json(data), f, indent=4)
+    try:
+        with open(js_file, "w") as f:
+            json.dump(clean_for_json(data), f, indent=4)
+        # tqdm.write(f"Output structure saved to:\n{js_file}")
+    except Exception as e:
+        tqdm.write("Error saving JSON:", e)
+
+def load_json(output_path, filename="FID_output.json"):
+    js_file = os.path.join(output_path, filename)
+    if os.path.exists(js_file):
+        try:
+            with open(js_file, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            tqdm.write("Error loading existing JSON:", e)
+    return None
 
 
 def create_output_folders(folder_path):
@@ -82,12 +291,15 @@ def create_output_folders(folder_path):
     output_path = os.path.join(folder_path, "chromatoPy output")
     figures_path = os.path.join(output_path, "Figures")
 
-    # Remove output folder if it already exists
-    if os.path.exists(output_path):
-        shutil.rmtree(output_path)
+    # # Remove output folder if it already exists
+    # if os.path.exists(output_path):
+    #     shutil.rmtree(output_path)
 
-    # Create output and figures subfolders
-    os.makedirs(figures_path)
+    # # Create output and figures subfolders
+    # os.makedirs(figures_path)
+    
+    os.makedirs(output_path, exist_ok=True)
+    os.makedirs(figures_path, exist_ok=True)
 
     return output_path, figures_path
 
@@ -104,20 +316,47 @@ def clean_for_json(obj):
             return obj
         except (TypeError, OverflowError):
             return str(obj)  # fallback
+        
+def parse_metadata_block(raw_text):
+    """
+    Parse chromatogram metadata string into a nested dictionary.
+    """
+    lines = raw_text.strip().split("\n")
+    result = {}
+    current_section = None
 
-def import_data(folder_path=None):
-    # Prompt user if no path is provided
-    if folder_path is None:
-        folder_path = input("Provide folder containing .txt files: ")
-        folder_path = folder_path.strip('\'"')
-    if not folder_path:
-        print("No folder selected. Aborting.")
-        raise SystemExit
+    for line in lines:
+        if not line.strip():
+            continue  # skip empty lines
+
+        parts = line.split("\t")
+        parts = [p.strip() for p in parts if p.strip()]
+
+        if len(parts) == 1:
+            # This is likely a section header like "Injection Information:"
+            section = parts[0].rstrip(":")
+            result[section] = {}
+            current_section = section
+        elif len(parts) == 2:
+            key, value = parts
+            if current_section:
+                result[current_section][key] = value
+            else:
+                result[key] = value
+        else:
+            # Unhandled line structure
+            tqdm.write("Skipping malformed line:", line)
+
+    return result
+
+def import_data(): # folder_path=None):
+    folder_path = input("Provide folder containing .txt files: ")
+    folder_path = folder_path.strip('\'"')
 
     # List all .txt files
     txt_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".txt")]
     if not txt_files:
-        print(f"No .txt files found in {folder_path}. Aborting.")
+        tqdm.write(f"No .txt files found in {folder_path}. Aborting.")
         raise SystemExit
 
     no_time_col = []
@@ -139,7 +378,7 @@ def import_data(folder_path=None):
                 break
 
         if table_start is None or table_start + 1 >= len(lines):
-            print(f"Could not find table start in {filename}")
+            tqdm.write(f"Could not find table start in {filename}")
             continue
 
         # Read headers
@@ -150,7 +389,7 @@ def import_data(folder_path=None):
         try:
             df = pd.DataFrame([l.strip().split('\t') for l in data_lines if l.strip() != ''], columns=headers)
         except Exception as e:
-            print(f"Failed to parse table in {filename}: {e}")
+            tqdm.write(f"Failed to parse table in {filename}: {e}")
             continue
 
         # Header matching
@@ -174,20 +413,21 @@ def import_data(folder_path=None):
         if not has_signal:
             no_signal_col.append(filename)
 
-        # Metadata is everything before the table
         metadata = ''.join(lines[:table_start - 1])
+        parsed_metadata = parse_metadata_block(metadata)
+        
         # Store in dictionary
         data_dict['Samples'][filename.replace(".txt", "")] = {
-            "metadata": metadata,
-            "raw data": df}
+            "Metadata": parsed_metadata,
+            "Raw Data": df}
 
-    print(f"Found {len(txt_files)} .txt files.")
+    tqdm.write(f"Found {len(txt_files)} .txt files.")
     if no_time_col:
-        print("Files missing time column:", no_time_col)
+        tqdm.write("Files missing time column:", no_time_col)
     if no_signal_col:
-        print("Files missing signal column:", no_signal_col)
+        tqdm.write("Files missing signal column:", no_signal_col)
 
-    return data_dict, no_time_col, no_signal_col, time_column, signal_column
+    return data_dict, no_time_col, no_signal_col, time_column, signal_column, folder_path
 
 
 class FID_Peak_ID:
@@ -343,7 +583,7 @@ class FID_Peak_ID:
             self.ax.set_ylim(ymin, ymax)
             self.fig.canvas.draw_idle()
         except ValueError:
-            print('Invalid axis limits entered.')
+            tqdm.write('Invalid axis limits entered.')
 
     def finish(self, event):
         # Store the peaks dict so callers can grab it

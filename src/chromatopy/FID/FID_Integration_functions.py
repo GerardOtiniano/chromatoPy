@@ -8,8 +8,12 @@ from scipy.integrate import simpson
 from pybaselines import Baseline
 import warnings 
 import pandas as pd
+from tqdm import tqdm
+from scipy.special import erf
+import matplotlib.pyplot as plt
+
 # Functions
-def baseline( x, y, deg=500, max_it=1000, tol=1e-4):
+def baseline( x, y, deg=5, max_it=1000, tol=1e-4):
     original_y = y.copy()
     order = deg + 1
     coeffs = np.ones(order)
@@ -45,18 +49,32 @@ def find_valleys(y, peaks, peak_oi=None):
         valleys.append(np.argmin(y[peaks[poi] : peaks[poi + 1]]) + peaks[poi])
     return valleys
 
-def smoother(y, param_0, param_1):
-    return savgol_filter(y, param_0, param_1)
+# def smoother(y, param_0, param_1, mode = "interp"):# "constant"):
+#     return savgol_filter(y, param_0, param_1, mode=mode)
+def smoother(y, window_length, polyorder):
+    from scipy.signal import savgol_filter
+
+    if len(y) < 3:
+        return y  # don't try to smooth tiny series
+
+    # Adjust window_length to be <= len(y) and an odd integer
+    window_length = min(window_length, len(y) - 1 if len(y) % 2 == 0 else len(y))
+    if window_length % 2 == 0:
+        window_length -= 1
+    window_length = max(window_length, polyorder + 2 + (polyorder % 2))  # ensure still valid
+
+    return savgol_filter(y, window_length=window_length, polyorder=polyorder)
 
 def find_peak_neighborhood_boundaries(x, y_smooth, peaks, valleys, peak_idx, max_peaks, peak_properties, gi, smoothing_params, pk_sns):
-    peak_distances = np.abs(x[peaks] - x[peak_idx])
-    closest_peaks_indices = np.argsort(peak_distances)[:max_peaks]
-    closest_peaks = np.sort(peaks[closest_peaks_indices])
+    # peak_distances = np.abs(x[peaks] - x[peak_idx])
+    # closest_peaks_indices = np.argsort(peak_distances)[:max_peaks]
+    # closest_peaks = np.sort(peaks[closest_peaks_indices])
+    # closest_peaks = [p for p in peaks if p != peak_idx]
 
     overlapping_peaks = []
     extended_boundaries = {}
     # Analyze each of the closest peaks
-    for peak in closest_peaks:
+    for peak in peaks: #closest_peaks:
         peak_pos = np.where(peak == peaks)
         l_lim = peak_properties["left_bases"][peak_pos][0]
         r_lim = peak_properties["right_bases"][peak_pos][0]
@@ -101,8 +119,6 @@ def find_peak_neighborhood_boundaries(x, y_smooth, peaks, valleys, peak_idx, max
     return neighborhood_left_boundary, neighborhood_right_boundary, overlapping_peaks
 
 
-
-
 # Gaussian fitting
 def calculate_gaus_extension_limits(cen, wid, decay, factor=3):  # decay, factor=3):
     sigma_effective = wid * factor  # Adjust factor for tail thinness
@@ -111,14 +127,28 @@ def calculate_gaus_extension_limits(cen, wid, decay, factor=3):  # decay, factor
     x_max = cen + sigma_effective + np.abs(extension_factor)
     return x_min, x_max
 
-def extrapolate_gaussian(x, amp, cen, wid, decay, x_min, x_max, step=0.01):
+# Modified to work with skewed Gaussian
+# def extrapolate_gaussian(x, amp, cen, wid, decay, x_min, x_max, step=0.0001):
+#     extended_x = np.arange(x_min, x_max, step)
+#     if decay is None:
+#         extended_y = individual_gaussian(extended_x, amp, cen, wid)
+#     else:
+#         extended_y = gaussian_decay(extended_x, amp, cen, wid, decay)
+#     return extended_x, extended_y
+
+def extrapolate_gaussian(x, amp, cen, wid, skew=None, x_min=None, x_max=None, step=0.0001):
+    if x_min is None: x_min = cen - 3 * wid
+    if x_max is None: x_max = cen + 3 * wid
     extended_x = np.arange(x_min, x_max, step)
-    if decay is None:
+
+    if skew is None:
         extended_y = individual_gaussian(extended_x, amp, cen, wid)
     else:
-        extended_y = gaussian_decay(extended_x, amp, cen, wid, decay)
+        extended_y = skewed_gaussian(extended_x, amp, cen, wid, skew)
+
     return extended_x, extended_y
-def calculate_boundaries( x, y, ind_peak, smoothing_params, pk_sns):
+
+def calculate_boundaries(x, y, ind_peak, smoothing_params, pk_sns):
     smooth_y = smoother(y, smoothing_params[0], smoothing_params[1])
     velocity, X1 = forward_derivative(x, smooth_y)
     velocity /= np.max(np.abs(velocity))
@@ -139,47 +169,206 @@ def calculate_boundaries( x, y, ind_peak, smoothing_params, pk_sns):
         B = len(x) - 1
     return A, B
 
-def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi):
-    # detect overlapping peaks
-    current_peaks = np.array(peaks)
-    current_peaks = np.append(current_peaks, ind_peak)
-    current_peaks = np.sort(current_peaks)
-    iteration = 0
+# def calculate_boundaries_acceleration(x, y, ind_peak, smoothing_params, pk_sns):
+#     # Smooth the signal
+#     smooth_y = smoother(y, smoothing_params[0], smoothing_params[1])
+
+#     # Compute first derivative (velocity)
+#     velocity, _ = forward_derivative(x, smooth_y)
+#     velocity /= np.max(np.abs(velocity))
+#     smoother_val = min(smoothing_params[0], len(velocity) - 1)
+#     smooth_velo = smoother(velocity, smoother_val, smoothing_params[1])
+
+#     # Compute second derivative (acceleration)
+#     acceleration, _ = forward_derivative(x[:-1], velocity)
+#     acceleration /= np.max(np.abs(acceleration))
+#     smooth_accel = smoother(acceleration, smoother_val, smoothing_params[1])
+    
+#     # Find boundaries
+    
+#     # Define region of interest
+#     dt = int(np.ceil(0.025 / np.mean(np.diff(x[:-1]))))
+
+#     # --- Left Boundary ---
+#     # (1) Use first derivative threshold to find steep slope before the peak
+#     A1_candidates = np.where(smooth_velo[: ind_peak - 3 * dt] < pk_sns)[0]
+#     A1 = A1_candidates[-1] + 1 if A1_candidates.size > 0 else 1
+
+#     # (2) Use second derivative zero-crossing before the peak
+#     accel_left = smooth_accel[: ind_peak - 3 * dt]
+#     A2_candidates = np.where(np.diff(np.sign(accel_left)))[0]
+#     A2 = A2_candidates[-1] + 1 if A2_candidates.size > 0 else 1
+
+#     # Final left boundary = minimum (stricter of the two)
+#     A = min(A1, A2)
+
+#     # --- Right Boundary ---
+#     # (1) Use first derivative threshold to find decreasing slope after the peak
+#     B1_candidates = np.where(smooth_velo[ind_peak + 3 * dt :] > -pk_sns)[0]
+#     B1 = B1_candidates[0] + ind_peak + 3 * dt - 1 if B1_candidates.size > 0 else len(x) - 1
+
+#     # (2) Use second derivative zero-crossing after the peak
+#     accel_right = smooth_accel[ind_peak + 3 * dt :]
+#     B2_candidates = np.where(np.diff(np.sign(accel_right)))[0]
+#     B2 = B2_candidates[0] + ind_peak + 3 * dt if B2_candidates.size > 0 else len(x) - 1
+
+#     # Final right boundary = maximum (stricter of the two)
+#     B = max(B1, B2)
+#     return A, B
+
+
+def calculate_boundaries_acceleration(x, y, ind_peak, smoothing_params, pk_sns):
+    smooth_y = smoother(y, smoothing_params[0], smoothing_params[1])
+    velocity, _ = forward_derivative(x, smooth_y)
+    acceleration, _ = forward_derivative(x[:-1], velocity)
+    acceleration /= np.max(np.abs(acceleration))
+    smoother_val = min(smoothing_params[0], len(acceleration) - 1)
+    smooth_accel = smoother(acceleration, smoother_val, smoothing_params[1])
+    left_zone = smooth_accel[:ind_peak]
+    right_zone = smooth_accel[ind_peak:]
+    if len(left_zone) > 0:
+        A = np.argmax(left_zone)
+    else:
+        A = 1
+    if len(right_zone) > 0:
+        B = np.argmax(right_zone) + ind_peak
+    else:
+        B = len(x) - 1
+    return A, B
+
+def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi, mode="both"):
+    if mode not in {"single", "multi", "both"}:
+        raise ValueError("mode must be 'single', 'multi', or 'both'")
+    # figy = plt.figure()
+    results = []
+    
+    # --- MULTI-GAUSSIAN ---
+    if mode in {"multi", "both"}:
+        result = _fit_multi_gaussian(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi)
+        if result is not None:
+            best_x, best_fit_y, best_fit_params, best_fit_params_error, best_error, best_idx_interest = result
+            results.append({
+                "name": "multi",
+                "x": best_x,
+                "y": best_fit_y,
+                "params": best_fit_params,
+                "pcov": best_fit_params_error,
+                "error": best_error,
+                "idx_interest": best_idx_interest,
+                "multi_flag": True
+            })
+
+    # --- SINGLE-GAUSSIAN ---
+    if mode in {"single", "both"}:
+        result = _fit_single_gaussian(x_full, y_full, ind_peak, smoothing_params, pk_sns, gi, current_best_error=float("inf"))
+        if result is not None:
+            best_x, best_fit_y, best_fit_params, best_fit_params_error, best_error = result
+            # print("Single Gaussian Best Fit x", best_x)
+            # plt.plot(x_full, y_full, c= 'k')
+            # plt.plot(best_x, best_fit_y, color='red')
+            results.append({
+                "name": "single",
+                "x": best_x,
+                "y": best_fit_y,
+                "params": best_fit_params,
+                "pcov": best_fit_params_error,
+                "error": best_error,
+                "multi_flag": False,
+                "idx_interest": None})
+
+    # --- ASYMMETRIC MODEL (always run) ---
+    result = _fit_asymmetric_gaussian(x_full, y_full, ind_peak, smoothing_params, pk_sns, gi, current_best_error=float("inf"))
+    if result is not None:
+        best_x, best_fit_y, best_fit_params, best_fit_params_error, best_error = result
+        # print("Asymmetric Best Fit x", best_x)
+        # plt.plot(best_x, best_fit_y, color='blue')
+        results.append({
+            "name": "asymmetric",
+            "x": best_x,
+            "y": best_fit_y,
+            "params": best_fit_params,
+            "pcov": best_fit_params_error,
+            "error": best_error,
+            "multi_flag": False,
+            "idx_interest": None})
+    # plt.xlim(4,15)
+    # plt.show()
+    # --- CHOOSE BEST FIT BY LOWEST ERROR ---
+    if not results:
+        raise RuntimeError(f"No valid fit found for peak at index {ind_peak}")
+
+    best_result = min(results, key=lambda r: r["error"])
+
+    # --- Process best fit output ---
+    best_x = best_result["x"]
+    best_fit_y = best_result["y"]
+    best_fit_params = best_result["params"]
+    best_fit_params_error = best_result["pcov"]
+    best_idx_interest = best_result.get("idx_interest", None)
+    multi_gauss_flag = best_result["multi_flag"]
+    model_used = best_result["name"]
+
+
+    # --- Extend fit + calculate area ---
+    if multi_gauss_flag:
+        amp, cen, wid = best_fit_params[best_idx_interest * 3: best_idx_interest * 3 + 3]
+        best_fit_y = individual_gaussian(best_x, amp, cen, wid)
+        best_x, best_fit_y = extrapolate_gaussian(best_x, amp, cen, wid, None, best_x.min() - 1, best_x.max() + 1, step=0.0001)
+        new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
+        left_boundary, right_boundary = calculate_boundaries(best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
+        best_x = best_x[left_boundary - 1: right_boundary + 1]
+        best_fit_y = best_fit_y[left_boundary - 1: right_boundary + 1]
+        area_smooth, area_ensemble = peak_area_distribution(best_fit_params, best_fit_params_error, best_idx_interest, best_x, x_full, ind_peak, multi=True, smoothing_params=smoothing_params, pk_sns=pk_sns)
+
+    else:
+        amp, cen, wid = best_fit_params[:3]
+        # if model_used == "asymmetric":
+        #     tail_factor = 5  # asymmetric peaks may have longer tails
+        # else:
+        #     tail_factor = 3
+        tail_factor = 3
+        x_min, x_max = calculate_gaus_extension_limits(cen, wid, 0, factor=tail_factor)
+        # THESE X VALUES ARE FINE - ISSUE LIKELY IS IN L269-271 - IF MODEL IS ASSYMMETRIC
+        if model_used == "asymmetric":
+            alpha = best_fit_params[3]
+            best_x, best_fit_y = extrapolate_gaussian(best_x, amp, cen, wid, alpha, x_min, x_max, step=0.0001)
+        else:
+            best_x, best_fit_y = extrapolate_gaussian(best_x, amp, cen, wid, None, x_min, x_max, step=0.0001)
+        new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
+        left_boundary, right_boundary = calculate_boundaries_acceleration(best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
+        area_smooth, area_ensemble = peak_area_distribution(best_fit_params, best_fit_params_error, best_idx_interest, best_x, x_full, ind_peak, multi=False, smoothing_params=smoothing_params, pk_sns=pk_sns)
+    return best_x, best_fit_y, area_smooth, area_ensemble, best_result
+
+
+def _fit_multi_gaussian(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi):
+    current_peaks = np.sort(np.append(peaks, ind_peak))
     best_fit_y = None
-    best_x = None
     best_fit_params = None
-    best_ksp = np.inf
-    multi_gauss_flag = True
+    best_fit_params_error = None
+    best_x = None
+    best_error = float("inf")
     best_idx_interest = None
-    best_error = np.inf
-    best_ks_stat = np.inf
+
     while len(current_peaks) > 1:
-        left_boundary, _ = calculate_boundaries(x_full, y_full, np.min(current_peaks), smoothing_params, pk_sns)
-        _, right_boundary = calculate_boundaries(x_full, y_full, np.max(current_peaks), smoothing_params, pk_sns)
-        x = x_full[left_boundary : right_boundary + 1]
-        y = y_full[left_boundary : right_boundary + 1]
+        left, _ = calculate_boundaries(x_full, y_full, np.min(current_peaks), smoothing_params, pk_sns)
+        _, right = calculate_boundaries(x_full, y_full, np.max(current_peaks), smoothing_params, pk_sns)
+        x = x_full[left:right + 1]
+        y = y_full[left:right + 1]
         index_of_interest = np.where(current_peaks == ind_peak)[0][0]
-        initial_guesses = []
-        bounds_lower = []
-        bounds_upper = []
+
+        p0, bounds = [], ([], [])
         for peak in current_peaks:
-            height, center, width = estimate_initial_gaussian_params(x, y, peak)  # peak)
-            height = height[0]
-            center = center[0]
-            width = width[0]
-            initial_guesses.extend([height, center, width])
-            # Bounds for peak fitting
-            lw = 0.1 - width if width > 0.1 else width
-            bounds_lower.extend([0.1 * y_full[peak], x_full[peak] - 0.15, lw])  # Bounds for peak fittin
-            bounds_upper.extend([1 + y_full[peak], x_full[peak] + 0.15, 0.5 + width])  # Old amplitude was 2 * peak height, y_full[peak] * 2, width was 2+width
-        bounds = (bounds_lower, bounds_upper)
+            h, c, w = estimate_initial_gaussian_params(x, y, peak)
+            p0.extend([h[0], c[0], w[0]])
+            bounds[0].extend([0.1 * y_full[peak], x_full[peak] - 0.15, max(w[0] - 0.1, 0)])
+            bounds[1].extend([1 + y_full[peak], x_full[peak] + 0.15, 0.5 + w[0]])
+
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                popt, pcov = curve_fit(multigaussian, x, y, p0=initial_guesses, method="dogbox", bounds=bounds, maxfev=gi)  # , ftol=1e-4, xtol=1e-4)
+                popt, pcov = curve_fit(multigaussian, x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=gi)
             fitted_y = multigaussian(x, *popt)
-            # ax.plot(x, fitted_y, c="fuchsia") # plots the multi gaussian curve
-            error = np.sqrt(((fitted_y - y) ** 2).mean())  # RMSE
+            error = np.sqrt(np.mean((fitted_y - y) ** 2))
             if error < best_error:
                 best_error = error
                 best_fit_params = popt
@@ -191,79 +380,74 @@ def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi)
             pass
 
         distances = np.abs(x[current_peaks] - x_full[ind_peak])
-        if distances.size > 0:
-            max_dist_idx = np.argmax(distances)
-            current_peaks = np.delete(current_peaks, max_dist_idx)
-        iteration += 1
+        if distances.size:
+            current_peaks = np.delete(current_peaks, np.argmax(distances))
 
-    # Final fit with only the selected peak
-    if len(current_peaks) == 1:
-        left_boundary, right_boundary = calculate_boundaries(x_full, y_full, ind_peak, smoothing_params, pk_sns)
-        x = x_full[left_boundary : right_boundary + 1]
-        y = y_full[left_boundary : right_boundary + 1]
-        height, center, width = estimate_initial_gaussian_params(x, y, ind_peak)
-        height = height[0]
-        center = center[0]
-        width = width[0]
-        # p0 = [height, center, width]
-        initial_decay = 0.1
-        p0 = [height, center, width, initial_decay]
-        bounds_lower = [0.9 * y_full[ind_peak], x_full[ind_peak] - 0.1, 0.5 * width, 0.01]  # modified width from 0.05
-        bounds_upper = [1 + y_full[ind_peak], x_full[ind_peak] + 0.1, width * 1.5, 2]
-        bounds = (bounds_lower, bounds_upper)
+    if best_fit_params is not None:
+        return best_x, best_fit_y, best_fit_params, best_fit_params_error, best_error, best_idx_interest
+    return None
+
+def _fit_single_gaussian(x_full, y_full, ind_peak, smoothing_params, pk_sns, gi, current_best_error):
+    left, right = calculate_boundaries(x_full, y_full, ind_peak, smoothing_params, pk_sns)
+    x = x_full[left:right + 1]
+    y = y_full[left:right + 1]
+    h, c, w = estimate_initial_gaussian_params(x, y, ind_peak)
+    center_idx = (np.abs(x - c[0])).argmin()
+    decay_init = estimate_initial_decay(x, y, center_idx)
+    p0 = [h[0], c[0], w[0], decay_init]
+    # p0 = [h[0], c[0], w[0], 0.1]
+    bounds = ([0.9 * y_full[ind_peak], x_full[ind_peak] - 0.1, 0.5 * w[0], 0.01],
+              [1 + y_full[ind_peak], x_full[ind_peak] + 0.1, 1.5 * w[0], 2])
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            popt, pcov = curve_fit(gaussian_decay, x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=gi)
+        fitted_y = gaussian_decay(x, *popt)
+        error = np.sqrt(np.mean((fitted_y - y) ** 2))
+        if error < current_best_error:
+            return x, fitted_y, popt, pcov, error
+    except RuntimeError:
         try:
-            # Initial try with given maxfev
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: gaussian_decay(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=gi)
-            single_fitted_y = gaussian_decay(x, *single_popt)
-            error = np.sqrt(((single_fitted_y - y) ** 2).mean())  # RMSE
-            if error < best_error:
-                multi_gauss_flag = False
-                best_error = error
-                best_fit_params = single_popt
-                best_fit_params_error = single_pcov
-                best_fit_y = single_fitted_y
-                best_x = x
+                popt, pcov = curve_fit(gaussian_decay, x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=gi * 1000)
+            fitted_y = gaussian_decay(x, *popt)
+            error = np.sqrt(np.mean((fitted_y - y) ** 2))
+            if error < current_best_error:
+                return x, fitted_y, popt, pcov, error
         except RuntimeError:
-            print(f"Warning: Optimal parameters could not be found with {gi} iterations. Increasing iterations by a factor of 100. Please be patient.")
+            tqdm.write("Error: Optimal parameters could not be found even after increasing iterations.")
+    return None
 
-            # Increase maxfev by a factor of 10 and retry
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: gaussian_decay(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=gi* 1000) # comment out to speed up debug
-                single_fitted_y = gaussian_decay(x, *single_popt)
-                error = np.sqrt(((single_fitted_y - y) ** 2).mean())  # RMSE)
-                if error < best_error:
-                    multi_gauss_flag = False
-                    best_error = error
-                    best_fit_params = single_popt
-                    best_fit_params_error = single_pcov
-                    best_fit_y = single_fitted_y
-                    best_x = x
-            except RuntimeError:
-                print("Error: Optimal parameters could not be found even after increasing the iterations.")
-    if multi_gauss_flag == True:
-        # Determine the index of the peak of interest in the multi-Gaussian fit
-        amp, cen, wid = best_fit_params[best_idx_interest * 3], best_fit_params[best_idx_interest * 3 + 1], best_fit_params[best_idx_interest * 3 + 2]
-        best_fit_y = individual_gaussian(best_x, amp, cen, wid)
-        best_x, best_fit_y = extrapolate_gaussian(best_x, amp, cen, wid, None, best_x.min() - 1, best_x.max() + 1, step=0.01)
-        new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
-        left_boundary, right_boundary = calculate_boundaries(best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
-        best_x = best_x[left_boundary - 1 : right_boundary + 1]
-        best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
-        area_smooth, area_ensemble = peak_area_distribution(best_fit_params, best_fit_params_error, best_idx_interest, best_x, x_full, ind_peak, multi=True, smoothing_params=smoothing_params, pk_sns=pk_sns)
+def _fit_asymmetric_gaussian(x_full, y_full, ind_peak, smoothing_params, pk_sns, gi, current_best_error):
+    left, right = calculate_boundaries(x_full, y_full, ind_peak, smoothing_params, pk_sns)
+    x = x_full[left:right + 1]
+    y = y_full[left:right + 1]
 
-    else:
-        x_min, x_max = calculate_gaus_extension_limits(best_fit_params[1], best_fit_params[2], best_fit_params[3], factor=3)
-        best_x, best_fit_y = extrapolate_gaussian(best_x, best_fit_params[0], best_fit_params[1], best_fit_params[2], best_fit_params[3], x_min, x_max, step=0.01)
-        new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
-        left_boundary, right_boundary = calculate_boundaries(best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
-        best_x = best_x[left_boundary - 1 : right_boundary + 1]
-        best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
-        area_smooth, area_ensemble = peak_area_distribution(best_fit_params, best_fit_params_error, best_idx_interest, best_x, x_full, ind_peak, multi = False, smoothing_params=smoothing_params, pk_sns=pk_sns)
-    return best_x, best_fit_y, area_smooth, area_ensemble
+    h, c, w = estimate_initial_gaussian_params(x, y, ind_peak)
+
+    # Sanitize estimates
+    amp = max(h[0], 1e-5)
+    cen = c[0]
+    wid = max(w[0], 1e-5)
+    alpha = 0.0  # Start symmetric
+
+    p0 = [amp, cen, wid, alpha]
+    bounds = (
+        [1e-5, cen - 0.1, 1e-5, -10],  # lower bounds
+        [10 * amp, cen + 0.1, 10 * wid, 10]  # upper bounds
+    )
+
+    try:
+        popt, pcov = curve_fit(skewed_gaussian, x, y, p0=p0, bounds=bounds, maxfev=gi)
+        fitted_y = skewed_gaussian(x, *popt)
+        error = np.sqrt(np.mean((fitted_y - y) ** 2))
+        if error < current_best_error:
+            return x, fitted_y, popt, pcov, error
+    except RuntimeError:
+        pass
+    return None
 
 def peak_area_distribution( params, params_uncertainty, ind, x, x_full, ind_peak, multi, smoothing_params, pk_sns, n_samples= 250):
     area_ensemble = []
@@ -277,7 +461,7 @@ def peak_area_distribution( params, params_uncertainty, ind, x, x_full, ind_peak
         for i in range(0,n_samples):
             amp, cen, wid = samples[i,0], samples[i,1], samples[i,2]
             best_fit_y = individual_gaussian(x, amp, cen, wid)
-            best_x, best_fit_y = extrapolate_gaussian(x, amp, cen, wid, None, x.min() - 1, x.max() + 1, step=0.01)
+            best_x, best_fit_y = extrapolate_gaussian(x, amp, cen, wid, None, x.min() - 1, x.max() + 1, step=0.0001)
             new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
             left_boundary, right_boundary = calculate_boundaries(best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
             best_x = best_x[left_boundary - 1 : right_boundary + 1]
@@ -288,7 +472,7 @@ def peak_area_distribution( params, params_uncertainty, ind, x, x_full, ind_peak
         samples = np.random.multivariate_normal(params, params_uncertainty, size=n_samples)
         for i in range(0,n_samples):
             x_min, x_max = calculate_gaus_extension_limits(samples[i,1], samples[i,2], samples[i,3], factor=3)
-            best_x, best_fit_y = extrapolate_gaussian(x, samples[i,0], samples[i,1], samples[i,2], samples[i,3], x_min, x_max, step=0.01)
+            best_x, best_fit_y = extrapolate_gaussian(x, samples[i,0], samples[i,1], samples[i,2], samples[i,3], x_min, x_max, step=0.0001)
             new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
             left_boundary, right_boundary = calculate_boundaries(best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
             best_x = best_x[left_boundary - 1 : right_boundary + 1]
@@ -319,6 +503,17 @@ def estimate_initial_gaussian_params( x, y, peak):
     stddevs.append(stddev)
     return heights, means, stddevs
 
+def estimate_initial_decay(x, y, center_idx):
+    left_half = y[:center_idx]
+    right_half = y[center_idx:]
+    left_slope = np.mean(np.gradient(left_half))
+    right_slope = np.mean(np.gradient(right_half))
+    asymmetry = right_slope - left_slope
+
+    # Empirical mapping to decay (tweak this based on real data behavior)
+    decay_est = np.clip(0.5 * asymmetry, 0.01, 1.5)
+    return decay_est
+
 def multigaussian( x, *params):
     y = np.zeros_like(x)
     for i in range(0, len(params), 3):
@@ -328,11 +523,22 @@ def multigaussian( x, *params):
         y += amp * np.exp(-((x - cen) ** 2) / (2 * wid**2))
     return y
 
+def skewed_gaussian(x, amp, cen, sigma, alpha):
+    """
+    Skewed Gaussian (Skew-Normal) distribution:
+    - alpha = 0 gives symmetric Gaussian
+    - alpha > 0 → right skew
+    - alpha < 0 → left skew
+    """
+    z = (x - cen) / (sigma * np.sqrt(2))
+    return amp * np.exp(-z**2) * (1 + erf(alpha * z))
+
 def gaussian_decay( x, amp, cen, wid, dec):
     return amp * np.exp(-((x - cen) ** 2) / (2 * wid**2)) * np.exp(-dec * abs(x - cen))
+
 def forward_derivative(x, y):
     fd = np.diff(y) / np.diff(x)
-    x_n = x[:-1]
+    x_n = x#[:-1]
     return fd, x_n
 
 class FIDAnalyzer:
@@ -391,10 +597,24 @@ class FIDAnalyzer:
             plt.show(block=True)  # Blocks script until plot window is closed
         return self.peak_results, self.fig, self.reference_peaks, self.t_pressed
     
-def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_neighborhood, fp):
+def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_neighborhood, fp, gaussian_fit_mode):
     # Setup data
-    xdata = data['Samples'][key]['raw data'][data['Integration Metadata']['time_column']]
-    ydata = data['Samples'][key]['raw data'][data['Integration Metadata']['signal_column']]
+    xdata = data['Samples'][key]['Raw Data'][data['Integration Metadata']['time_column']]
+    ydata = data['Samples'][key]['Raw Data'][data['Integration Metadata']['signal_column']]
+    
+    # Subset to reference sample
+    # --- Subset to global x-limits based on reference sample ---
+    peak_times = list(data['Integration Metadata']['peak dictionary'].values())
+    rt_buffer = 0.5  # 30 seconds = 0.5 minutes (you suggested 0.4, which is ~24s)
+    
+    xmin = min(peak_times) - rt_buffer
+    xmax = max(peak_times) + rt_buffer
+    mask = (xdata >= xmin) & (xdata <= xmax)
+    
+    xdata = xdata[mask].reset_index(drop=True)
+    ydata = ydata[mask].reset_index(drop=True)
+    
+    # Signal processing
     ydata = smoother(ydata, smoothing_params[0], smoothing_params[1])
     ydata = pd.Series(ydata, index=xdata.index)
     ydata[ydata<0] = 0
@@ -403,12 +623,34 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
     
     base, min_peak_amp = baseline(xdata, ydata, deg=5, max_it=1000, tol=1e-4)
     y_bcorr = ydata-base
-    peak_indices, peak_properties = find_peaks(y_bcorr, height=min_peak_amp, prominence=0.01)
-    matched_indices, presence_flags = zip(*[
-        (peak_indices[np.argmin(np.abs(xdata.iloc[peak_indices] - pt))], True)
-        if np.min(np.abs(xdata.iloc[peak_indices] - pt)) <= 50/60
-        else (None, False)
-        for pt in peak_timing])
+    peak_indices, peak_properties = find_peaks(y_bcorr, height=min_peak_amp, prominence=0.001)
+    used_peaks = set()
+    matched_indices = []
+    presence_flags = []
+    
+    for pt in peak_timing:
+        # Find candidate matches within tolerance
+        distances = np.abs(xdata.iloc[peak_indices] - pt)
+        candidates = [(idx, dist) for idx, dist in zip(peak_indices, distances) if dist <= 5/60]
+    
+        # Sort by closeness
+        candidates.sort(key=lambda x: x[1])
+    
+        # Find the closest unused one
+        selected = None
+        for idx, dist in candidates:
+            if idx not in used_peaks:
+                selected = idx
+                used_peaks.add(idx)
+                break
+    
+        if selected is not None:
+            matched_indices.append(selected)
+            presence_flags.append(True)
+        else:
+            matched_indices.append(None)
+            presence_flags.append(False)
+    
     matched_indices = list(matched_indices)
 
     fig = plt.figure()
@@ -420,16 +662,18 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
             data['Samples'][key]['Processed Data'][label] = [np.nan]
             continue
         try:
-            A, B, peak_neighborhood = find_peak_neighborhood_boundaries(
-                x=xdata, y_smooth=y_bcorr, peaks=peak_indices, valleys=valleys,
-                peak_idx=peak_idx, max_peaks=max_peaks_for_neighborhood,
-                peak_properties=peak_properties, gi=gi,
-                smoothing_params=smoothing_params, pk_sns=pk_sns)
+            if gaussian_fit_mode in {"multi", "both"}:
+                A, B, peak_neighborhood = find_peak_neighborhood_boundaries(
+                    x=xdata, y_smooth=y_bcorr, peaks=peak_indices, valleys=valleys,
+                    peak_idx=peak_idx, max_peaks=max_peaks_for_neighborhood,
+                    peak_properties=peak_properties, gi=gi,
+                    smoothing_params=smoothing_params, pk_sns=pk_sns)
+            else:
+                peak_neighborhood = [peak_idx]
         
-            x_fit, y_fit_smooth, area_smooth, area_ensemble = fit_gaussians(
+            x_fit, y_fit_smooth, area_smooth, area_ensemble, model_parameters = fit_gaussians(
                 xdata, y_bcorr, peak_idx, peak_neighborhood,
-                smoothing_params, pk_sns, gi=gi)
-        
+                smoothing_params, pk_sns, gi=gi, mode=gaussian_fit_mode)
             plt.fill_between(x_fit, 0, y_fit_smooth, color="red", alpha=0.5, zorder=1)
             
             # Label
@@ -442,9 +686,11 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
             # plt.axhline(0, c = 'k')
             
             # Assign data to output
-            data['Samples'][key]['Processed Data'][label] = list(area_ensemble)
+            data['Samples'][key]['Processed Data'][label] = {}
+            data['Samples'][key]['Processed Data'][label]['Values'] = list(area_ensemble)
+            data['Samples'][key]['Processed Data'][label]['Model Parameters'] = model_parameters
         except Exception as e:
-            print(f"[Warning] Failed to fit {label} in {key}: {e}")
+            tqdm.write(f"[Warning] Failed to fit {label} in {key}: {e}")
             data['Samples'][key]['Processed Data'][label] = [np.nan]
         
     
@@ -461,4 +707,7 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
     plt.ylabel(data['Integration Metadata']['signal_column'])
     plt.xlabel(data['Integration Metadata']['time_column'])
     plt.savefig(str(fp)+f"/{key}.png", dpi=300)
+    plt.close()
     return data
+
+

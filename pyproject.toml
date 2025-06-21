@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "chromatopy"
-version = "1.9.0"
+version = "2.0.0"
 description = "Peak integration software."
 authors = ["Dr. Gerard Otiniano <gerardotiniano@gmail.com>", "Dr. Elizabeth Thomas"]
 readme = "README.md"
@@ -17,6 +17,8 @@ matplotlib = "^3.6.0"
 rainbow-api = "1.0.9"
 pybaselines = "1.1.0"
 tqdm = "^2.0.0"
+pillow = "^11.0.0"
+imagehash = "^4.0.0"
 
 
 [build-system]
