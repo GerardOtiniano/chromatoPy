@@ -27,18 +27,22 @@ from PyQt5.QtWidgets import (
     QMessageBox)
 
 # ─── Peak Integration ─────────────────────────────────────────────────────────
-from FID_Integration_functions import run_peak_integrator
-from bouqueter import get_cluster_labels
-from manual_peak_integration import run_peak_integrator_manual
-
+from .FID_Integration_functions import run_peak_integrator
+from .FID_General import get_cluster_labels
+from .manual_peak_integration import run_peak_integrator_manual
+from .import_data import import_data
 
 def integration(
-        categorized=None, selection_method="nearest",
-        peak_neighborhood_n=3, smoothing_window=13, 
+        # Peak selection
+        peak_labels=False, selection_method="nearest",
+        # Data categorization
+        categorized=None, 
+        # Peak deconvolution 
+        gaussian_fit_mode='single',  manual_peak_integration=False,
+        # Peak integration parameters
+        peak_neighborhood_n=3, smoothing_window=5, 
         smoothing_factor=3, gaus_iterations=1000, maximum_peak_amplitude=None, 
-        peak_boundary_derivative_sensitivity=0.01, peak_prominence=1,
-        gaussian_fit_mode='single', manual_peak_integration=False,
-        peak_labels=False):
+        peak_boundary_derivative_sensitivity=0.01, peak_prominence=0.01):
     """
     Main integration function for processing chromatographic samples.
 
@@ -55,6 +59,8 @@ def integration(
     - peak_prominence: Prominence threshold for peak finding.
     - peak_labels: If True, load peak label config from 'peak_labels.json'
     """
+    
+    # Handle predefined peak labels
     if peak_labels and manual_peak_integration:
         json_path = os.path.join(os.path.dirname(__file__), "peak_labels.json")
         if os.path.exists(json_path):
@@ -63,34 +69,28 @@ def integration(
         else:
             raise FileNotFoundError(f"Expected peak_labels.json in {json_path}")
     else: peak_labels_data=None
-            
-    def process_data(data, time_column, signal_column, folder_path):
-        data, output_path, figures_path = check_load_json(data, folder_path)
-        FID_integration_backend(
-            data, time_column, signal_column,
-            folder_path, output_path, figures_path,
-            selection_method, gaussian_fit_mode,
-            peak_neighborhood_n, smoothing_window, 
-            smoothing_factor, gaus_iterations,
-            maximum_peak_amplitude, peak_boundary_derivative_sensitivity,
-            peak_prominence, manual = manual_peak_integration,
-            peak_labels=peak_labels_data)
-        return data
-
+    
+    # Handle pre-categorized Data
     if categorized is not None:
         tqdm.write("Pre-categorized data.")
-        data = categorized 
-        _, no_time_col, no_signal_col, time_column, signal_column, folder_path = import_data()
-        data, output_path, figures_path = check_load_json(data, folder_path)
-        cluster_labels = get_cluster_labels(data)
+        result = import_data()
+        unprocessed = result["unprocessed_samples"]
+        if not unprocessed:
+            return
+        
+        data = result['data_dict']
+        time_column = result["time_column"]
+        signal_column = result["signal_column"]
+        folder_path = result["folder_path"]
+        output_path = result["output_path"]
+        figures_path = result["figures_path"]
+        cluster_labels = get_cluster_labels(categorized)
         for i in cluster_labels:
             cluster_subset = {
                 'Samples': {
                     key: value for key, value in data['Samples'].items()
-                    if value.get('cluster') == i
-                },
-                'Integration Metadata': {}
-            }
+                    if value.get('cluster') == i},
+                'Integration Metadata': {}}
             FID_integration_backend(
                 cluster_subset, time_column, signal_column,
                 folder_path, output_path, figures_path,
@@ -102,102 +102,45 @@ def integration(
                 manual = manual_peak_integration,
                 peak_labels=peak_labels_data)
     else:
-        data, no_time_col, no_signal_col, time_column, signal_column, folder_path = import_data()
-        data = process_data(data, time_column, signal_column, folder_path)
 
-    return data
+        result = import_data()
+        unprocessed = result["unprocessed_samples"]
+        if not unprocessed:
+            return
+        data = result['data_dict']
+        subset = {"Samples": {k: data["Samples"][k] for k in unprocessed},
+          "Integration Metadata": {}}
+        time_column = result["time_column"]
+        signal_column = result["signal_column"]
+        folder_path = result["folder_path"]
+        output_path = result["output_path"]
+        figures_path = result["figures_path"]
+        FID_integration_backend(
+            subset, time_column, signal_column,
+            folder_path, output_path, figures_path,
+            selection_method, gaussian_fit_mode,
+            peak_neighborhood_n, smoothing_window, 
+            smoothing_factor, gaus_iterations,
+            maximum_peak_amplitude, peak_boundary_derivative_sensitivity,
+            peak_prominence, manual = manual_peak_integration,
+            peak_labels=peak_labels_data)
     
+def print_no_samples_to_process():
+        tqdm.write("All samples in this directory have been processed.")
+        tqdm.write("To re-process sample entries, delete the samples with:")
+        tqdm.write("    chromatopy.FID.delete_samples()")
+        tqdm.write("Then rerun:")
+        tqdm.write("    chromatopy.FID.integration()")
     
-def check_load_json(data, folder_path):
-    output_path, figures_path = create_output_folders(folder_path)
-    existing_data = load_json(output_path)
-    new_samples = {}
-    if existing_data is not None:
-        for sample_name, sample in data["Samples"].items():
-            if sample_name not in existing_data["Samples"]:
-                existing_data["Samples"][sample_name] = sample
-        data = existing_data
-    save_json(data, output_path)
-    return data, output_path, figures_path
-    
-    
-    
-    
-# def FID_integration_backend(data, time_column, signal_column, folder_path, 
-#                             output_path, figures_path, sm, gaussian_fit_mode,
-#                             peak_neighborhood_n=3, smoothing_window=35, smoothing_factor=3, 
-#                             gaus_iterations=4000, maximum_peak_amplitude=None, 
-#                             peak_boundary_derivative_sensitivity=0.01, peak_prominence=1, 
-#                             manual = False, peak_labels=None):
-#     if manual and peak_labels is not None:
-#         tqdm.write("Using stored peak labels for manual integration.")
-#         data['Integration Metadata'] = {
-#             "peak dictionary": peak_labels["Peak Labels"],
-#             "x limits": peak_labels["x limits"],
-#             "time_column": time_column,
-#             "signal_column": signal_column
-#         }
-#     else:
-#         # Get unprocessed samples only
-#         unprocessed_keys = [k for k in data["Samples"].keys() if 'Processed Data' not in data["Samples"][k].keys()]
-#         if not unprocessed_keys:
-#             tqdm.write("No unprocessed samples to integrate.")
-#             return
-    
-#         # Instructions
-#         tqdm.write("Click the location of peaks and enter the chain length of interest (e.g., C22).\nUse 'shift+delete' to remove the last peak.\n'Select 'Finished' once satisfied.")
-    
-#         # Identify peak locations
-#         app = QApplication.instance() or QApplication(sys.argv)
-#         first_key = unprocessed_keys[0]
-#         time = data['Samples'][first_key]['Raw Data'][time_column]
-#         signal = data['Samples'][first_key]['Raw Data'][signal_column]
-        
-#         # Identify peak positions
-#         if sm == "nearest":
-#             peak_positions, _ = find_peaks(signal)
-#         elif sm == "click":
-#             peak_positions = None
-#         peak_identifier = FID_Peak_ID(x=time, y = signal, selection_method=sm, peak_positions=peak_positions)
-#         app.exec_()
-#         data['Integration Metadata'] = {}
-#         data['Integration Metadata']['peak dictionary'] = peak_identifier.result
-#         data['Integration Metadata']['time_column'] = time_column
-#         data['Integration Metadata']['signal_column'] = signal_column
-#         # tqdm.write(f"Results from Integradtion Metadata: {peak_identifier.result}")
-    
-#         # Integrate peaks
-#         for key in tqdm(unprocessed_keys, desc="Integrating samples", unit="sample"):
-#             # peak_timing = list(data['Integration Metadata'].values())
-#             if "Integratoin Result" in data['Samples'][key].keys():
-#                 tqdm.write(f" {key} already processed")
-#                 continue
-#             if manual:
-#                 run_peak_integrator_manual(data, key, gi = gaus_iterations, 
-#                                     pk_sns = peak_boundary_derivative_sensitivity,
-#                                     smoothing_params=[smoothing_window, smoothing_factor], 
-#                                     max_peaks_for_neighborhood = peak_neighborhood_n, 
-#                                     fp=figures_path, gaussian_fit_mode=gaussian_fit_mode)
-#             else:
-#                 run_peak_integrator(data, key, gi = gaus_iterations, 
-#                                     pk_sns = peak_boundary_derivative_sensitivity,
-#                                     smoothing_params=[smoothing_window, smoothing_factor], 
-#                                     max_peaks_for_neighborhood = peak_neighborhood_n, 
-#                                     fp=figures_path, gaussian_fit_mode=gaussian_fit_mode)   
-#             save_json(data, output_path)
-
 def FID_integration_backend(data, time_column, signal_column, folder_path, 
                             output_path, figures_path, sm, gaussian_fit_mode,
                             peak_neighborhood_n=3, smoothing_window=35, smoothing_factor=3, 
                             gaus_iterations=4000, maximum_peak_amplitude=None, 
                             peak_boundary_derivative_sensitivity=0.01, peak_prominence=1, 
                             manual=False, peak_labels=None):
-
+    
     # Get unprocessed samples only
     unprocessed_keys = [k for k in data["Samples"].keys() if 'Processed Data' not in data["Samples"][k].keys()]
-    if not unprocessed_keys:
-        tqdm.write("No unprocessed samples to integrate.")
-        return
 
     # Identify peak locations
     if manual and peak_labels is not None:
@@ -206,9 +149,7 @@ def FID_integration_backend(data, time_column, signal_column, folder_path,
             "peak dictionary": peak_labels["Peak Labels"],
             "x limits": peak_labels["x limits"],
             "time_column": time_column,
-            "signal_column": signal_column
-        }
-        print(data['Integration Metadata'])
+            "signal_column": signal_column}
     else:
         tqdm.write("Click the location of peaks and enter the chain length of interest (e.g., C22).\nUse 'shift+delete' to remove the last peak.\n'Select 'Finished' once satisfied.")
         app = QApplication.instance() or QApplication(sys.argv)
@@ -227,11 +168,9 @@ def FID_integration_backend(data, time_column, signal_column, folder_path,
         data['Integration Metadata'] = {
             "peak dictionary": peak_identifier.result,
             "time_column": time_column,
-            "signal_column": signal_column
-        }
+            "signal_column": signal_column}
 
-    # --- Run integration ---
-    for key in tqdm(unprocessed_keys, desc="Integrating samples", unit="sample"):
+    for key in tqdm(unprocessed_keys, desc="Integrating samples", unit="sample", mininterval=0, maxinterval=0):
         if "Integratoin Result" in data['Samples'][key].keys():
             tqdm.write(f"{key} already processed")
             continue
@@ -250,190 +189,262 @@ def FID_integration_backend(data, time_column, signal_column, folder_path,
                                 max_peaks_for_neighborhood=peak_neighborhood_n,
                                 fp=figures_path,
                                 gaussian_fit_mode=gaussian_fit_mode)
+        data = round_dict_floats(data)
+        existing_data = load_json(output_path)
+        if existing_data:
+            for sample_name, sample_data in data["Samples"].items():
+                existing_data["Samples"][sample_name] = sample_data
+        else:
+            existing_data = data
 
-        save_json(data, output_path)
+        save_json({'data_dict':existing_data}, output_path)
+        output_csv(existing_data, output_path)
+    # return data
 
-
-def save_json(data, output_path):
-    js_file = f"{output_path}/FID_output.json"
-    os.makedirs(os.path.dirname(js_file), exist_ok=True)
-    try:
-        with open(js_file, "w") as f:
-            json.dump(clean_for_json(data), f, indent=4)
-        # tqdm.write(f"Output structure saved to:\n{js_file}")
-    except Exception as e:
-        tqdm.write("Error saving JSON:", e)
-
-def load_json(output_path, filename="FID_output.json"):
-    js_file = os.path.join(output_path, filename)
-    if os.path.exists(js_file):
-        try:
-            with open(js_file, "r") as f:
-                return json.load(f)
-        except Exception as e:
-            tqdm.write("Error loading existing JSON:", e)
-    return None
-
-
-def create_output_folders(folder_path):
+def output_csv(data, output_directory):
     """
-    Creates a 'chromatoPy output' folder inside the given folder_path.
-    If it already exists, deletes it and recreates it.
-    Also creates a nested 'Figures' subfolder.
+    Generate two CSV files:
+    1. output_peak_areas.csv: contains median peak areas per sample.
+    2. output_retention_times.csv: contains retention times per sample.
+
+    Parameters
+    ----------
+    data : dict
+        Data dictionary containing processed chromatographic data.
+    output_directory : str
+        Directory to save the output CSVs.
 
     Returns
     -------
-    output_path : str
-        Path to 'chromatoPy output' folder.
-    figures_path : str
-        Path to 'chromatoPy output/Figures' folder.
+    df_areas : pandas.DataFrame
+        DataFrame of peak area medians per sample.
+    df_ret_times : pandas.DataFrame
+        DataFrame of retention times per sample.
     """
-    output_path = os.path.join(folder_path, "chromatoPy output")
-    figures_path = os.path.join(output_path, "Figures")
+    # Collect all unique peak labels across samples
+    all_peaks = set()
+    for sample in data['Samples'].values():
+        processed = sample.get("Processed Data", {})
+        all_peaks.update(processed.keys())
 
-    # # Remove output folder if it already exists
-    # if os.path.exists(output_path):
-    #     shutil.rmtree(output_path)
+    all_peaks = sorted(all_peaks)
 
-    # # Create output and figures subfolders
-    # os.makedirs(figures_path)
+    peak_area_rows = []
+    retention_time_rows = []
+
+    for sample_name, sample in data['Samples'].items():
+        row_area = {"Lab ID": sample_name}
+        row_ret = {"Lab ID": sample_name}
+        processed = sample.get("Processed Data", {})
+        for peak in all_peaks:
+            peak_data = processed.get(peak, None)
+            if peak_data and isinstance(peak_data, dict):
+                row_area[peak] = peak_data.get("Peak Area - median", np.nan)
+                row_ret[peak] = peak_data.get("Retention Time", np.nan)
+            else:
+                row_area[peak] = np.nan
+                row_ret[peak] = np.nan
+        peak_area_rows.append(row_area)
+        retention_time_rows.append(row_ret)
+
+    # Convert to DataFrames
+    df_areas = pd.DataFrame(peak_area_rows)
+    df_ret_times = pd.DataFrame(retention_time_rows)
+
+    # Save as CSVs
+    os.makedirs(output_directory, exist_ok=True)
+    area_path = os.path.join(output_directory, "output_peak_areas.csv")
+    rt_path = os.path.join(output_directory, "output_retention_times.csv")
+    df_areas.to_csv(area_path, index=False)
+    df_ret_times.to_csv(rt_path, index=False)
+
+def convert_dataframes_to_dicts(obj):
+    """
+    Walks any nested structure of dicts/lists and converts
+    any pandas.DataFrame it finds into a plain dict of lists.
+    """
+    if isinstance(obj, pd.DataFrame):
+        return obj.to_dict(orient="list")
+    elif isinstance(obj, dict):
+        return {k: convert_dataframes_to_dicts(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_dataframes_to_dicts(v) for v in obj]
+    else:
+        return obj
+
+def save_json(container, output_path):
+    # “container” is the dict you get back from import_data()
+    data_dict = container["data_dict"]
+
+    # convert _all_ DataFrames under data_dict → dicts of lists
+    cleanable = convert_dataframes_to_dicts(data_dict)
+
+    js_file = os.path.join(output_path, "FID_output.json")
+    os.makedirs(os.path.dirname(js_file), exist_ok=True)
+    with open(js_file, "w") as f:
+        json.dump(clean_for_json(cleanable), f, indent=4)
+
+def load_json(output_path, list_samples=False, list_processed=False):
+    """
+    Try to load FID_output.json from output_path.
+    If it doesn’t exist, return None.
+    Otherwise return the dict, rebuilding any Raw Data dicts into DataFrames.
+    """
+    js_file = os.path.join(output_path, "FID_output.json")
+    if not os.path.exists(js_file):
+        return None
+
+    with open(js_file, "r") as f:
+        data = json.load(f)
+
+    # rebuild Raw Data dicts into DataFrames
+    for sample in data.get("Samples", {}).values():
+        raw = sample.get("Raw Data")
+        if isinstance(raw, dict):
+            sample["Raw Data"] = pd.DataFrame(raw)
+    if list_samples:
+        for key in data['Samples'].keys():
+            print(key)
+    if list_processed:
+        key = []
+        for x in data['Samples'].keys():
+            if 'Processed Data' in data['Samples'][x].keys():
+                key.append(x)
+        print(key)
+    return data
+
+
+# def create_output_folders(folder_path):
+#     """
+#     Creates a 'chromatoPy output' folder inside the given folder_path.
+#     If it already exists, deletes it and recreates it.
+#     Also creates a nested 'Figures' subfolder.
+
+#     Returns
+#     -------
+#     output_path : str
+#         Path to 'chromatoPy output' folder.
+#     figures_path : str
+#         Path to 'chromatoPy output/Figures' folder.
+#     """
+#     output_path = os.path.join(folder_path, "chromatoPy output")
+#     figures_path = os.path.join(output_path, "Figures")
     
-    os.makedirs(output_path, exist_ok=True)
-    os.makedirs(figures_path, exist_ok=True)
+#     os.makedirs(output_path, exist_ok=True)
+#     os.makedirs(figures_path, exist_ok=True)
 
-    return output_path, figures_path
+#     return output_path, figures_path
 
 def clean_for_json(obj):
     if isinstance(obj, (np.integer, np.floating)):
         return obj.item()
     elif isinstance(obj, (np.ndarray, pd.Series, list, tuple)):
         return [clean_for_json(el) for el in obj]
+    elif isinstance(obj, pd.DataFrame): 
+        return obj.to_dict(orient="list")
     elif isinstance(obj, dict):
         return {str(k): clean_for_json(v) for k, v in obj.items()}
     else:
         try:
-            json.dumps(obj)  # test if serializable
+            json.dumps(obj)
             return obj
         except (TypeError, OverflowError):
-            return str(obj)  # fallback
+            return str(obj)
         
-def parse_metadata_block(raw_text):
+# def parse_metadata_block(raw_text):
+#     """
+#     Parse chromatogram metadata string into a nested dictionary.
+#     """
+#     lines = raw_text.strip().split("\n")
+#     result = {}
+#     current_section = None
+
+#     for line in lines:
+#         if not line.strip():
+#             continue  # skip empty lines
+
+#         parts = line.split("\t")
+#         parts = [p.strip() for p in parts if p.strip()]
+
+#         if len(parts) == 1:
+#             # This is likely a section header like "Injection Information:"
+#             section = parts[0].rstrip(":")
+#             result[section] = {}
+#             current_section = section
+#         elif len(parts) == 2:
+#             key, value = parts
+#             if current_section:
+#                 result[current_section][key] = value
+#             else:
+#                 result[key] = value
+#         else:
+#             # Unhandled line structure
+#             tqdm.write("Skipping malformed line:", line)
+
+#     return result
+ 
+def merge_existing_jsons(data, output_path):
     """
-    Parse chromatogram metadata string into a nested dictionary.
+    Function Identifies previously processed data (.json files) in working
+    directory, selects samples from this previous dataset that are not in
+    the raw .txt files, and adds these samples to the new dictionary.
+    --- Requires heavy modificatoin to properly retain model information.
+
+    Parameters
+    ----------
+    data : dict
+        Imported data from .txt file. Contains raw data
+    output_path : str
+        Location of output directory.
+
+    Returns
+    -------
+    data : dict
+        Dataset.
     """
-    lines = raw_text.strip().split("\n")
-    result = {}
-    current_section = None
+    # output_path, figures_path = create_output_folders(folder_path)
+    existing_data = load_json(output_path)
+    new_samples = {}
+    if existing_data is not None:
+        for sample_name, sample in data["Samples"].items():
+            if sample_name not in existing_data["Samples"]:
+                existing_data["Samples"][sample_name] = sample
+        data = existing_data
+    save_json(data, output_path)
+    return data
 
-    for line in lines:
-        if not line.strip():
-            continue  # skip empty lines
 
-        parts = line.split("\t")
-        parts = [p.strip() for p in parts if p.strip()]
+# def check_existing_jsons(data_dict, output_path):
+#     """
+#     Merge any new samples in data_dict into an existing JSON on disk.
+#     Returns: (merged_dict, unprocessed_keys)
+#       - merged_dict: either the existing JSON plus new samples, or your original data_dict
+#       - unprocessed_keys: list of sample-names that came in fresh
+#     """
+#     existing = load_json(output_path)
+#     # no file on disk → nothing processed yet
+#     if existing is None:
+#         unprocessed = list(data_dict["Samples"].keys())
+#         return data_dict, unprocessed
 
-        if len(parts) == 1:
-            # This is likely a section header like "Injection Information:"
-            section = parts[0].rstrip(":")
-            result[section] = {}
-            current_section = section
-        elif len(parts) == 2:
-            key, value = parts
-            if current_section:
-                result[current_section][key] = value
-            else:
-                result[key] = value
-        else:
-            # Unhandled line structure
-            tqdm.write("Skipping malformed line:", line)
+#     # else: there was an existing JSON
+#     before = set(existing["Samples"].keys())
+#     # add any brand-new samples
+#     for name, sample in data_dict["Samples"].items():
+#         if name not in existing["Samples"]:
+#             existing["Samples"][name] = sample
 
-    return result
+#     # figure out which ones we just added
+#     after = set(existing["Samples"].keys())
+#     unprocessed = list(after - before)
 
-def import_data(): # folder_path=None):
-    folder_path = input("Provide folder containing .txt files: ")
-    folder_path = folder_path.strip('\'"')
-
-    # List all .txt files
-    txt_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".txt")]
-    if not txt_files:
-        tqdm.write(f"No .txt files found in {folder_path}. Aborting.")
-        raise SystemExit
-
-    no_time_col = []
-    no_signal_col = []
-    data_dict = {}
-    data_dict["Samples"] = {}
-
-    for filename in txt_files:
-        file_path = os.path.join(folder_path, filename)
-
-        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-            lines = f.readlines()
-
-        # Find the line where the table begins
-        table_start = None
-        for i, line in enumerate(lines):
-            if re.search(r'(?i)^\s*Chromatogram Data\s*:', line):
-                table_start = i + 1  # The actual table header is the next line
-                break
-
-        if table_start is None or table_start + 1 >= len(lines):
-            tqdm.write(f"Could not find table start in {filename}")
-            continue
-
-        # Read headers
-        headers = lines[table_start].strip().split('\t')
-        data_lines = lines[table_start + 1:]
-
-        # Read into DataFrame
-        try:
-            df = pd.DataFrame([l.strip().split('\t') for l in data_lines if l.strip() != ''], columns=headers)
-        except Exception as e:
-            tqdm.write(f"Failed to parse table in {filename}: {e}")
-            continue
-
-        # Header matching
-        time_keywords = ['time', 'min', 'sec', 'second', 'minute']
-        signal_keywords = ['signal', 'value', 'intensity', 'amplitude', '(pa)', '(a)']
-        headers = lines[table_start].strip().split('\t')
-        header_map = {h.lower(): h for h in headers}
-
-        time_column = next((header_map[h] for h in header_map if any(key in h for key in time_keywords)), None)
-        has_time = time_column is not None
-        signal_column = next((header_map[h] for h in header_map if any(key in h for key in signal_keywords)), None)
-        has_signal = signal_column is not None
-
-        # Numeric dataframe
-        df[time_column] = pd.to_numeric(df[time_column], errors='coerce')
-        df[signal_column] = pd.to_numeric(df[signal_column], errors='coerce')
-        df[signal_column] = df[signal_column].fillna(0)
-
-        if not has_time:
-            no_time_col.append(filename)
-        if not has_signal:
-            no_signal_col.append(filename)
-
-        metadata = ''.join(lines[:table_start - 1])
-        parsed_metadata = parse_metadata_block(metadata)
-        
-        # Store in dictionary
-        data_dict['Samples'][filename.replace(".txt", "")] = {
-            "Metadata": parsed_metadata,
-            "Raw Data": df}
-
-    tqdm.write(f"Found {len(txt_files)} .txt files.")
-    if no_time_col:
-        tqdm.write("Files missing time column:", no_time_col)
-    if no_signal_col:
-        tqdm.write("Files missing signal column:", no_signal_col)
-
-    return data_dict, no_time_col, no_signal_col, time_column, signal_column, folder_path
+#     return existing, unprocessed
 
 
 class FID_Peak_ID:
     def __init__(self, x, y, selection_method, peak_positions=None):
-        self.x = x
-        self.y = y
+        self.x = pd.Series(x)
+        self.y = pd.Series(y)
         self.selection_method = selection_method
         self.lines = []
         self.labels = []
@@ -584,6 +595,12 @@ class FID_Peak_ID:
             self.fig.canvas.draw_idle()
         except ValueError:
             tqdm.write('Invalid axis limits entered.')
+        finally:
+            # force-release any mouse grab so next click is clean
+            try:
+                self.fig.canvas.release_mouse(self.ax)
+            except Exception:
+                pass
 
     def finish(self, event):
         # Store the peaks dict so callers can grab it
@@ -615,3 +632,39 @@ class LabelDialog(QDialog):
 
     def value(self):
         return self.edit.text().strip()
+
+def round_dict_floats(data, default_decimals=4):
+    """
+    Recursively round all floats in a nested dictionary or list structure to a fixed number of decimals.
+    Handles DataFrames by rounding numeric columns.
+    Does not round stringified DataFrame representations.
+
+    Parameters:
+    - data: dict or list
+    - default_decimals: int, number of decimal places to round to
+    """
+    def process_df(df):
+        for col in df.columns:
+            if pd.api.types.is_numeric_dtype(df[col]):
+                df[col] = df[col].round(default_decimals)
+        return df
+
+    def recursive_round(obj):
+        if isinstance(obj, dict):
+            new_dict = {}
+            for k, v in obj.items():
+                if k == "Raw Data" and isinstance(v, pd.DataFrame):
+                    new_dict[k] = process_df(v.copy())
+                else:
+                    new_dict[k] = recursive_round(v)
+            return new_dict
+        elif isinstance(obj, list):
+            return [recursive_round(v) for v in obj]
+        elif isinstance(obj, pd.DataFrame):
+            return process_df(obj.copy())
+        elif isinstance(obj, (float, np.floating)):
+            return round(obj, default_decimals)
+        else:
+            return obj
+
+    return recursive_round(data)

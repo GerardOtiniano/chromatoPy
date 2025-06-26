@@ -12,23 +12,27 @@ DEFAULT_LABELS = {
                     "C20", "C21", "C22", "C23", "C24",
                     "C25", "C26", "C27", "C28", "C29",
                     "C30", "C31", "C32"],
-    "x limits": [5, 17]
+    "x limits": [3, 17]
 }
 
-def load_peak_labels(json_path="peak_labels.json"):
+MODULE_DIR = os.path.dirname(__file__)
+DEFAULT_JSON = os.path.join(MODULE_DIR, "peak_labels.json")
+
+def load_peak_labels(json_path: str = DEFAULT_JSON):
     if os.path.exists(json_path):
         with open(json_path, 'r') as f:
             return json.load(f)
     return DEFAULT_LABELS
 
-def save_peak_labels(data, json_path="peak_labels.json"):
+def save_peak_labels(data, json_path: str = DEFAULT_JSON):
+    # debug print so you can see where it goes:
+    # print(f"⤷ writing peak_labels.json to: {json_path!r}")
     with open(json_path, 'w') as f:
         json.dump(data, f, indent=4)
 
 class PeakLabelEditor(QDialog):
-    def __init__(self, json_path="peak_labels.json"):
+    def __init__(self, json_path: str = DEFAULT_JSON):
         super().__init__()
-        self.setWindowTitle("Edit Peak Labels")
         self.json_path = json_path
         self.label_dict = load_peak_labels(json_path)
         self.init_ui()
@@ -65,11 +69,7 @@ class PeakLabelEditor(QDialog):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save: {str(e)}")
 
-def peak_label_editor(json_path="peak_labels.json"):
+def peak_label_editor(json_path: str = DEFAULT_JSON):
     app = QApplication.instance() or QApplication(sys.argv)
     editor = PeakLabelEditor(json_path)
     editor.exec_()
-
-# Optional: for testing from terminal
-if __name__ == "__main__":
-    peak_label_editor()

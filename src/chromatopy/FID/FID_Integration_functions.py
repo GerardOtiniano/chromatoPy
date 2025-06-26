@@ -120,12 +120,17 @@ def find_peak_neighborhood_boundaries(x, y_smooth, peaks, valleys, peak_idx, max
 
 
 # Gaussian fitting
-def calculate_gaus_extension_limits(cen, wid, decay, factor=3):  # decay, factor=3):
+def calculate_gaus_extension_limits(cen, wid, decay, factor=3, max_tail_sigma=5):
     sigma_effective = wid * factor  # Adjust factor for tail thinness
-    extension_factor = 1 / decay if decay != 0 else sigma_effective  # Use decay to modify the extension if applicable
-    x_min = cen - sigma_effective - np.abs(extension_factor)
-    x_max = cen + sigma_effective + np.abs(extension_factor)
-    return x_min, x_max
+    if decay <= 0:
+        tail = sigma_effective * max_tail_sigma
+    else:
+        tail = min(1/decay, sigma_effective * max_tail_sigma)
+    return cen - sigma_effective-tail, cen+sigma_effective+tail
+    # extension_factor = 1 / decay if decay != 0 else sigma_effective  # Use decay to modify the extension if applicable
+    # x_min = cen - sigma_effective - np.abs(extension_factor)
+    # x_max = cen + sigma_effective + np.abs(extension_factor)
+    # return x_min, x_max
 
 # Modified to work with skewed Gaussian
 # def extrapolate_gaussian(x, amp, cen, wid, decay, x_min, x_max, step=0.0001):
@@ -168,53 +173,6 @@ def calculate_boundaries(x, y, ind_peak, smoothing_params, pk_sns):
     else:
         B = len(x) - 1
     return A, B
-
-# def calculate_boundaries_acceleration(x, y, ind_peak, smoothing_params, pk_sns):
-#     # Smooth the signal
-#     smooth_y = smoother(y, smoothing_params[0], smoothing_params[1])
-
-#     # Compute first derivative (velocity)
-#     velocity, _ = forward_derivative(x, smooth_y)
-#     velocity /= np.max(np.abs(velocity))
-#     smoother_val = min(smoothing_params[0], len(velocity) - 1)
-#     smooth_velo = smoother(velocity, smoother_val, smoothing_params[1])
-
-#     # Compute second derivative (acceleration)
-#     acceleration, _ = forward_derivative(x[:-1], velocity)
-#     acceleration /= np.max(np.abs(acceleration))
-#     smooth_accel = smoother(acceleration, smoother_val, smoothing_params[1])
-    
-#     # Find boundaries
-    
-#     # Define region of interest
-#     dt = int(np.ceil(0.025 / np.mean(np.diff(x[:-1]))))
-
-#     # --- Left Boundary ---
-#     # (1) Use first derivative threshold to find steep slope before the peak
-#     A1_candidates = np.where(smooth_velo[: ind_peak - 3 * dt] < pk_sns)[0]
-#     A1 = A1_candidates[-1] + 1 if A1_candidates.size > 0 else 1
-
-#     # (2) Use second derivative zero-crossing before the peak
-#     accel_left = smooth_accel[: ind_peak - 3 * dt]
-#     A2_candidates = np.where(np.diff(np.sign(accel_left)))[0]
-#     A2 = A2_candidates[-1] + 1 if A2_candidates.size > 0 else 1
-
-#     # Final left boundary = minimum (stricter of the two)
-#     A = min(A1, A2)
-
-#     # --- Right Boundary ---
-#     # (1) Use first derivative threshold to find decreasing slope after the peak
-#     B1_candidates = np.where(smooth_velo[ind_peak + 3 * dt :] > -pk_sns)[0]
-#     B1 = B1_candidates[0] + ind_peak + 3 * dt - 1 if B1_candidates.size > 0 else len(x) - 1
-
-#     # (2) Use second derivative zero-crossing after the peak
-#     accel_right = smooth_accel[ind_peak + 3 * dt :]
-#     B2_candidates = np.where(np.diff(np.sign(accel_right)))[0]
-#     B2 = B2_candidates[0] + ind_peak + 3 * dt if B2_candidates.size > 0 else len(x) - 1
-
-#     # Final right boundary = maximum (stricter of the two)
-#     B = max(B1, B2)
-#     return A, B
 
 
 def calculate_boundaries_acceleration(x, y, ind_peak, smoothing_params, pk_sns):
@@ -260,12 +218,11 @@ def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi,
 
     # --- SINGLE-GAUSSIAN ---
     if mode in {"single", "both"}:
+        # print("debug 1.1")
         result = _fit_single_gaussian(x_full, y_full, ind_peak, smoothing_params, pk_sns, gi, current_best_error=float("inf"))
+        # print("debug 1.2")
         if result is not None:
             best_x, best_fit_y, best_fit_params, best_fit_params_error, best_error = result
-            # print("Single Gaussian Best Fit x", best_x)
-            # plt.plot(x_full, y_full, c= 'k')
-            # plt.plot(best_x, best_fit_y, color='red')
             results.append({
                 "name": "single",
                 "x": best_x,
@@ -277,11 +234,12 @@ def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi,
                 "idx_interest": None})
 
     # --- ASYMMETRIC MODEL (always run) ---
+    
+    # print("debug 1.3")
     result = _fit_asymmetric_gaussian(x_full, y_full, ind_peak, smoothing_params, pk_sns, gi, current_best_error=float("inf"))
+    # print("debug 1.4")
     if result is not None:
         best_x, best_fit_y, best_fit_params, best_fit_params_error, best_error = result
-        # print("Asymmetric Best Fit x", best_x)
-        # plt.plot(best_x, best_fit_y, color='blue')
         results.append({
             "name": "asymmetric",
             "x": best_x,
@@ -291,14 +249,11 @@ def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi,
             "error": best_error,
             "multi_flag": False,
             "idx_interest": None})
-    # plt.xlim(4,15)
-    # plt.show()
-    # --- CHOOSE BEST FIT BY LOWEST ERROR ---
     if not results:
         raise RuntimeError(f"No valid fit found for peak at index {ind_peak}")
 
     best_result = min(results, key=lambda r: r["error"])
-
+    # print("debug 1.5")
     # --- Process best fit output ---
     best_x = best_result["x"]
     best_fit_y = best_result["y"]
@@ -307,7 +262,6 @@ def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi,
     best_idx_interest = best_result.get("idx_interest", None)
     multi_gauss_flag = best_result["multi_flag"]
     model_used = best_result["name"]
-
 
     # --- Extend fit + calculate area ---
     if multi_gauss_flag:
@@ -319,24 +273,24 @@ def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi,
         best_x = best_x[left_boundary - 1: right_boundary + 1]
         best_fit_y = best_fit_y[left_boundary - 1: right_boundary + 1]
         area_smooth, area_ensemble = peak_area_distribution(best_fit_params, best_fit_params_error, best_idx_interest, best_x, x_full, ind_peak, multi=True, smoothing_params=smoothing_params, pk_sns=pk_sns)
-
     else:
         amp, cen, wid = best_fit_params[:3]
-        # if model_used == "asymmetric":
-        #     tail_factor = 5  # asymmetric peaks may have longer tails
-        # else:
-        #     tail_factor = 3
         tail_factor = 3
         x_min, x_max = calculate_gaus_extension_limits(cen, wid, 0, factor=tail_factor)
-        # THESE X VALUES ARE FINE - ISSUE LIKELY IS IN L269-271 - IF MODEL IS ASSYMMETRIC
+        # print("debug 1.6")
         if model_used == "asymmetric":
             alpha = best_fit_params[3]
             best_x, best_fit_y = extrapolate_gaussian(best_x, amp, cen, wid, alpha, x_min, x_max, step=0.0001)
+            # print("debug 1.6.1")
         else:
             best_x, best_fit_y = extrapolate_gaussian(best_x, amp, cen, wid, None, x_min, x_max, step=0.0001)
+            # print("debug 1.6.2")
         new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
+        # print("debug 1.7")
         left_boundary, right_boundary = calculate_boundaries_acceleration(best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
+        # print("debug 1.8")
         area_smooth, area_ensemble = peak_area_distribution(best_fit_params, best_fit_params_error, best_idx_interest, best_x, x_full, ind_peak, multi=False, smoothing_params=smoothing_params, pk_sns=pk_sns)
+        # print("debug 1.9")
     return best_x, best_fit_y, area_smooth, area_ensemble, best_result
 
 
@@ -449,7 +403,51 @@ def _fit_asymmetric_gaussian(x_full, y_full, ind_peak, smoothing_params, pk_sns,
         pass
     return None
 
-def peak_area_distribution( params, params_uncertainty, ind, x, x_full, ind_peak, multi, smoothing_params, pk_sns, n_samples= 250):
+# def draw_positive_mvnorm(mu, cov, n_samples,max_decay = 15.0,  max_attempts = 100000):
+#     """
+#     Draws random fitting parameters from the covariance matrix while ensuring 
+#     a positive width value, which is needed for peak integration. Maximum
+#     decay value is 15 default. 
+
+#     """
+#     # out = []
+#     # mu = np.asarray(mu)
+#     # attempts = 0
+#     # while len(out) < n_samples and attempts < max_attempts:
+#     #     to_draw = n_samples - len(out)
+#     #     batch = np.random.multivariate_normal(mu, cov, size=to_draw)
+#     #     mask = batch[:,2] > 0
+#     #     out.extend(batch[mask].tolist())
+#     #     attempts += 1
+#     # if len(out) < n_samples:
+#     #     raise RuntimeError(f"Could only draw {len(out)} valid widths after {attempts} tries")
+#     # return np.array(out[:n_samples])
+def draw_positive_mvnorm(mu, cov, n_samples, max_attempts=10000):
+    """
+    Draw exactly n_samples from N(mu, cov) but only keep those with wid>0.
+    We no longer filter on decay here.
+    """
+    mu = np.asarray(mu)
+    out = []
+    attempts = 0
+
+    while len(out) < n_samples and attempts < max_attempts:
+        to_draw = n_samples - len(out)
+        batch = np.random.multivariate_normal(mu, cov, size=to_draw)
+        # only require width > 0 (batch[:,2])
+        mask = batch[:,2] > 0
+        out.extend(batch[mask].tolist())
+        attempts += 1
+
+    if len(out) < n_samples:
+        raise RuntimeError(
+            f"Could only draw {len(out)} valid samples after {attempts} attempts "
+            f"(needed {n_samples}).")
+
+    return np.array(out[:n_samples])
+
+
+def peak_area_distribution( params, params_uncertainty, ind, x, x_full, ind_peak, multi, smoothing_params, pk_sns, n_samples= 100):
     area_ensemble = []
     if multi:
         amp_i, cen_i, wid_i = params[ind * 3], params[ind * 3 + 1], params[ind * 3 + 2]
@@ -467,18 +465,84 @@ def peak_area_distribution( params, params_uncertainty, ind, x, x_full, ind_peak
             best_x = best_x[left_boundary - 1 : right_boundary + 1]
             best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
             area_ensemble.append(simpson(y=best_fit_y, x=best_x))
-        return np.mean(area_ensemble), area_ensemble
+        return np.median(area_ensemble), area_ensemble
     else:
-        samples = np.random.multivariate_normal(params, params_uncertainty, size=n_samples)
-        for i in range(0,n_samples):
-            x_min, x_max = calculate_gaus_extension_limits(samples[i,1], samples[i,2], samples[i,3], factor=3)
-            best_x, best_fit_y = extrapolate_gaussian(x, samples[i,0], samples[i,1], samples[i,2], samples[i,3], x_min, x_max, step=0.0001)
+        # samples = np.random.multivariate_normal(params, params_uncertainty, size=n_samples)
+        # print("debug 1.8.1")
+        # debug_param_distribution(params, params_uncertainty, n_draw=5000)
+        # print("debug 1.8.1.5")
+        samples = draw_positive_mvnorm(params, params_uncertainty,n_samples)
+        # print("debug 1.8.2")
+        x = 0
+        for i in range(0,n_samples): 
+            # print(f"1.8.2.{x}.a")
+            amp, cen, wid, decay = samples[i]
+            # print(f"1.8.2.{x}.b")
+            decay_eff = np.clip(decay, 0.0, 15.0)
+            wid   = max(abs(wid), 1e-6)
+            decay = max(decay, 1e-6)
+            # print(f"1.8.2.{x}.c")
+            x_min, x_max = calculate_gaus_extension_limits(cen, wid, decay_eff, factor=3)
+            # print(f"1.8.2.{x}.d")
+            best_x, best_fit_y = extrapolate_gaussian(x, amp, cen, wid, decay_eff, x_min, x_max, step=1e-4)
+            # x_min, x_max = calculate_gaus_extension_limits(cen, wid, decay, factor=3)
+            # best_x, best_fit_y = extrapolate_gaussian(x, samples[i,0], samples[i,1], samples[i,2], samples[i,3], x_min, x_max, step=0.0001)
             new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
+            # print(f"1.8.2.{x}.e")
             left_boundary, right_boundary = calculate_boundaries(best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
+            # print(f"1.8.2.{x}.f")
             best_x = best_x[left_boundary - 1 : right_boundary + 1]
+            # print(f"1.8.2.{x}.g")
             best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
+            # print(f"1.8.2.{x}.h")
             area_ensemble.append(simpson(y=best_fit_y, x=best_x))
-        return np.mean(area_ensemble), area_ensemble
+            # print(f"1.8.2.{x}.i")
+            x=+1
+        return np.median(area_ensemble), area_ensemble
+    
+def debug_param_distribution(mu, cov, n_draw=5000):
+    """
+    Sample from N(mu, cov) and plot:
+      1) joint scatter of (wid, decay)
+      2) histogram of wid
+      3) histogram of decay
+    """
+    mu = np.asarray(mu)
+    cov = np.asarray(cov)
+    
+    # draw a big batch
+    batch = np.random.multivariate_normal(mu, cov, size=n_draw)
+    wid   = batch[:,2]
+    decay = batch[:,3]
+    
+    # print("Mean wid, decay:", mu[2], mu[3])
+    # print("Std  wid, decay:", np.sqrt(cov[2,2]), np.sqrt(cov[3,3]))
+    # print("   Sampled wid min/max:", wid.min(), wid.max())
+    # print(" Sampled decay min/max:", decay.min(), decay.max())
+    
+    # 1) Joint scatter
+    plt.figure()
+    plt.scatter(wid, decay, alpha=0.2)
+    plt.axvline(0)
+    plt.axhline(0)
+    plt.xlabel("wid")
+    plt.ylabel("decay")
+    plt.title("Joint draw of (wid, decay)")
+    plt.show()
+    
+    # 2) wid histogram
+    plt.figure()
+    plt.hist(wid, bins=50)
+    plt.xlabel("wid")
+    plt.title("Histogram of wid")
+    plt.show()
+    
+    # 3) decay histogram
+    plt.figure()
+    plt.hist(decay, bins=50)
+    plt.xlabel("decay")
+    plt.title("Histogram of decay")
+    plt.show()
     
 def individual_gaussian( x, amp, cen, wid):
     return amp * np.exp(-((x - cen) ** 2) / (2 * wid**2))
@@ -599,8 +663,8 @@ class FIDAnalyzer:
     
 def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_neighborhood, fp, gaussian_fit_mode):
     # Setup data
-    xdata = data['Samples'][key]['Raw Data'][data['Integration Metadata']['time_column']]
-    ydata = data['Samples'][key]['Raw Data'][data['Integration Metadata']['signal_column']]
+    xdata = pd.Series(data['Samples'][key]['Raw Data'][data['Integration Metadata']['time_column']])
+    ydata = pd.Series(data['Samples'][key]['Raw Data'][data['Integration Metadata']['signal_column']])
     
     # Subset to reference sample
     # --- Subset to global x-limits based on reference sample ---
@@ -686,11 +750,15 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
             # plt.axhline(0, c = 'k')
             
             # Assign data to output
-            data['Samples'][key]['Processed Data'][label] = {}
-            data['Samples'][key]['Processed Data'][label]['Values'] = list(area_ensemble)
-            data['Samples'][key]['Processed Data'][label]['Model Parameters'] = model_parameters
+            data['Samples'][key]['Processed Data'][label] = {
+                 'Peak Area - median': np.median(area_ensemble),
+                 'Peak Area - mean': np.mean(area_ensemble),
+                 'Peak Area - standard deviation': np.std(area_ensemble, ddof=1),
+                 'Peak Area - number of ensemble members': len(area_ensemble),
+                 'Model Parameters': model_parameters,
+                 'Retention Time': float(x_peak_label)}
         except Exception as e:
-            tqdm.write(f"[Warning] Failed to fit {label} in {key}: {e}")
+            # tqdm.write(f"[Warning] Failed to fit {label} in {key}: {e}")
             data['Samples'][key]['Processed Data'][label] = [np.nan]
         
     

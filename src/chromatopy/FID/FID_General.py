@@ -4,8 +4,8 @@ from scipy.signal import find_peaks
 import hdbscan
 from tqdm import tqdm
 
-from FID_Integration_functions import *
-from FID_integration import *
+from .FID_Integration_functions import *
+from .import_data import import_data
 
 import os
 import shutil
@@ -119,42 +119,56 @@ def cluster_figures(data):
         plt.xlabel("Time (min)")
         plt.ylabel(f"Value (pA)\n{cl}")
         plt.show()
+        
+def get_cluster_labels(data):
+    cluster_labels = set()
+    for key in data['Samples'].keys():
+        cluster_labels.add(data['Samples'][key]['cluster'])
+    return cluster_labels
 
-def plot_chromatogram(data, figure_directory,time_window=None):
+def plot_chromatogram(time_window=None):
     """
-    Function for plotting chromatograms of FID data. Function requires
-    dictionary structure of FID produced by import_function(),
+    Plot and save chromatograms of all FID samples.
 
     Parameters
     ----------
-    data : Dictionary
-        Nested dictionary produced by import_data() that conatins FID data.
-    figure_directory : String
-        Fodler location to save chromatograms.
-    time_window : List, optional
-        2 component list contaitning the minimum (first) and maximum (last)
-        time value (units match input data) for the chromatograms.
-        The default is None.
-
-    Returns
-    -------
-    None.
-
+    time_window : list of two floats, optional
+        [xmin, xmax] time limits (in same units as input) to restrict the plot.
+        If None, the full trace is plotted.
     """
-    for key in data['Samples'].keys():
-        df = pd.DataFrame(columns=['x','y'])
-        df['x'] = data['Samples'][key]['Raw Data']['Time (min)'] 
-        df['y'] = data['Samples'][key]['Raw Data']['Value (pA)']
-        
-        if time_window:
-            df = df.loc[(df.x>time_window[0])&(df.x<time_window[1])]
-        fig = plt.figure()
-        plt.plot(df.x, df.y, c='k')
-        plt.xlabel("Time (min)")
-        plt.ylabel("Signal (pA)")
-        plt.savefig(str(figure_directory)+'/'+key+'.png', dpi=300)
-        plt.close()
+    # 1) load data & get the raw folder path
+    result = import_data()
+    data = result['data_dict']
+    time_column = result["time_column"]
+    signal_column = result["signal_column"]
+    folder_path = result["folder_path"]
+    output_path = result["output_path"]
+    figures_path = result["figures_path"]
+    
+    # 2) make (or reuse) the output folder
+    chromatograms_dir = os.path.join(folder_path, "chromatograms")
+    os.makedirs(chromatograms_dir, exist_ok=True)
 
+    # 3) loop and save each sample’s trace
+    for key, sample in data['Samples'].items():
+        df = pd.DataFrame({
+            'x': sample['Raw Data'][time_column],
+            'y': sample['Raw Data'][signal_column]
+        })
+        if time_window is not None:
+            xmin, xmax = time_window
+            df = df.loc[(df.x >= xmin) & (df.x <= xmax)]
+
+        plt.figure()
+        plt.plot(df.x, df.y, color='k')
+        plt.xlabel(time_column)
+        plt.ylabel(signal_column)
+
+        out_file = os.path.join(chromatograms_dir, f"{key}.png")
+        plt.savefig(out_file, dpi=300)
+        plt.close()
+    return data, chromatograms_dir, output_path, folder_path
+        
 def plot_chromatogram_cluster(data, time_window=[4,30]):
     """
     Function for plotting the categorized chromatograms.

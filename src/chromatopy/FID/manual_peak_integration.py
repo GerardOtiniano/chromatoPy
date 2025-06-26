@@ -27,13 +27,15 @@ from PyQt5.QtWidgets import (
     QMessageBox)
 
 # ─── Peak Integration ─────────────────────────────────────────────────────────
-from FID_Integration_functions import run_peak_integrator, smoother, baseline, find_valleys, find_peak_neighborhood_boundaries, fit_gaussians
+from .FID_Integration_functions import run_peak_integrator, smoother, baseline, find_valleys, find_peak_neighborhood_boundaries, fit_gaussians
     
 def run_peak_integrator_manual(data, key, gi, pk_sns, smoothing_params, max_peaks_for_neighborhood, fp, gaussian_fit_mode):
     # Setup data
     md = data['Integration Metadata']
-    x = data['Samples'][key]['Raw Data'][md['time_column']]
-    y = data['Samples'][key]['Raw Data'][md['signal_column']]
+    x = pd.Series(data['Samples'][key]['Raw Data'][md['time_column']])
+    x = x.fillna(0)
+    y = pd.Series(data['Samples'][key]['Raw Data'][md['signal_column']])
+    y = y.fillna(0)
     # Subset to x limits: either deduce from a dict of times, or fall back to explicit x-limits
     pdict = md['peak dictionary']
     if isinstance(pdict, dict):
@@ -95,7 +97,7 @@ class ManualPeakIntegrator:
                  pk_sns,
                  gi,
                  gaussian_fit_mode):
-        self.x, self.y = x, y
+        self.x, self.y = pd.Series(x), pd.Series(y)
         self.valleys = valleys
         self.peaks = np.asarray(peaks)
         self.peak_properties = peak_properties
@@ -177,16 +179,22 @@ class ManualPeakIntegrator:
                      pk_sns=self.pk_sns)
              else:
                  neigh = [peak_idx]
+             # print("debug 1")   
              x_fit, y_fit, _, area_ensemble, model_params = fit_gaussians(
                  self.x, self.y, peak_idx, neigh,
                  self.smoothing_params, self.pk_sns,
                  gi=self.gi,
                  mode=self.gaussian_fit_mode)
+             # print("debug 2")
              poly = self.ax.fill_between(x_fit, 0, y_fit, color='red', alpha=0.4)
              drawn.append(poly)
              self.processed_data[self.labels[self.index]] = {
-                 'Area Ensemble': list(area_ensemble),
-                 'Model Parameters': model_params}
+                 'Peak Area - median': np.median(area_ensemble),
+                 'Peak Area - mean': np.mean(area_ensemble),
+                 'Peak Area - standard deviation': np.std(area_ensemble, ddof=1),
+                 'Peak Area - number of ensemble members': len(area_ensemble),
+                 'Model Parameters': model_params,
+                 'Retention Time': float(click_time)}
     
          except Exception as e:
              tqdm.write(f"[Manual Warning] Failed to fit {self.labels[self.index]}: {e}")
