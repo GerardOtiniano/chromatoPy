@@ -1,4 +1,7 @@
 # src/chromatopy/utils/folder_handling.py
+import os 
+import json 
+
 def get_gdgt(gdgt_oi):
     """
     Retrieves metadata for GDGT (Glycerol Dialkyl Glycerol Tetraethers) types based on user selection.
@@ -136,3 +139,59 @@ def get_gdgt_input():
         except ValueError as ve:
             # Print the error message and prompt the user again
             print(ve)
+            
+# def load_gdgt_metadata_from_config(path="chromatopy_gdgt_config.json"):
+#     """
+#     Loads GDGT metadata from the saved configuration file and transforms it into
+#     the expected structure used during HPLC integration.
+
+#     Parameters
+#     ----------
+#     path : str
+#         Path to the GDGT configuration JSON file.
+
+#     Returns
+#     -------
+#     dict
+#         A dictionary with keys: "names", "GDGT_dict", "Trace", and "window",
+#         matching the structure returned by get_gdgt().
+#     """
+#     if not os.path.exists(path):
+#         raise FileNotFoundError(f"GDGT configuration file not found at: {path}")
+
+#     with open(path, "r") as f:
+#         config = json.load(f)
+
+#     names = []
+#     gdgt_dicts = []
+#     traces = []
+#     windows = []
+
+#     for group_name, group_data in config.items():
+#         if not group_data.get("checked", True):
+#             continue  # Skip if unchecked
+
+#         names.append([group_name])
+#         gdgt_dicts.append(group_data["traces"])
+
+#         # Extract trace IDs from keys of trace dictionary
+#         trace_ids = list(group_data["traces"].keys())
+#         traces.append(trace_ids)
+
+#         # Retention time window
+#         window = group_data.get("window", [0, 0])
+#         windows.append(window)
+
+#     return {
+#         "names": names,
+#         "GDGT_dict": gdgt_dicts,
+#         "Trace": traces,
+#         "window": windows,
+#     }
+from ..config.GDGT_configuration import load_gdgt_window_data
+
+def load_gdgt_metadata_from_config():
+    """
+    Loads GDGT metadata using the same method as the GUI.
+    """
+    return load_gdgt_window_data()

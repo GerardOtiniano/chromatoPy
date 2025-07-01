@@ -45,6 +45,6 @@ def smoothing_check(smoothing_window, smoothing_factor):
         if smoothing_window <= smoothing_factor:
             print("The smoothing window must still be at least 1 higher than the smoothing factor. Please try again.")
     
-    print(f"\nValidated Inputs:\nSmoothing Window: {smoothing_window}\nSmoothing Factor: {smoothing_factor}")
+    # print(f"\nValidated Inputs:\nSmoothing Window: {smoothing_window}\nSmoothing Factor: {smoothing_factor}")
     return {"sw": smoothing_window, 
             "sf": smoothing_factor}

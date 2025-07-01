@@ -38,8 +38,8 @@ class GDGTAnalyzer:
         self.pk_sns = pk_sns
         self.pk_pr = pk_pr
         self.t_pressed = False # Flag to track if 't' was pressed
-        self.called = False
         self.max_peak_amp = max_PA
+        self.closed_by_user = False
 
     def run(self):
         """
@@ -50,13 +50,23 @@ class GDGTAnalyzer:
             reference_peaks (dict): Updated reference peaks.
             t_pressed (bool): Indicates if 't' was pressed to update reference peaks.
         """
+        self.programmatic_close = False
         self.fig, self.axs = self.plot_data()
         self.current_ax_idx = 0  # Initialize current axis index
+        self.closed_by_user = False
+        
+        def on_close(event):
+            if not self.programmatic_close:
+                self.closed_by_user = True
+        self.fig.canvas.mpl_connect('close_event', on_close)
+        
         if self.is_reference:
             # Reference samples handling
             self.fig.canvas.mpl_connect("button_press_event", self.on_click)
             self.fig.canvas.mpl_connect("key_press_event", self.on_key)  # Connect general key events
             plt.show(block=True)  # Blocks script until plot window is closed
+            if self.closed_by_user:
+                return None, None, None, None
             if not self.reference_peaks:
                 self.reference_peaks = self.peak_results
             else:
@@ -67,6 +77,8 @@ class GDGTAnalyzer:
             self.fig.canvas.mpl_connect("key_press_event", self.on_key)
             self.fig.canvas.mpl_connect("button_press_event", self.on_click)
             plt.show(block=True)  # Blocks script until plot window is closed
+            if self.closed_by_user:
+                return None, None, None, None
         return self.peak_results, self.fig, self.reference_peaks, self.t_pressed
 
     ######################################################
@@ -903,6 +915,7 @@ class GDGTAnalyzer:
 
         # Set the current x-limits based on the current window_bounds
         ax.set_xlim(self.window_bounds)
+        ax.set_ylabel(f"m/z: {trace}")
 
         # Adjust y-limits based on data within the current window
         within_xlim = (x_values >= self.window_bounds[0]) & (x_values <= self.window_bounds[1])
@@ -1153,10 +1166,14 @@ class GDGTAnalyzer:
         - "r": Clears the peaks in the currently highlighted subplot by calling `clear_peaks_subplot()` and removes corresponding entries from `self.integrated_peaks` and `self.peak_results`.
         - After clearing or navigating, the plot is redrawn using `plt.draw()` to reflect changes.
         """
+        # if event.key == "enter":
+        #     self.collect_peak_data()
+        #     self.waiting_for_input = False
+        #     plt.close(self.fig)  # Close the figure to resume script execution
         if event.key == "enter":
             self.collect_peak_data()
-            self.waiting_for_input = False
-            plt.close(self.fig)  # Close the figure to resume script execution
+            self.programmatic_close = True
+            plt.close(self.fig)
         elif event.key == "d":
             self.undo_last_action()
         elif event.key in ["up", "down"]:
@@ -1179,11 +1196,11 @@ class GDGTAnalyzer:
                 self.peak_results[trace_to_clear]["areas"] = []
             plt.draw()
         elif event.key == "t":
-            print(f"All peaks removed from {self.sample_name}. Reference peaks will be updated.")
+            # print(f"All peaks removed from {self.sample_name}. Reference peaks will be updated.")
             self.clear_all_peaks()
             self.t_pressed = True
         elif event.key == "w":
-            print("A new view!")
+            # print("A new view!")
             self.add_window_controls()
 
     def undo_last_action(self):
