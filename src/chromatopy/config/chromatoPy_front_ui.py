@@ -1,7 +1,7 @@
 import os
 import toga
 from toga.style import Pack
-from ..hplc_integration import hplc_integration
+from . .hplc_integration import hplc_integration
 from .GDGT_configuration import open_gdgt_selector
 from .Integration_Settings import open_settings, load_integration_settings
 

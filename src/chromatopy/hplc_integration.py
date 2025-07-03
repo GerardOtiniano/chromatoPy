@@ -4,9 +4,9 @@ from .utils.messages import *
 from .utils.handle_window_params import *
 from .utils.import_data import *
 from .utils.time_normalization import *
-from .chromatoPy_base import *
 from .utils.errors.smoothing_check import *
 from .config.GDGT_configuration import load_gdgt_window_data
+from .chromatopy_base import *
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -39,7 +39,7 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
     smooth           = smoothing_check(smoothing_window, smoothing_factor)
     smoothing_window = smooth['sw']
     smoothing_factor = smooth["sf"]
-    
+
     # Handle folder-related operations
     folder_info       = folder_handling(folder_path)
     folder_path       = folder_info["folder_path"]
@@ -52,16 +52,16 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
     gdgt_meta_set     = folder_info["gdgt_meta_set"]
     default_windows   = folder_info["default_windows"]
     gdgt_groups       = folder_info['names']
-    
+
     # Handle window operations
     window_info = load_gdgt_window_data()
     windows     = window_info["window"]
     GDGT_dict   = window_info["GDGT_dict"]
     trace_ids_nested   = window_info["Trace"]
     trace_ids = [tid for group in trace_ids_nested for tid in group]
-    
+
     # Handle data input
-    data_info  = import_data(results_file_path, folder_path, csv_files, trace_ids) 
+    data_info  = import_data(results_file_path, folder_path, csv_files, trace_ids)
     data       = data_info["data"]
     reference  = data_info["reference"]
     results_df = data_info["results_df"]
@@ -70,7 +70,7 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
     time_norm = time_normalization(data)
     data      = time_norm["data"]
     iref      = time_norm["iref"]
-       
+
     # Process samples
     for df in data:
         sample_name = df["Sample Name"].iloc[0]
@@ -88,13 +88,13 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
             refpkhld = ref_pk
         for trace_set, trace_label, window, GDGT_dict_single, gdgt_group in zip(trace_sets, trace_labels, windows, GDGT_dict, gdgt_groups):
             analyzer = GDGTAnalyzer(
-                df, trace_set, window, GDGT_dict_single, gaus_iterations, sample_name, is_reference=iref, 
+                df, trace_set, window, GDGT_dict_single, gaus_iterations, sample_name, is_reference=iref,
                 max_peaks=peak_neighborhood_n, sw=smoothing_window, sf=smoothing_factor, max_PA = None,
                 pk_sns=peak_boundary_derivative_sensitivity, pk_pr=peak_prominence, reference_peaks=refpkhld)
             peaks, fig, ref_pk_new, t_pressed = analyzer.run()
             if peaks is None and analyzer.closed_by_user:
                 print(f"Integration aborted by user at sample: {sample_name}")
-                return 
+                return
             if iref:
                 ref_pk.update(ref_pk_new)
             elif t_pressed:
@@ -109,7 +109,7 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
                     sample[gdgt_group[0]][gdgt] = peaks[gdgt]
                 else:
                     peak_data[gdgt] = 0  # Use NaN if the GDGT is missing
-                    sample[gdgt_group[0]][gdgt] = 0      
+                    sample[gdgt_group[0]][gdgt] = 0
             fig_path = os.path.join(figures_folder, f"{sample_name}_{trace_label}.png")
             fig.savefig(fig_path)
             plt.close(fig)
@@ -121,7 +121,7 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
         new_entry = pd.DataFrame([peak_data])
         results_df = pd.concat([results_df, new_entry], ignore_index=True)
         results_df.to_csv(results_file_path, index=False)
-        
+
         if not iref:
             refpkhld = ref_pk
         iref = False

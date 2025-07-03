@@ -3,11 +3,9 @@
 
 a = Analysis(
     ['src/chromatopy/__main__.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=[],
-    datas=[
-    ('src/chromatopy/config/integration_settings.json', 'src/chromatopy/config'),
-    ('src/chromatopy/config/chromatopy_gdgt_config.json', 'src/chromatopy/config'),],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -34,6 +32,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['/Users/gerard/Documents/GitHub/chromatoPy/chromatopy_icon.icns'],
 )
 coll = COLLECT(
     exe,
@@ -47,6 +46,6 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='chromatopy.app',
-    icon=None,
+    icon='/Users/gerard/Documents/GitHub/chromatoPy/chromatopy_icon.icns',
     bundle_identifier=None,
 )

@@ -5,15 +5,13 @@ description = "Peak integration software."
 authors = ["Dr. Gerard Otiniano <gerardotiniano@gmail.com>", "Dr. Elizabeth Thomas"]
 readme = "README.md"
 packages = [{include = "chromatopy", from = "src"}]
-
-[tool.poetry.include]
-"chromatopy/config/*.json" = "chromatopy/config"
+include = ["src/chromatopy/config/chromatopy_gdgt_config.json"]
 
 [tool.poetry.scripts]
 chromatopy = "chromatopy.__main__:main"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"      # ← upper-bound fixes pythonnet conflict
+python = ">=3.10,<3.13"
 numpy           = "^2"
 pandas          = "^2.2.3"
 scipy           = "^1.15.3"
@@ -21,37 +19,9 @@ scikit-learn    = "^1.6.1"
 matplotlib      = "^3.10.0"
 pybaselines     = "^1.2"
 tqdm            = "^4.66"
-toga            = "0.5.1"            # keep the umbrella pkg; marker issue is solved by narrowing python
+toga            = "0.5.1"
 rainbow-api     = "1.0.9"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-
-[tool.briefcase]
-project_name = "ChromatoPy"
-bundle    = "edu.buffalo"          # ← your reverse-DNS identifier
-version   = "1.0.0"                # same as Poetry or higher
-url       = "https://github.com/yourname/chromatopy"
-license = { file = "LICENSE" }
-description = "Chromatographic peak integration GUI"
-
-[tool.briefcase.app.chromatopy]
-pip_options = ["--no-index", "--find-links=../wheels"]
-resources = ["src/chromatopy/config/chromatopy_gdgt_config.json"]
-formal_name = "ChromatoPy"
-sources     = ["src/chromatopy"]
-entry_point = "chromatopy.__main__:main"
-requires = [
-  "toga",
-  "std-nslog",      # Recommended for debugging
-  "numpy",
-  "pandas",
-  "scipy",
-  "scikit-learn",
-  "matplotlib",
-  "pybaselines",
-  "tqdm",
-  "rainbow-api"     # Add this back if your app uses it
-]
