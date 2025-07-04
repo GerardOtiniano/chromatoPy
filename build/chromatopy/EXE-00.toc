@@ -62,7 +62,7 @@
  [],
  False,
  False,
- 1751505995,
+ 1751513202,
  [('runw',
    '/Users/gerard/anaconda3/envs/chroma-py311/lib/python3.11/site-packages/PyInstaller/bootloader/Darwin-64bit/runw',
    'EXECUTABLE')],

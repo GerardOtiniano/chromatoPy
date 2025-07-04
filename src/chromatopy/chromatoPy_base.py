@@ -663,9 +663,7 @@ class GDGTAnalyzer:
                 "idx_interest": None})
         if not results:
             raise RuntimeError(f"No valid fit found for peak at index {ind_peak}")
-
         best_result = min(results, key=lambda r: r["error"])
-        # --- Process best fit output ---
         best_x = best_result["x"]
         best_fit_y = best_result["y"]
         best_fit_params = best_result["params"]
@@ -673,8 +671,6 @@ class GDGTAnalyzer:
         best_idx_interest = best_result.get("idx_interest", None)
         multi_gauss_flag = best_result["multi_flag"]
         model_used = best_result["name"]
-
-        # --- Extend fit + calculate area ---
         if multi_gauss_flag:
             amp, cen, wid = best_fit_params[best_idx_interest * 3: best_idx_interest * 3 + 3]
             best_fit_y = self.individual_gaussian(best_x, amp, cen, wid)
@@ -764,7 +760,7 @@ class GDGTAnalyzer:
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    popt, pcov = curve_fit(gaussian_decay, x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi * 1000)
+                    popt, pcov = curve_fit(self.gaussian_decay, x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi * 1000)
                 fitted_y = self.gaussian_decay(x, *popt)
                 error = np.sqrt(np.mean((fitted_y - y) ** 2))
                 if error < current_best_error:

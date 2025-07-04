@@ -21,7 +21,7 @@ imports:
     <a href="#_collections_abc">_collections_abc</a>
  &#8226;   <a href="#_weakrefset">_weakrefset</a>
  &#8226;   <a href="#abc">abc</a>
- &#8226;   <a href="#chromatopy.config.chromatoPy_front_ui">chromatopy.config.chromatoPy_front_ui</a>
+ &#8226;   <a href="#chromatopy.chromatoPy_front_ui">chromatopy.chromatoPy_front_ui</a>
  &#8226;   <a href="#codecs">codecs</a>
  &#8226;   <a href="#collections">collections</a>
  &#8226;   <a href="#collections.abc">collections.abc</a>
@@ -640,7 +640,7 @@ imported by:
   <a target="code" href="" type="text/plain"><tt>'org.python'</tt></a>
 <span class="moduletype">MissingModule</span>  <div class="import">
 imported by:
-    <a href="#copy">copy</a>
+    <a href="#pickle">pickle</a>
  &#8226;   <a href="#xml.sax">xml.sax</a>
 
   </div>
@@ -6692,10 +6692,33 @@ imported by:
   <a target="code" href="/Users/gerard/Documents/GitHub/chromatoPy/src/chromatopy/__init__.py" type="text/plain"><tt>chromatopy</tt></a>
 <span class="moduletype">Package</span>  <div class="import">
 imported by:
-    <a href="#chromatopy.chromatopy_base">chromatopy.chromatopy_base</a>
+    <a href="#chromatopy.chromatoPy_front_ui">chromatopy.chromatoPy_front_ui</a>
+ &#8226;   <a href="#chromatopy.chromatopy_base">chromatopy.chromatopy_base</a>
  &#8226;   <a href="#chromatopy.config">chromatopy.config</a>
  &#8226;   <a href="#chromatopy.hplc_integration">chromatopy.hplc_integration</a>
  &#8226;   <a href="#chromatopy.utils">chromatopy.utils</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="chromatopy.chromatoPy_front_ui"></a>
+  <a target="code" href="/Users/gerard/Documents/GitHub/chromatoPy/src/chromatopy/chromatoPy_front_ui.py" type="text/plain"><tt>chromatopy.chromatoPy_front_ui</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#chromatopy">chromatopy</a>
+ &#8226;   <a href="#chromatopy.config.GDGT_configuration">chromatopy.config.GDGT_configuration</a>
+ &#8226;   <a href="#chromatopy.config.Integration_Settings">chromatopy.config.Integration_Settings</a>
+ &#8226;   <a href="#chromatopy.hplc_integration">chromatopy.hplc_integration</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#toga">toga</a>
+ &#8226;   <a href="#toga.style">toga.style</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#__main__.py">__main__.py</a>
 
   </div>
 
@@ -6739,7 +6762,6 @@ imports:
 imported by:
     <a href="#chromatopy.config.GDGT_configuration">chromatopy.config.GDGT_configuration</a>
  &#8226;   <a href="#chromatopy.config.Integration_Settings">chromatopy.config.Integration_Settings</a>
- &#8226;   <a href="#chromatopy.config.chromatoPy_front_ui">chromatopy.config.chromatoPy_front_ui</a>
 
   </div>
 
@@ -6762,7 +6784,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#chromatopy.config.chromatoPy_front_ui">chromatopy.config.chromatoPy_front_ui</a>
+    <a href="#chromatopy.chromatoPy_front_ui">chromatopy.chromatoPy_front_ui</a>
  &#8226;   <a href="#chromatopy.hplc_integration">chromatopy.hplc_integration</a>
  &#8226;   <a href="#chromatopy.utils.GDGT_compounds">chromatopy.utils.GDGT_compounds</a>
 
@@ -6787,29 +6809,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#chromatopy.config.chromatoPy_front_ui">chromatopy.config.chromatoPy_front_ui</a>
-
-  </div>
-
-</div>
-
-<div class="node">
-  <a name="chromatopy.config.chromatoPy_front_ui"></a>
-  <a target="code" href="/Users/gerard/Documents/GitHub/chromatoPy/src/chromatopy/config/chromatoPy_front_ui.py" type="text/plain"><tt>chromatopy.config.chromatoPy_front_ui</tt></a>
-<span class="moduletype">SourceModule</span>  <div class="import">
-imports:
-    <a href="#chromatopy.config">chromatopy.config</a>
- &#8226;   <a href="#chromatopy.config.GDGT_configuration">chromatopy.config.GDGT_configuration</a>
- &#8226;   <a href="#chromatopy.config.Integration_Settings">chromatopy.config.Integration_Settings</a>
- &#8226;   <a href="#chromatopy.hplc_integration">chromatopy.hplc_integration</a>
- &#8226;   <a href="#os">os</a>
- &#8226;   <a href="#toga">toga</a>
- &#8226;   <a href="#toga.style">toga.style</a>
-
-  </div>
-  <div class="import">
-imported by:
-    <a href="#__main__.py">__main__.py</a>
+    <a href="#chromatopy.chromatoPy_front_ui">chromatopy.chromatoPy_front_ui</a>
 
   </div>
 
@@ -6839,7 +6839,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#chromatopy.config.chromatoPy_front_ui">chromatopy.config.chromatoPy_front_ui</a>
+    <a href="#chromatopy.chromatoPy_front_ui">chromatopy.chromatoPy_front_ui</a>
 
   </div>
 
@@ -8279,8 +8279,8 @@ imported by:
   <a target="code" href="/Users/gerard/anaconda3/envs/chroma-py311/lib/python3.11/copy.py" type="text/plain"><tt>copy</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
-    <a href="#'org.python'">'org.python'</a>
- &#8226;   <a href="#copyreg">copyreg</a>
+    <a href="#copyreg">copyreg</a>
+ &#8226;   <a href="#org">org</a>
  &#8226;   <a href="#types">types</a>
  &#8226;   <a href="#weakref">weakref</a>
 
@@ -19601,7 +19601,6 @@ imports:
  &#8226;   <a href="#importlib">importlib</a>
  &#8226;   <a href="#importlib._bootstrap">importlib._bootstrap</a>
  &#8226;   <a href="#importlib._bootstrap_external">importlib._bootstrap_external</a>
- &#8226;   <a href="#importlib.machinery">importlib.machinery</a>
  &#8226;   <a href="#sys">sys</a>
  &#8226;   <a href="#warnings">warnings</a>
 
@@ -19769,7 +19768,6 @@ imports:
   <div class="import">
 imported by:
     <a href="#ctypes.util">ctypes.util</a>
- &#8226;   <a href="#importlib">importlib</a>
  &#8226;   <a href="#importlib.abc">importlib.abc</a>
  &#8226;   <a href="#inspect">inspect</a>
  &#8226;   <a href="#packaging.tags">packaging.tags</a>
@@ -35395,7 +35393,7 @@ imported by:
   <a target="code" href="" type="text/plain"><tt>org</tt></a>
 <span class="moduletype">MissingModule</span>  <div class="import">
 imported by:
-    <a href="#pickle">pickle</a>
+    <a href="#copy">copy</a>
 
   </div>
 
@@ -35466,9 +35464,9 @@ imported by:
  &#8226;   <a href="#bz2">bz2</a>
  &#8226;   <a href="#cgi">cgi</a>
  &#8226;   <a href="#charset_normalizer.api">charset_normalizer.api</a>
+ &#8226;   <a href="#chromatopy.chromatoPy_front_ui">chromatopy.chromatoPy_front_ui</a>
  &#8226;   <a href="#chromatopy.config.GDGT_configuration">chromatopy.config.GDGT_configuration</a>
  &#8226;   <a href="#chromatopy.config.Integration_Settings">chromatopy.config.Integration_Settings</a>
- &#8226;   <a href="#chromatopy.config.chromatoPy_front_ui">chromatopy.config.chromatoPy_front_ui</a>
  &#8226;   <a href="#chromatopy.hplc_integration">chromatopy.hplc_integration</a>
  &#8226;   <a href="#chromatopy.utils.GDGT_compounds">chromatopy.utils.GDGT_compounds</a>
  &#8226;   <a href="#chromatopy.utils.folder_handling">chromatopy.utils.folder_handling</a>
@@ -49291,14 +49289,14 @@ imported by:
   <a target="code" href="/Users/gerard/anaconda3/envs/chroma-py311/lib/python3.11/pickle.py" type="text/plain"><tt>pickle</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
-    <a href="#_compat_pickle">_compat_pickle</a>
+    <a href="#'org.python'">'org.python'</a>
+ &#8226;   <a href="#_compat_pickle">_compat_pickle</a>
  &#8226;   <a href="#_pickle">_pickle</a>
  &#8226;   <a href="#codecs">codecs</a>
  &#8226;   <a href="#copyreg">copyreg</a>
  &#8226;   <a href="#functools">functools</a>
  &#8226;   <a href="#io">io</a>
  &#8226;   <a href="#itertools">itertools</a>
- &#8226;   <a href="#org">org</a>
  &#8226;   <a href="#pprint">pprint</a>
  &#8226;   <a href="#re">re</a>
  &#8226;   <a href="#struct">struct</a>
@@ -72231,9 +72229,9 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#chromatopy.config.GDGT_configuration">chromatopy.config.GDGT_configuration</a>
+    <a href="#chromatopy.chromatoPy_front_ui">chromatopy.chromatoPy_front_ui</a>
+ &#8226;   <a href="#chromatopy.config.GDGT_configuration">chromatopy.config.GDGT_configuration</a>
  &#8226;   <a href="#chromatopy.config.Integration_Settings">chromatopy.config.Integration_Settings</a>
- &#8226;   <a href="#chromatopy.config.chromatoPy_front_ui">chromatopy.config.chromatoPy_front_ui</a>
  &#8226;   <a href="#toga">toga</a>
  &#8226;   <a href="#toga.app">toga.app</a>
  &#8226;   <a href="#toga.colors">toga.colors</a>
@@ -73075,9 +73073,9 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#chromatopy.config.GDGT_configuration">chromatopy.config.GDGT_configuration</a>
+    <a href="#chromatopy.chromatoPy_front_ui">chromatopy.chromatoPy_front_ui</a>
+ &#8226;   <a href="#chromatopy.config.GDGT_configuration">chromatopy.config.GDGT_configuration</a>
  &#8226;   <a href="#chromatopy.config.Integration_Settings">chromatopy.config.Integration_Settings</a>
- &#8226;   <a href="#chromatopy.config.chromatoPy_front_ui">chromatopy.config.chromatoPy_front_ui</a>
  &#8226;   <a href="#toga">toga</a>
  &#8226;   <a href="#toga.style.applicator">toga.style.applicator</a>
  &#8226;   <a href="#toga.style.mixin">toga.style.mixin</a>

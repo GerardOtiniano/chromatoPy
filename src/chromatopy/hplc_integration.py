@@ -94,7 +94,7 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
             peaks, fig, ref_pk_new, t_pressed = analyzer.run()
             if peaks is None and analyzer.closed_by_user:
                 print(f"Integration aborted by user at sample: {sample_name}")
-                return
+                return "aborted"
             if iref:
                 ref_pk.update(ref_pk_new)
             elif t_pressed:

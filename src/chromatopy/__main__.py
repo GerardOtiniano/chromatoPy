@@ -1,4 +1,4 @@
-from chromatopy.config.chromatoPy_front_ui import ChromatoPyApp
+from chromatopy.chromatoPy_front_ui import ChromatoPyApp
 
 def main() -> None:
     app = ChromatoPyApp("ChromatoPy", "com.GerardOtiniano.chromatopy")
