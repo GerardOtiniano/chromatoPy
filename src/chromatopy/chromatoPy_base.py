@@ -1297,14 +1297,10 @@ class GDGTAnalyzer:
 
         # Get the correct GDGT dictionary
         gdgt_dict = self.GDGT_dict
-
         for trace_key, compounds in gdgt_dict.items():
             # Find matching peaks in self.integrated_peaks
             matching_peaks = [peak_data for key, peak_data in self.integrated_peaks.items() if peak_data["trace"] == trace_key]
-            # Sort peaks by retention time
-            # print(matching_peaks)
             matching_peaks.sort(key=lambda peak: peak["rt"])
-
             if isinstance(compounds, list):  # If the key maps to multiple compounds
                 if len(matching_peaks) < len(compounds):
                     print(f"Warning: Fewer peaks found than expected for trace {trace_key}")
