@@ -13,30 +13,7 @@ chromatoPy is an open-source Python package designed to streamline the integrati
 
 ## Installation
 
-## Requirements
-
-## Note on Development and Testing
-
-## Usage
-
-## JSON Output Structure
-
-The `FID_output.json` has two top‑level keys:
-
-1. **`Samples`**: a dict mapping each sample name →
-
-   - `Metadata`: raw file metadata
-   - `Raw Data`: original time & signal arrays
-   - `Processed Data`: dict of peak labels →
-
-     - `Area Ensembles`: list of calculated peak areas
-     - `Model Parameters`: fitted Gaussian params & metadata
-
-2. **`Integration Metadata`**: info on how integration was run:
-
-   - `peak dictionary`: dict (label→RT) or list of labels
-   - `x limits`: \[xmin, xmax] (when using stored labels)
-   - `time_column` & `signal_column`
+Please contact Gerard Otiniano for an installable version of the app for macOS (.dmg is too large for GitHub). Alternatively, feel free clone the repository and build a working version of the app for any OS using briefcase.
 
 ## Versioning
 
