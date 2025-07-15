@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-script minSpecVersion="1.000000">
+    <title>chromatopy</title>
+    <welcome file="welcome.html" mime-type="text/html" />
+    <license file="LICENSE" mime-type="text/plain" />
+    <options customize="never" allow-external-scripts="no" hostArchitectures="x86_64,arm64" />
+    <domains enable_localSystem="true" />
+    <choices-outline>
+        <line choice="chromatopy"/>
+    </choices-outline>
+    <choice id="chromatopy" title="chromatopy">
+        <pkg-ref id="chromatopy.pkg"/>
+    </choice>
+    <pkg-ref id="chromatopy.pkg" auth="Root">chromatopy.pkg</pkg-ref>
+</installer-script>

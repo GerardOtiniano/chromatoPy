@@ -1,0 +1,22 @@
+# Generated using Python 3.10.18
+[briefcase]
+# This is the start of the framework-based support package era.
+target_version = "0.3.20"
+
+[paths]
+app_path = "chromatopy.app/Contents/Resources/app"
+app_packages_path = "chromatopy.app/Contents/Resources/app_packages"
+info_plist_path = "chromatopy.app/Contents/Info.plist"
+entitlements_path = "Entitlements.plist"
+support_path = "chromatopy.app/Contents/Frameworks"
+runtime_path = "Python.xcframework/macos-arm64_x86_64/Python.framework"
+support_revision = 12
+stub_binary_revision = 11
+cleanup_paths = [
+    "chromatopy.app/Contents/Frameworks/Python.framework/**/Headers",
+    "chromatopy.app/Contents/Frameworks/Python.framework/**/include",
+    "chromatopy.app/Contents/Frameworks/Python.framework/**/config-*-darwin",
+    "chromatopy.app/Contents/Frameworks/Python.framework/**/pkg-config",
+]
+icon = "chromatopy.app/Contents/Resources/chromatopy.icns"
+

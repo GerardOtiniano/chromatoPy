@@ -1,0 +1,12 @@
+#!/bin/sh
+echo "Post installation process started"
+
+if [ ! -d "/usr/local/bin" ]; then
+    echo "Creating /usr/local/bin directory"
+    mkdir -p /usr/local/bin
+fi
+
+echo "Install binary symlink"
+ln -si "/Library/chromatopy/chromatopy.app/Contents/MacOS/chromatopy" /usr/local/bin/chromatopy
+
+echo "Post installation process finished"
