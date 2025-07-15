@@ -1,7 +1,6 @@
 # src/chromatopy/chromatoPy_general.py
 import math
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.widgets import TextBox
 
@@ -19,29 +18,21 @@ To do:
         • e.g., window_bounds[xmin, xmax]
     • Reference - look in hplc_integration.py for call
 """
-# def SignalAnalyzer_wrapper(df, window_bounds, gaus_iterations, sample_name, is_reference=True, max_peaks, sw, sf, pk_sns, pk_pr, max_PA, reference_peaks=None):
-    
-    
-
-
 class SignalAnalyzer:
-    def __init__(self, df, window_bounds, gaus_iterations, sample_name, is_reference=True, max_peaks, sw, sf, pk_sns, pk_pr, max_PA, reference_peaks=None):
+    def __init__(self, df, compounds, window_bounds, headers, gaus_iterations, sample_name, max_peaks, sw, sf, pk_sns, pk_pr, max_PA, is_reference=True, reference_peaks=None):
         self.fig, self.axs = None, None
         self.df = df
-        # self.traces = traces
         self.window_bounds = window_bounds
-        # self.GDGT_dict = GDGT_dict
+        self.headers = headers
         self.sample_name = sample_name
         self.is_reference = is_reference
-        self.reference_peaks = reference_peaks  # ref_key
-        self.fig, self.axs = None, None
+        self.reference_peaks = reference_peaks
         self.datasets = []
         self.peaks_indices = []
         self.integrated_peaks = {}
         self.action_stack = []
         self.no_peak_lines = {}
-        self.peaks = {}  # Store all peak indices and properties for each trace
-        # self.axs_to_traces = {}  # Empty map for connecting traces to figure axes
+        self.peaks = []
         self.peak_results = {}
         self.peak_results['Sample ID'] = sample_name
         self.gi = gaus_iterations
@@ -50,8 +41,8 @@ class SignalAnalyzer:
         self.smoothing_params = [sw, sf]
         self.pk_sns = pk_sns
         self.pk_pr = pk_pr
-        self.t_pressed = False # Flag to track if 't' was pressed
-        self.called = False
+        self.r_pressed = False
+        self.e_pressed = False
         self.max_peak_amp = max_PA
 
     def run(self):
@@ -61,14 +52,14 @@ class SignalAnalyzer:
             peaks (dict): Peak areas and related info.
             fig (matplotlib.figure.Figure): The figure object.
             reference_peaks (dict): Updated reference peaks.
-            t_pressed (bool): Indicates if 't' was pressed to update reference peaks.
+            r_pressed (bool): Indicates if 'r' was pressed to update reference peaks.
         """
         self.fig, self.axs = self.plot_data()
         self.current_ax_idx = 0  # Initialize current axis index
         if self.is_reference:
             # Reference samples handling
             self.fig.canvas.mpl_connect("button_press_event", self.on_click)
-            self.fig.canvas.mpl_connect("key_press_event", self.on_key)  # Connect general key events
+            self.fig.canvas.mpl_connect("key_press_event", self.on_key) # Connect general key events
             plt.show(block=True)  # Blocks script until plot window is closed
             if not self.reference_peaks:
                 self.reference_peaks = self.peak_results
@@ -80,7 +71,7 @@ class SignalAnalyzer:
             self.fig.canvas.mpl_connect("key_press_event", self.on_key)
             self.fig.canvas.mpl_connect("button_press_event", self.on_click)
             plt.show(block=True)  # Blocks script until plot window is closed
-        return self.peak_results, self.fig, self.reference_peaks, self.t_pressed
+        return self.peak_results, self.fig, self.reference_peaks, self.r_pressed, self.e_pressed
 
     ######################################################
     ################  Gaussian Fit  ######################
@@ -205,7 +196,6 @@ class SignalAnalyzer:
     ######################################################
     ###############  Peak detection  #####################
     ######################################################
-
     def find_valleys(self, y, peaks, peak_oi=None):
         """
         Identifies valleys (lowest points) between peaks in the given data.
@@ -242,7 +232,7 @@ class SignalAnalyzer:
             valleys.append(np.argmin(y[peaks[poi] : peaks[poi + 1]]) + peaks[poi])
         return valleys
 
-    def find_peak_neighborhood_boundaries(self, x, y_smooth, peaks, valleys, peak_idx, ax, max_peaks, trace):
+    def find_peak_neighborhood_boundaries(self, x, y_smooth, peaks, valleys, peak_idx, ax, max_peaks):
         """
         Finds the extended boundaries of a peak's neighborhood by analyzing the closest peaks and their overlaps.
 
@@ -290,8 +280,8 @@ class SignalAnalyzer:
         # Analyze each of the closest peaks
         for peak in closest_peaks:
             peak_pos = np.where(peak == peaks)
-            l_lim = self.peak_properties[trace]["left_bases"][peak_pos][0]
-            r_lim = self.peak_properties[trace]["right_bases"][peak_pos][0]
+            l_lim = self.peak_properties["left_bases"][peak_pos][0]
+            r_lim = self.peak_properties["right_bases"][peak_pos][0]
             heights, means, stddevs = self.estimate_initial_gaussian_params(x[l_lim : r_lim + 1], y_smooth[l_lim : r_lim + 1], peak)
             height, mean, stddev = heights[0], means[0], stddevs[0]
 
@@ -381,7 +371,7 @@ class SignalAnalyzer:
             B = len(x) - 1
         return A, B
 
-    def find_peak_boundaries(self, x, y, center, trace, threshold=0.1):
+    def find_peak_boundaries(self, x, y, center, threshold=0.1):
         """
         Finds the left and right boundaries of a peak based on the first derivative test and a threshold value.
 
@@ -536,7 +526,7 @@ class SignalAnalyzer:
             extended_y = self.gaussian_decay(extended_x, amp, cen, wid, decay)
         return extended_x, extended_y
 
-    def calculate_gaus_extension_limits(self, cen, wid, decay, factor=3):  # decay, factor=3):
+    def calculate_gaus_extension_limits(self, cen, wid, decay, factor=3):
         """
         Calculates the extension limits for the Gaussian tails based on the 3-sigma rule, optionally accounting for decay.
 
@@ -570,7 +560,7 @@ class SignalAnalyzer:
         x_max = cen + sigma_effective + np.abs(extension_factor)
         return x_min, x_max
 
-    def fit_gaussians(self, x_full, y_full, ind_peak, trace, peaks, ax):
+    def fit_gaussians(self, x_full, y_full, ind_peak, peaks, ax):
         """
         Fits single or multi-Gaussian models to the provided data to determine the best-fit parameters for the peaks of interest.
 
@@ -767,7 +757,7 @@ class SignalAnalyzer:
             return np.mean(area_ensemble), area_ensemble
 
 
-    def handle_peak_selection(self, ax, ax_idx, xdata, y_bcorr, peak_idx, peaks): #trace:
+    def handle_peak_selection(self, ax, ax_idx, xdata, y_bcorr, peak_idx, peaks):
         """
         Handles the selection of a peak, fits a Gaussian to the selected peak, and updates the plot and internal data structures.
 
@@ -803,19 +793,23 @@ class SignalAnalyzer:
         """
         try:
             valleys = self.find_valleys(y_bcorr, peaks)
-            A, B, peak_neighborhood = self.find_peak_neighborhood_boundaries(xdata, y_bcorr, self.peaks[trace], valleys, peak_idx, ax, self.max_peaks_for_neighborhood)#, trace)
-            x_fit, y_fit_smooth, area_smooth, area_ensemble = self.fit_gaussians(xdata, y_bcorr, peak_idx, trace, peak_neighborhood, ax)
+            A, B, peak_neighborhood = self.find_peak_neighborhood_boundaries(xdata, y_bcorr, self.peaks, valleys, peak_idx, ax, self.max_peaks_for_neighborhood)
+            x_fit, y_fit_smooth, area_smooth, area_ensemble = self.fit_gaussians(xdata, y_bcorr, peak_idx, peak_neighborhood, ax)
             fill = ax.fill_between(x_fit, 0, y_fit_smooth, color="grey", alpha=0.5)
             rt_of_peak = xdata[peak_idx]
             area_text = f"Area: {area_smooth:.0f}\nRT: {rt_of_peak:.0f}"
             text_annotation = ax.annotate(area_text, xy=(rt_of_peak + 1.5, y_fit_smooth.max() * 0.5), textcoords="offset points", xytext=(0, 10), ha="center", fontsize=8, color="grey")
-            self.integrated_peaks[(ax_idx, peak_idx)] = {"fill": fill, "area": area_smooth, "rt": rt_of_peak, "text": text_annotation, "trace": trace, 'area_ensemble': area_ensemble}
+            self.integrated_peaks[(ax_idx, peak_idx)] = {"fill": fill, "area": area_smooth, "rt": rt_of_peak, "text": text_annotation, 'area_ensemble': area_ensemble}
             plt.draw()
-            if trace not in self.peak_results:
-                self.peak_results[trace] = {"rts": [], "areas": [], "area_ensemble": []}
-            self.peak_results[trace]["rts"].append(rt_of_peak)
-            self.peak_results[trace]["areas"].append(area_smooth)  # Calculate area if needed
-            self.peak_results[trace]["area_ensemble"].append(area_ensemble)
+
+            for key in ["rts", "areas", "area_ensemble"]:
+                if key not in  self.peak_results:
+                    self.peak_results[key] = []
+
+            self.peak_results["rts"].append(rt_of_peak)
+            self.peak_results["areas"].append(area_smooth)
+            self.peak_results["area_ensemble"].append(area_ensemble)
+
         except RuntimeError:
             pass
 
@@ -866,38 +860,26 @@ class SignalAnalyzer:
         Creates subplots for each trace and adds two text boxes to allow the user to update the x-window boundaries.
         """
         # Create subplots as before
-        # if len(self.traces) == 1:
-        #     fig, ax = plt.subplots(figsize=(8, 10))
-        #     axs = [ax]
-        # else:
-        #     fig, axs = plt.subplots(len(self.traces), 1, figsize=(8, 10), sharex=True)
-        #     axs = axs.ravel()
         fig, ax = plt.subplots(figsize=(8, 10))
         axs = [ax]
 
-        # Initialize storage for datasets and peak indices if not already
-        self.datasets = [None] # * len(self.traces)
-        self.peaks_indices = [None] # * len(self.traces)
-
         # Create the subplots and store the full data and line objects
         for i, ax in enumerate(axs):
-            self.setup_subplot(ax, i)
-            if i == len(self.traces) - 1:
-                ax.set_xlabel("Corrected Retention Time (minutes)")
+            self.setup_subplot(ax)
+            ax.set_xlabel("Corrected Retention Time (minutes)")
 
         fig.suptitle(f"Sample: {self.sample_name}", fontsize=16, fontweight="bold")
 
         return fig, axs
 
-    def setup_subplot(self, ax, trace_idx):
+    def setup_subplot(self, ax):
         """
         Configures a single subplot for the given trace, computes and stores the full
         processed data, then plots it.
         """
         # Get full x-values and y-data for the trace
-        x_values = self.df["rt_corr"]
-        trace = self.traces[trace_idx]
-        y = self.df[trace]
+        x_values = self.df[self.headers[0]] #Used to be "rt_corr"
+        y = self.df[self.headers[1]]
 
         # Baseline correction and smoothing on the full dataset
         y_base, min_peak_amp = self.baseline(x_values, y)
@@ -906,15 +888,11 @@ class SignalAnalyzer:
         y_filtered = self.smoother(y_bcorr)
 
         # Store the full processed data for later updates
-        if not hasattr(self, "full_data"):
-            self.full_data = {}
-        self.full_data[trace_idx] = (x_values, y_filtered)
+        self.full_data = (x_values, y_filtered) #Had to be a list with a tuple, so it works in on_click
 
         # Plot the full data; even if the current x-limits are restricted, we plot everything
-        line, = ax.plot(x_values, y_filtered, "k")
-        if not hasattr(self, "line_objects"):
-            self.line_objects = {}
-        self.line_objects[trace_idx] = line
+        line = ax.plot(x_values, y_filtered, "k")
+        self.line_object = line  #line_object used to be a list of lines
 
         # Set the current x-limits based on the current window_bounds
         ax.set_xlim(self.window_bounds)
@@ -930,15 +908,14 @@ class SignalAnalyzer:
             ax.set_ylim(0, 1)
 
         # Store additional info for peak selection, etc.
-        self.axs_to_traces[ax] = trace
-        self.datasets[trace_idx] = (x_values, y_bcorr)
+        self.datasets = [(x_values, y_bcorr)]
         if self.max_peak_amp is not None:
             peaks_total, properties = find_peaks(y_filtered, height=(min_peak_amp, self.max_peak_amp), width=0.05, prominence=self.pk_pr)
         else:
             peaks_total, properties = find_peaks(y_filtered, height=min_peak_amp, width=0.05, prominence=self.pk_pr)
-        self.peaks[trace] = peaks_total
-        self.peak_properties[trace] = properties
-        self.peaks_indices[trace_idx] = peaks_total
+        self.peaks = peaks_total
+        self.peak_properties = properties
+        self.peaks_indices = [peaks_total] #Had to be a list with an array, so it works in on_click
 
     def baseline(self, x, y, deg=5, max_it=1000, tol=1e-4):
         """
@@ -1053,22 +1030,19 @@ class SignalAnalyzer:
         - The click actions, such as selecting a peak or adding a line, are stored in `self.action_stack` for undo functionality.
         - Updates to the plot are redrawn using `plt.draw()` after each action.
         """
+
         self.x_full = []
         self.y_full = []
-        if event.inaxes not in self.axs_to_traces:
+        if event.inaxes not in self.axs: #axs_to_traces doesn't exist so checking in axs or list of axes
             return
-        # print("Click registered!")
+
         ax = event.inaxes
-        # Assuming axs_to_traces maps axes to trace identifiers directly
-        # trace = self.axs_to_traces[ax]
-        ax_idx = list(ax.figure.axes).index(ax)  # Retrieve the index of ax in the figure's list of axes
+        ax_idx = 0  #Only one axis present, thus 0
 
         xdata, y_bcorr = self.datasets[ax_idx]
         self.x_full = xdata
         self.y_full = y_bcorr
         peaks = self.peaks_indices[ax_idx]
-        for i in peaks:
-            plt.draw()
         rel_click_pos = np.abs(xdata[peaks] - event.xdata)
         peak_found = False
         for peak_index, peak_pos in enumerate(rel_click_pos):
@@ -1076,20 +1050,29 @@ class SignalAnalyzer:
                 peak_found = True
                 selected_peak = peaks[np.argmin(np.abs(xdata[peaks] - event.xdata))]
                 # Correctly pass the trace identifier to handle_peak_selection
-                self.handle_peak_selection(ax, ax_idx, xdata, y_bcorr, selected_peak, peaks)#, trace)
+                self.handle_peak_selection(ax, ax_idx, xdata, y_bcorr, selected_peak, peaks)
                 # Store the action for undoing
                 self.action_stack.append(("select_peak", ax, (ax_idx, selected_peak)))
                 break
         if not peak_found:
-            peak_key = (ax_idx, None)  # Using ax_idx to keep consistent with non-peak-specific actions
+            no_peak_mark = f"no_peak_at_{event.xdata}" #a non peak click marker created to differentiate non click peaks in intergated_peaks
+            peak_key = (ax_idx, None,  no_peak_mark)  # Using ax_idx to keep consistent with non-peak-specific actions
             line = ax.axvline(event.xdata, color="grey", linestyle="--", zorder=-1)
             text = ax.text(event.xdata + 2, (ax.get_ylim()[1] / 10) * 0.7, "No peak\n" + str(np.round(event.xdata)), color="grey", fontsize=8)
             no_peak_key = peak_key
             self.no_peak_lines[no_peak_key] = (line, text)
-            self.integrated_peaks[peak_key] = {"area": 0, "rt": event.xdata, "text": text, "line": [line], "area_ensemble": 0}
+            self.integrated_peaks[peak_key] = {"area": 0, "rt": event.xdata, "text": text, "line": [line], "area_ensemble": [0]}
             self.action_stack.append(("add_line", ax, no_peak_key))
+
+            for key in ["rts", "areas", "area_ensemble"]:
+                if key not in self.peak_results:
+                    self.peak_results[key] = []
+            self.peak_results["rts"].append(event.xdata)
+            self.peak_results["areas"].append(0)
+            self.peak_results["area_ensemble"].append([0])
+
             plt.grid(False)
-            plt.draw()
+        plt.draw() #Took out of if statement
 
     def auto_select_peaks(self):
         """
@@ -1114,36 +1097,41 @@ class SignalAnalyzer:
         self.y_full = []
 
         if self.reference_peaks:
-            for compound, ref_peaks in self.reference_peaks.items():
-                # Here, compound corresponds to the GDGT compound name (e.g., 'IIIa', 'IIb')
-                for trace_id in self.traces:
-                    if trace_id in self.GDGT_dict and compound in self.GDGT_dict[trace_id]:
-                        ax_idx = self.traces.index(trace_id) if trace_id in self.traces else -1
-                        if ax_idx != -1:
-                            ax = self.axs[ax_idx]
-                            xdata, y_bcorr = self.datasets[ax_idx]
-                            self.x_full = xdata
-                            self.y_full = y_bcorr
-                            peaks = self.peaks_indices[ax_idx]
-                            for ref_peak in ref_peaks["rts"]:
-                                rel_click_pos = np.abs(xdata[peaks] - ref_peak)
-                                peak_found = False
-                                trace = self.axs_to_traces[self.axs[ax_idx]]
-                                for peak_index, peak_pos in enumerate(rel_click_pos):
-                                    if np.min(np.abs(xdata[peaks] - ref_peak)) < 0.2:  # Slightly higher threshold
-                                        peak_found = True
-                                        selected_peak = peaks[np.argmin(np.abs(xdata[peaks] - ref_peak))]
-                                        self.handle_peak_selection(ax, ax_idx, xdata, y_bcorr, selected_peak, peaks, trace)
-                                        break
-                                if not peak_found:
-                                    peak_key = (ax_idx, None)
-                                    line = ax.axvline(ref_peak, color="red", linestyle="--", alpha=0.5)
-                                    text = ax.text(ref_peak + 2, ax.get_ylim()[1] * 0.5, "No peak\n" + str(np.round(ref_peak)), color="grey", fontsize=8)
-                                    no_peak_key = peak_key
-                                    self.no_peak_lines[no_peak_key] = (line, text)
-                                    self.integrated_peaks[peak_key] = {"area": 0, "rt": ref_peak, "trace": trace, "area_ensemble": 0}
-                                    self.action_stack.append(("add_line", ax, no_peak_key))
-                                    plt.draw()
+            ax_idx = 0
+            ax = self.axs[ax_idx]
+            xdata, y_bcorr = self.datasets[ax_idx]
+            self.x_full = xdata
+            self.y_full = y_bcorr
+            peaks = self.peaks_indices[ax_idx]
+            for ref_peak in self.reference_peaks["rts"]:
+                rel_click_pos = np.abs(xdata[peaks] - ref_peak)
+                peak_found = False
+                for peak_index, peak_pos in enumerate(rel_click_pos):
+                    if np.min(np.abs(xdata[peaks] - ref_peak)) < 0.2:  # Slightly higher threshold
+                        peak_found = True
+                        selected_peak = peaks[np.argmin(np.abs(xdata[peaks] - ref_peak))]
+                        self.handle_peak_selection(ax, ax_idx, xdata, y_bcorr, selected_peak, peaks)
+                        break
+                if not peak_found:
+                    no_peak_mark = f"no_peak_at_{ref_peak}"
+                    peak_key = (ax_idx, None, no_peak_mark)
+                    line = ax.axvline(ref_peak, color="red", linestyle="--", alpha=0.5)
+                    text = ax.text(ref_peak + 2, ax.get_ylim()[1] * 0.5, "No peak\n" + str(np.round(ref_peak)),
+                                   color="grey", fontsize=8)
+                    no_peak_key = peak_key
+                    self.no_peak_lines[no_peak_key] = (line, text)
+                    self.integrated_peaks[peak_key] = {"area": 0, "rt": ref_peak, "area_ensemble": [0]}
+                    self.action_stack.append(("add_line", ax, no_peak_key))
+
+                    for key in ["rts", "areas", "area_ensemble"]:
+                        if key not in self.peak_results:
+                            self.peak_results[key] = []
+                    self.peak_results["rts"].append(ref_peak)
+                    self.peak_results["areas"].append(0)
+                    self.peak_results["area_ensemble"].append([0])
+
+                plt.draw()
+
 
     def on_key(self, event):
         """
@@ -1164,39 +1152,33 @@ class SignalAnalyzer:
         - "Enter": Calls `collect_peak_data()` to finalize peak selection and closes the figure to resume script execution.
         - "d": Calls `undo_last_action()` to undo the most recent action.
         - "e": Reserved for future expansion (currently does nothing).
-        - "up" and "down": Navigates between subplots using the up and down arrow keys, and highlights the selected subplot.
         - "r": Clears the peaks in the currently highlighted subplot by calling `clear_peaks_subplot()` and removes corresponding entries from `self.integrated_peaks` and `self.peak_results`.
         - After clearing or navigating, the plot is redrawn using `plt.draw()` to reflect changes.
         """
         if event.key == "enter":
-            self.collect_peak_data()
-            self.waiting_for_input = False
+            matching_peaks = [dict(sorted(self.integrated_peaks.items(), key=lambda item: item[1]['rt']))] #I don't think this is needed
+            # matching_peaks is a list that has the intergrated_peaks dictionary BUT every peak: data key-value pair is sorted by the 'rt' key of value dictionary in the pair
+            self.waiting_for_input = False #WHY?
             plt.close(self.fig)  # Close the figure to resume script execution
         elif event.key == "d":
-            self.undo_last_action()
-        elif event.key in ["up", "down"]:
-            # Handle subplot navigation with up and down arrow keys
-            if event.key == "up":
-                self.current_ax_idx = (self.current_ax_idx - 1) % len(self.axs)
-            elif event.key == "down":
-                self.current_ax_idx = (self.current_ax_idx + 1) % len(self.axs)
-            self.highlight_subplot()
+            self.undo_last_action() #BUG
         elif event.key == "r":
-            self.clear_peaks_subplot(self.current_ax_idx)
-            trace_to_clear = self.axs_to_traces[self.axs[self.current_ax_idx]]
-
-            # Remove any entries in self.integrated_peaks that have a matching trace value
-            self.integrated_peaks = {key: peak_data for key, peak_data in self.integrated_peaks.items() if "trace" in peak_data and peak_data["trace"] != trace_to_clear}
-
-            # Clear the corresponding entries in self.peak_results
-            if trace_to_clear in self.peak_results:
-                self.peak_results[trace_to_clear]["rts"] = []
-                self.peak_results[trace_to_clear]["areas"] = []
+            self.clear_peaks_subplot()
+            # Clear the entries in self.intergrated_peaks
+            self.integrated_peaks = {}
+            # Clear the entries in self.peak_results
+            self.peak_results["rts"] = []
+            self.peak_results["areas"] = []
             plt.draw()
-        elif event.key == "t":
+
             print(f"All peaks removed from {self.sample_name}. Reference peaks will be updated.")
-            self.clear_all_peaks()
-            self.t_pressed = True
+            self.action_stack.clear()
+            self.r_pressed = True
+
+        elif event.key == "e":
+            plt.close(self.fig)
+            self.e_pressed = True
+
         elif event.key == "w":
             print("A new view!")
             self.add_window_controls()
@@ -1204,7 +1186,6 @@ class SignalAnalyzer:
     def undo_last_action(self):
         """
         Undoes the last action performed during peak selection, removing the corresponding graphical objects from the plot.
-
         Returns
         -------
         None
@@ -1236,7 +1217,7 @@ class SignalAnalyzer:
         else:
             print("No actions to undo.")
 
-    def clear_peaks_subplot(self, ax_idx):
+    def clear_peaks_subplot(self):
         """
         Clears the peaks and resets the specified subplot by re-plotting the data.
 
@@ -1256,110 +1237,7 @@ class SignalAnalyzer:
         - After clearing, it re-initializes the subplot by calling `setup_subplot()` to re-plot the data.
         - The plot is updated and redrawn using `plt.draw()` to reflect the changes.
         """
-        ax = self.axs[ax_idx]
+        ax = self.axs[0]
         ax.clear()
-        self.setup_subplot(ax, ax_idx)
+        self.setup_subplot(ax)
         plt.draw()
-    def clear_all_peaks(self):
-        """
-        Clears all peaks and resets all subplots by re-plotting the data.
-
-        This method iterates through each subplot, clears the peaks, and removes corresponding
-        entries from the internal data structures `self.integrated_peaks` and `self.peak_results`.
-
-        Returns
-        -------
-        None
-        """
-        for ax_idx in range(len(self.axs)):
-            # Clear peaks for each subplot
-            self.clear_peaks_subplot(ax_idx)
-            trace_to_clear = self.axs_to_traces[self.axs[ax_idx]]
-
-            # Remove any entries in self.integrated_peaks that have a matching trace value
-            keys_to_remove = [key for key, peak_data in self.integrated_peaks.items() if "trace" in peak_data and peak_data["trace"] == trace_to_clear]
-            for key in keys_to_remove:
-                del self.integrated_peaks[key]
-
-            # Clear the corresponding entries in self.peak_results
-            if trace_to_clear in self.peak_results:
-                self.peak_results[trace_to_clear]["rts"] = []
-                self.peak_results[trace_to_clear]["areas"] = []
-
-        # Clear the action stack since all actions are undone
-        self.action_stack.clear()
-
-        # Redraw the plot to reflect changes
-        plt.draw()
-    def collect_peak_data(self):
-        """
-        Collects and organizes peak data based on the GDGT (Glycerol Dialkyl Glycerol Tetraether) type provided.
-
-        Returns
-        -------
-        None
-            This function updates the `self.peak_results` dictionary with peak data for each trace.
-        Notes
-        -----
-        - The function retrieves the appropriate GDGT dictionary (`self.GDGT_dict`) to determine the compounds for each trace.
-        - It then collects peaks from `self.integrated_peaks` that match each trace and organizes them by retention time (RT).
-        - If multiple compounds are associated with a trace, the function assigns peaks to compounds based on their order in the list. If fewer peaks are found than expected, a warning is issued.
-        - For traces that correspond to a single compound, the first peak is selected and added to the results.
-        - The `_append_peak_data` method is used to store the peak data for each compound in the `self.peak_results` dictionary.
-        - Warnings are printed if no peaks or fewer peaks than expected are found for a given trace.
-        """
-        self.peak_results = {}
-
-        # Get the correct GDGT dictionary
-        gdgt_dict = self.GDGT_dict
-
-        for trace_key, compounds in gdgt_dict.items():
-            # Find matching peaks in self.integrated_peaks
-            matching_peaks = [peak_data for key, peak_data in self.integrated_peaks.items() if peak_data["trace"] == trace_key]
-            # Sort peaks by retention time
-            # print(matching_peaks)
-            matching_peaks.sort(key=lambda peak: peak["rt"])
-
-            if isinstance(compounds, list):  # If the key maps to multiple compounds
-                if len(matching_peaks) < len(compounds):
-                    print(f"Warning: Fewer peaks found than expected for trace {trace_key}")
-                for i, compound in enumerate(compounds):
-                    if i < len(matching_peaks):
-                        self._append_peak_data(compound, matching_peaks[i])
-                    else:
-                        print(f"Warning: Not enough peaks to match all compounds for trace {trace_key}")
-            else:  # Single compound
-                if matching_peaks:
-                    self._append_peak_data(compounds, matching_peaks[0])
-                else:
-                    print(f"Warning: No peaks found for trace {trace_key}")
-
-    def _append_peak_data(self, compound, peak_data):
-        """
-        Helper function to append peak data to the `peak_results` dictionary.
-
-        Parameters
-        ----------
-        compound : str
-            The name of the compound (e.g., GDGT type) for which peak data is being stored.
-        peak_data : dict
-            A dictionary containing peak data, which includes the area under the peak and the retention time (rt).
-            Example: {"area": float, "rt": float}
-
-        Returns
-        -------
-        None
-            This function updates the `self.peak_results` dictionary by appending the peak area and retention time for the given compound.
-
-        Notes
-        -----
-        - If the compound is not already in `self.peak_results`, a new entry is created with empty lists for "areas" and "rts".
-        - The peak area and retention time (rt) are appended to the corresponding lists for the given compound.
-        """
-        if compound not in self.peak_results:
-            self.peak_results[compound] = {"areas": [], "rts": [], "area_ensemble": []}
-        # print("peak_results", self.peak_results)
-        # print("peak_data", peak_data)
-        self.peak_results[compound]["areas"].append(peak_data["area"])
-        self.peak_results[compound]["rts"].append(peak_data["rt"])
-        self.peak_results[compound]["area_ensemble"].append(peak_data["area_ensemble"])
