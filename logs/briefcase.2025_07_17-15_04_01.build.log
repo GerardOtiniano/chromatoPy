@@ -1,0 +1,299 @@
+Date/Time:       2025-07-17 15:04:01 
+Command line:    /Users/gerard/anaconda3/bin/briefcase build
+
+OS Release:      Darwin 24.0.0
+OS Version:      Darwin Kernel Version 24.0.0: Mon Aug 12 20:54:26 PDT 2024; root:xnu-11215.1.10~2/RELEASE_ARM64_T8112
+Architecture:    arm64
+Platform:        macOS-15.0-arm64-arm-64bit
+
+Python exe:      /Users/gerard/anaconda3/bin/python
+Python version:  3.10.14 (main, May  6 2024, 14:42:37) [Clang 14.0.6 ]
+Virtual env:     False
+Conda env:       True
+
+Briefcase:       0.3.24
+Target platform: macOS
+Target format:   app
+
+Environment Variables:
+	COLORFGBG=15;0
+	COLORTERM=truecolor
+	COMMAND_MODE=unix2003
+	CONDA_DEFAULT_ENV=base
+	CONDA_EXE=/Users/gerard/anaconda3/bin/conda
+	CONDA_PREFIX=/Users/gerard/anaconda3
+	CONDA_PROMPT_MODIFIER=(base) 
+	CONDA_PYTHON_EXE=/Users/gerard/anaconda3/bin/python
+	CONDA_SHLVL=1
+	CPL_ZIP_ENCODING=UTF-8
+	GDAL_DATA=/Users/gerard/anaconda3/share/gdal
+	GDAL_DRIVER_PATH=/Users/gerard/anaconda3/lib/gdalplugins
+	GSETTINGS_SCHEMA_DIR=/Users/gerard/anaconda3/share/glib-2.0/schemas
+	GSETTINGS_SCHEMA_DIR_CONDA_BACKUP=
+	HOME=/Users/gerard
+	HOMEBREW_CELLAR=/opt/homebrew/Cellar
+	HOMEBREW_PREFIX=/opt/homebrew
+	HOMEBREW_REPOSITORY=/opt/homebrew
+	INFOPATH=/opt/homebrew/share/info:/opt/homebrew/share/info:
+	ITERM_PROFILE=Default
+	ITERM_SESSION_ID=w0t1p0:9039F4BE-5D71-41D1-AF63-5A01DD86FC84
+	LANG=en_US.UTF-8
+	LC_TERMINAL=iTerm2
+	LC_TERMINAL_VERSION=3.4.20
+	LOGNAME=gerard
+	OLDPWD=/Users/gerard
+	PATH=/opt/homebrew/Cellar/gcc/14.2.0/lib/gcc/14:/Users/gerard/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/gerard/anaconda3/bin:/Users/gerard/anaconda3/condabin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/opt/X11/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/Applications/Little Snitch.app/Contents/Components
+	PROJ_DATA=/Users/gerard/anaconda3/share/proj
+	PROJ_NETWORK=ON
+	PWD=/Users/gerard/Documents/GitHub/chromatoPy
+	SHELL=/bin/zsh
+	SHLVL=1
+	SSH_AUTH_SOCK=/private/tmp/com.apple.launchd.71lrmqk8oQ/Listeners
+	TERM=xterm-256color
+	TERM_PROGRAM=iTerm.app
+	TERM_PROGRAM_VERSION=3.4.20
+	TERM_SESSION_ID=w0t1p0:9039F4BE-5D71-41D1-AF63-5A01DD86FC84
+	TMPDIR=/var/folders/n9/pm6mg74j2bl4_crq7scjg9wm0000gn/T/
+	USER=gerard
+	XPC_FLAGS=0x0
+	XPC_SERVICE_NAME=0
+	_=/Users/gerard/anaconda3/bin/briefcase
+	_CE_CONDA=
+	_CE_M=
+	__CFBundleIdentifier=com.googlecode.iterm2
+	__CF_USER_TEXT_ENCODING=0x0:0:0
+
+pyproject.toml:
+[tool.poetry]
+name = "chromatopy-app"
+version = "1.0.0"
+description = "Peak integration software."
+authors = ["Dr. Gerard Otiniano <gerardotiniano@gmail.com>", "Dr. Elizabeth Thomas"]
+readme = "README.md"
+packages = [{include = "chromatopy", from = "src"}]
+include = ["src/chromatopy/config/chromatopy_gdgt_config.json"]
+
+[tool.poetry.scripts]
+chromatopy = "chromatopy.__main__:main"
+
+[tool.poetry.dependencies]
+#python = ">=3.10,<3.13"
+#numpy           = "^2"
+#pandas          = "^2.2.3"
+#scipy           = "^1.15.3"
+#scikit-learn    = "^1.6.1"
+#matplotlib      = "^3.10.0"
+#pybaselines     = "^1.2"
+#tqdm            = "^4.66"
+#toga            = "0.5.1"
+#rainbow-api     = "1.0.9"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.briefcase]
+project_name = "chromatopy-app"
+bundle = "com.otiniano.chromatopy"
+version = "1.0.0"
+description = "Peak integration software."
+author = "Dr. Gerard Otiniano"
+author_email = "gerardotiniano@gmail.com"
+license = { file = "LICENSE" }
+home_page = "https://github.com/gerardotiniano/chromatopy"
+
+[tool.briefcase.app.chromatopy]
+formal_name = "chromatopy"
+description = "Peak integration software for GDGT analysis"
+sources = ["src/chromatopy"]
+entry_point = "chromatopy.__main__:main"
+icon = "chromatopy_icon"
+python_version = "3.10"
+requires = [
+  "scipy==1.8rc1",
+  "pybaselines==1.2.0",
+  "pandas>=2.2,<3.0",
+  "matplotlib>=3.7,<4.0",
+  "tqdm>=4.66,<5.0",
+  "toga==0.5.2",]
+
+Briefcase Log:
+[15:04:00]                                                                                                                                                             create.py:936
+           [chromatopy] Generating application template...                                                                                                             create.py:936
+           Using app template: https://github.com/beeware/briefcase-macOS-app-template.git, branch v0.3.24                                                              base.py:1235
+[15:04:01] Using existing template (sha 887143527396b2327a2593e0a7f97c3171cb255d, updated Thu Jul 10 12:32:16 2025)                                                     base.py:1140
+                                                                                                                                                                   subprocess.py:838
+           >>> Running Command:                                                                                                                                    subprocess.py:838
+           >>>     xattr -p 'com.apple.fileprovider.fpfs#P' /Users/gerard/Documents/GitHub/chromatoPy/build/chromatopy/macos/app/chromatopy.app                    subprocess.py:838
+           >>> Working Directory:                                                                                                                                  subprocess.py:838
+           >>>     /Users/gerard/Documents/GitHub/chromatoPy                                                                                                       subprocess.py:838
+           >>> Command Output:                                                                                                                                     subprocess.py:838
+           >>>                                                                                                                                                     subprocess.py:838
+           >>> Return code: 0                                                                                                                                      subprocess.py:838
+                                                                                                                                                                   subprocess.py:838
+                                                                                                                                                                      __main__.py:42
+           Your project is in a folder that is synchronized with iCloud. This interferes                                                                              __main__.py:43
+           with the operation of macOS code signing.                                                                                                                  __main__.py:43
+                                                                                                                                                                      __main__.py:43
+           Move your project to a location that is not synchronized with iCloud,                                                                                      __main__.py:43
+           and re-run `briefcase create`.                                                                                                                             __main__.py:43
+           Saving log... started                                                                                                                                      console.py:433
+
+Main thread traceback:
+╭─────────────────────────────────────────────────────────────────────── Traceback (most recent call last) ────────────────────────────────────────────────────────────────────────╮
+│ /Users/gerard/anaconda3/lib/python3.10/site-packages/briefcase/__main__.py:27 in main                                                                                            │
+│                                                                                                                                                                                  │
+│   24 │   │   │   Path.cwd() / "pyproject.toml",                                                                                                                                  │
+│   25 │   │   │   overrides=overrides,                                                                                                                                            │
+│   26 │   │   )                                                                                                                                                                   │
+│ ❱ 27 │   │   command(**options)                                                                                                                                                  │
+│   28 │   except HelpText as e:                                                                                                                                                   │
+│   29 │   │   console.info()                                                                                                                                                      │
+│   30 │   │   console.info(str(e))                                                                                                                                                │
+│                                                                                                                                                                                  │
+│ ╭─────────────────────────────────────────────────────────────────────────────────── locals ───────────────────────────────────────────────────────────────────────────────────╮ │
+│ │       command = <briefcase.platforms.macOS.app.macOSAppBuildCommand object at 0x11020db70>                                                                                   │ │
+│ │       Command = <class 'briefcase.platforms.macOS.app.macOSAppBuildCommand'>                                                                                                 │ │
+│ │       console = <briefcase.console.Console object at 0x1049442b0>                                                                                                            │ │
+│ │             e = BriefcaseCommandError('Your project is in a folder that is synchronized with iCloud. This interferes\nwith the operation of macOS code signing.\n\nMove your │ │
+│ │                 project to a location that is not synchronized with iCloud,\nand re-run `briefcase create`.')                                                                │ │
+│ │ extra_cmdline = []                                                                                                                                                           │ │
+│ │       options = {                                                                                                                                                            │ │
+│ │                 │   'update': False,                                                                                                                                         │ │
+│ │                 │   'update_requirements': False,                                                                                                                            │ │
+│ │                 │   'update_support': False,                                                                                                                                 │ │
+│ │                 │   'update_stub': False,                                                                                                                                    │ │
+│ │                 │   'update_resources': False,                                                                                                                               │ │
+│ │                 │   'no_update': False,                                                                                                                                      │ │
+│ │                 │   'test_mode': False                                                                                                                                       │ │
+│ │                 }                                                                                                                                                            │ │
+│ │     overrides = {}                                                                                                                                                           │ │
+│ │        result = 200                                                                                                                                                          │ │
+│ ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                                                                                  │
+│ /Users/gerard/anaconda3/lib/python3.10/site-packages/briefcase/commands/build.py:154 in __call__                                                                                 │
+│                                                                                                                                                                                  │
+│   151 │   │                                                                                                                                                                      │
+│   152 │   │   state = None                                                                                                                                                       │
+│   153 │   │   for app_name, app_obj in sorted(apps_to_build.items()):                                                                                                            │
+│ ❱ 154 │   │   │   state = self._build_app(                                                                                                                                       │
+│   155 │   │   │   │   app_obj,                                                                                                                                                   │
+│   156 │   │   │   │   update=update,                                                                                                                                             │
+│   157 │   │   │   │   update_requirements=update_requirements,                                                                                                                   │
+│                                                                                                                                                                                  │
+│ ╭───────────────────────────────────────────── locals ─────────────────────────────────────────────╮                                                                             │
+│ │                 app = None                                                                       │                                                                             │
+│ │            app_name = 'chromatopy'                                                               │                                                                             │
+│ │             app_obj = <com.otiniano.chromatopy.chromatopy v1.0.0 AppConfig>                      │                                                                             │
+│ │       apps_to_build = {'chromatopy': <com.otiniano.chromatopy.chromatopy v1.0.0 AppConfig>}      │                                                                             │
+│ │           no_update = False                                                                      │                                                                             │
+│ │             options = {}                                                                         │                                                                             │
+│ │                self = <briefcase.platforms.macOS.app.macOSAppBuildCommand object at 0x11020db70> │                                                                             │
+│ │               state = None                                                                       │                                                                             │
+│ │           test_mode = False                                                                      │                                                                             │
+│ │              update = False                                                                      │                                                                             │
+│ │ update_requirements = False                                                                      │                                                                             │
+│ │    update_resources = False                                                                      │                                                                             │
+│ │         update_stub = False                                                                      │                                                                             │
+│ │      update_support = False                                                                      │                                                                             │
+│ ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯                                                                             │
+│                                                                                                                                                                                  │
+│ /Users/gerard/anaconda3/lib/python3.10/site-packages/briefcase/commands/build.py:66 in _build_app                                                                                │
+│                                                                                                                                                                                  │
+│    63 │   │   │   )                                                                                                                                                              │
+│    64 │   │                                                                                                                                                                      │
+│    65 │   │   if not self.bundle_path(app).exists():                                                                                                                             │
+│ ❱  66 │   │   │   state = self.create_command(app, **options)                                                                                                                    │
+│    67 │   │   elif (                                                                                                                                                             │
+│    68 │   │   │   update  # An explicit update has been requested                                                                                                                │
+│    69 │   │   │   or update_requirements  # An explicit update of requirements has been reques                                                                                   │
+│                                                                                                                                                                                  │
+│ ╭───────────────────────────────────────────── locals ─────────────────────────────────────────────╮                                                                             │
+│ │                 app = <com.otiniano.chromatopy.chromatopy v1.0.0 AppConfig>                      │                                                                             │
+│ │           no_update = False                                                                      │                                                                             │
+│ │             options = {}                                                                         │                                                                             │
+│ │                self = <briefcase.platforms.macOS.app.macOSAppBuildCommand object at 0x11020db70> │                                                                             │
+│ │              update = False                                                                      │                                                                             │
+│ │ update_requirements = False                                                                      │                                                                             │
+│ │    update_resources = False                                                                      │                                                                             │
+│ │         update_stub = False                                                                      │                                                                             │
+│ │      update_support = False                                                                      │                                                                             │
+│ ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯                                                                             │
+│                                                                                                                                                                                  │
+│ /Users/gerard/anaconda3/lib/python3.10/site-packages/briefcase/commands/create.py:1025 in __call__                                                                               │
+│                                                                                                                                                                                  │
+│   1022 │   │                                                                                                                                                                     │
+│   1023 │   │   state = None                                                                                                                                                      │
+│   1024 │   │   for app_name, app_obj in sorted(apps_to_create.items()):                                                                                                          │
+│ ❱ 1025 │   │   │   state = self.create_app(                                                                                                                                      │
+│   1026 │   │   │   │   app_obj,                                                                                                                                                  │
+│   1027 │   │   │   │   **full_options(state, options),                                                                                                                           │
+│   1028 │   │   │   )                                                                                                                                                             │
+│                                                                                                                                                                                  │
+│ ╭─────────────────────────────────────────── locals ───────────────────────────────────────────╮                                                                                 │
+│ │            app = <com.otiniano.chromatopy.chromatopy v1.0.0 AppConfig>                       │                                                                                 │
+│ │       app_name = 'chromatopy'                                                                │                                                                                 │
+│ │        app_obj = <com.otiniano.chromatopy.chromatopy v1.0.0 AppConfig>                       │                                                                                 │
+│ │ apps_to_create = {'chromatopy': <com.otiniano.chromatopy.chromatopy v1.0.0 AppConfig>}       │                                                                                 │
+│ │        options = {}                                                                          │                                                                                 │
+│ │           self = <briefcase.platforms.macOS.app.macOSAppCreateCommand object at 0x11027dcc0> │                                                                                 │
+│ │          state = None                                                                        │                                                                                 │
+│ ╰──────────────────────────────────────────────────────────────────────────────────────────────╯                                                                                 │
+│                                                                                                                                                                                  │
+│ /Users/gerard/anaconda3/lib/python3.10/site-packages/briefcase/commands/create.py:937 in create_app                                                                              │
+│                                                                                                                                                                                  │
+│    934 │   │   │   self.tools.shutil.rmtree(bundle_path)                                                                                                                         │
+│    935 │   │                                                                                                                                                                     │
+│    936 │   │   self.console.info("Generating application template...", prefix=app.app_name)                                                                                      │
+│ ❱  937 │   │   self.generate_app_template(app=app)                                                                                                                               │
+│    938 │   │                                                                                                                                                                     │
+│    939 │   │   # External apps (apps that define 'external_package_path') need the packaging me                                                                                  │
+│    940 │   │   # from the template, but not the app content, dependencies, support package etc.                                                                                  │
+│                                                                                                                                                                                  │
+│ ╭──────────────────────────────────────────── locals ─────────────────────────────────────────────╮                                                                              │
+│ │         app = <com.otiniano.chromatopy.chromatopy v1.0.0 AppConfig>                             │                                                                              │
+│ │ bundle_path = PosixPath('/Users/gerard/Documents/GitHub/chromatoPy/build/chromatopy/macos/app') │                                                                              │
+│ │     options = {}                                                                                │                                                                              │
+│ │        self = <briefcase.platforms.macOS.app.macOSAppCreateCommand object at 0x11027dcc0>       │                                                                              │
+│ ╰─────────────────────────────────────────────────────────────────────────────────────────────────╯                                                                              │
+│                                                                                                                                                                                  │
+│ /Users/gerard/anaconda3/lib/python3.10/site-packages/briefcase/platforms/macOS/__init__.py:178 in generate_app_template                                                          │
+│                                                                                                                                                                                  │
+│    175 │   │   # we *are* on iCloud, because it takes a moment for the iCloud daemon to detect                                                                                   │
+│    176 │   │   # that a new folder has been created; however, if this occurs, it will be                                                                                         │
+│    177 │   │   # picked up on the next run of any Briefcase command).                                                                                                            │
+│ ❱  178 │   │   self.verify_not_on_icloud(app, cleanup=True)                                                                                                                      │
+│    179 │                                                                                                                                                                         │
+│    180 │   def _install_app_requirements(                                                                                                                                        │
+│    181 │   │   self,                                                                                                                                                             │
+│                                                                                                                                                                                  │
+│ ╭────────────────────────────────────── locals ──────────────────────────────────────╮                                                                                           │
+│ │  app = <com.otiniano.chromatopy.chromatopy v1.0.0 AppConfig>                       │                                                                                           │
+│ │ self = <briefcase.platforms.macOS.app.macOSAppCreateCommand object at 0x11027dcc0> │                                                                                           │
+│ ╰────────────────────────────────────────────────────────────────────────────────────╯                                                                                           │
+│                                                                                                                                                                                  │
+│ /Users/gerard/anaconda3/lib/python3.10/site-packages/briefcase/platforms/macOS/__init__.py:150 in verify_not_on_icloud                                                           │
+│                                                                                                                                                                                  │
+│    147 Delete the {bundle_path} folder, move your project to location                                                                                                            │
+│    148 that is not synchronized with iCloud, and re-run `briefcase {self.command}`."""                                                                                           │
+│    149 │   │   │   │   )                                                                                                                                                         │
+│ ❱  150 │   │   │   raise BriefcaseCommandError("\n".join(msg))                                                                                                                   │
+│    151                                                                                                                                                                           │
+│    152                                                                                                                                                                           │
+│    153 class macOSCreateMixin(AppPackagesMergeMixin):                                                                                                                            │
+│                                                                                                                                                                                  │
+│ ╭─────────────────────────────────────────────── locals ────────────────────────────────────────────────╮                                                                        │
+│ │     app = <com.otiniano.chromatopy.chromatopy v1.0.0 AppConfig>                                       │                                                                        │
+│ │ cleanup = True                                                                                        │                                                                        │
+│ │     msg = [                                                                                           │                                                                        │
+│ │           │   'Your project is in a folder that is synchronized with iCloud. This interferes\nwi'+39, │                                                                        │
+│ │           │   '\nMove your project to a location that is not synchronized with iCloud,\nand re-ru'+21 │                                                                        │
+│ │           ]                                                                                           │                                                                        │
+│ │    self = <briefcase.platforms.macOS.app.macOSAppCreateCommand object at 0x11027dcc0>                 │                                                                        │
+│ ╰───────────────────────────────────────────────────────────────────────────────────────────────────────╯                                                                        │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+BriefcaseCommandError: Your project is in a folder that is synchronized with iCloud. This interferes
+with the operation of macOS code signing.
+
+Move your project to a location that is not synchronized with iCloud,
+and re-run `briefcase create`.
