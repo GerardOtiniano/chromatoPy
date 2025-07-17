@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jul 17 11:00:31 2025
+
+@author: gerard
+"""
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS metadata
+.DS_Store
+
+# IDE settings
+.vscode/
+.idea/
