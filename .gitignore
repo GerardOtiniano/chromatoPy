@@ -17,3 +17,5 @@ venv/
 .idea/
 build/chromatopy/macos/app/.DS_Store
 .DS_Store
+
+.spyproject
