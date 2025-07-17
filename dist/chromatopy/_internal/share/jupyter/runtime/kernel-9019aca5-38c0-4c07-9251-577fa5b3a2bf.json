@@ -1,0 +1,13 @@
+{
+  "shell_port": 49391,
+  "iopub_port": 49392,
+  "stdin_port": 49393,
+  "control_port": 49395,
+  "hb_port": 49394,
+  "ip": "127.0.0.1",
+  "key": "e90afa81-b3b7627fd2d2a9b2729f84d5",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/GDGT_Calibration/Notebooks/Functions.ipynb"
+}

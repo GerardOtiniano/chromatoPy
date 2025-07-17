@@ -1,0 +1,13 @@
+{
+  "shell_port": 52918,
+  "iopub_port": 52919,
+  "stdin_port": 52920,
+  "control_port": 52922,
+  "hb_port": 52921,
+  "ip": "127.0.0.1",
+  "key": "68a8a0c6-d245ea0fa3e1f62bb4eeea8e",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "python3",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/Functions.ipynb"
+}

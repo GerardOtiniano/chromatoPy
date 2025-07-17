@@ -1,0 +1,12 @@
+{
+  "shell_port": 58451,
+  "iopub_port": 58452,
+  "stdin_port": 58453,
+  "control_port": 58455,
+  "hb_port": 58454,
+  "ip": "127.0.0.1",
+  "key": "cfb8bf1d-9664fb3b2037303d92645c45",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "gdalenv"
+}

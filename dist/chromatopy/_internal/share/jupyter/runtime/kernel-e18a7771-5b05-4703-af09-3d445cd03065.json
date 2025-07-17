@@ -1,0 +1,13 @@
+{
+  "shell_port": 50026,
+  "iopub_port": 50027,
+  "stdin_port": 50028,
+  "control_port": 50030,
+  "hb_port": 50029,
+  "ip": "127.0.0.1",
+  "key": "e2b609d3-046efaf70ebd4f9d8cb22960",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "python3",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/Finnish Lake Manuscript/Untitled5.ipynb"
+}

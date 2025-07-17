@@ -1,0 +1,13 @@
+{
+  "shell_port": 64810,
+  "iopub_port": 64811,
+  "stdin_port": 64812,
+  "control_port": 64814,
+  "hb_port": 64813,
+  "ip": "127.0.0.1",
+  "key": "a3ffb0d0-96dc3d8d824a61af955804cd",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/Finnish Lake Manuscript/Drafts/Lake AJU/Notebooks/Untitled1.ipynb"
+}

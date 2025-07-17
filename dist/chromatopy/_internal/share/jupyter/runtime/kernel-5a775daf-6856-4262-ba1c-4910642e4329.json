@@ -1,0 +1,13 @@
+{
+  "shell_port": 55731,
+  "iopub_port": 55732,
+  "stdin_port": 55733,
+  "control_port": 55735,
+  "hb_port": 55734,
+  "ip": "127.0.0.1",
+  "key": "8da4c4d4-2bf42ec5715ce573f9e8d202",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/dD processing/GC_IRMS_processing/OSIBL GCIRM Processing - unified chains.ipynb"
+}

@@ -1,0 +1,13 @@
+{
+  "shell_port": 61349,
+  "iopub_port": 61350,
+  "stdin_port": 61351,
+  "control_port": 61353,
+  "hb_port": 61352,
+  "ip": "127.0.0.1",
+  "key": "da4f7542-8be8232860363f390dd91e96",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "python3",
+  "jupyter_session": "/var/folders/n9/pm6mg74j2bl4_crq7scjg9wm0000gn/T/spyder-gerard/notebooks/untitled0.ipynb"
+}

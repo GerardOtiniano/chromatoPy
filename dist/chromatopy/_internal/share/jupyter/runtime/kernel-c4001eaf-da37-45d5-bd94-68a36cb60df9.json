@@ -1,0 +1,13 @@
+{
+  "shell_port": 52240,
+  "iopub_port": 52241,
+  "stdin_port": 52242,
+  "control_port": 52244,
+  "hb_port": 52243,
+  "ip": "127.0.0.1",
+  "key": "8371a355-7ac2f24f19b3138cae65f48a",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/Emanda/Emanda Small Peaks.ipynb"
+}

@@ -1,0 +1,13 @@
+{
+  "shell_port": 64997,
+  "iopub_port": 64998,
+  "stdin_port": 64999,
+  "control_port": 65001,
+  "hb_port": 65000,
+  "ip": "127.0.0.1",
+  "key": "1f4d7f5f-6030b2694bde1c0cc3fd8ef4",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/GDGT_Calibration/Notebooks/Global GDGTs.ipynb"
+}

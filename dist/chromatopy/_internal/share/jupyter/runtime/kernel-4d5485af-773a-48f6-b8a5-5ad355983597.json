@@ -1,0 +1,13 @@
+{
+  "shell_port": 54744,
+  "iopub_port": 54745,
+  "stdin_port": 54746,
+  "control_port": 54748,
+  "hb_port": 54747,
+  "ip": "127.0.0.1",
+  "key": "765569b3-eb2b3bc0de0c711f9d5e3895",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "lake_model",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/Finnish Lake Manuscript/Drafts/Lake AJU/Notebooks/AJU RA and Index calculation.ipynb"
+}

@@ -1,0 +1,13 @@
+{
+  "shell_port": 53321,
+  "iopub_port": 53322,
+  "stdin_port": 53323,
+  "control_port": 53326,
+  "hb_port": 53325,
+  "ip": "127.0.0.1",
+  "key": "013e2bed-d8cdc9433645e66164460fb2",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "lake_model",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/dD processing/GC_IRMS_processing/Bayesian Correction.ipynb"
+}

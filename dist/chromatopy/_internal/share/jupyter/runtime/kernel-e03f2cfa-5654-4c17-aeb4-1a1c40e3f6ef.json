@@ -1,0 +1,13 @@
+{
+  "shell_port": 55496,
+  "iopub_port": 55497,
+  "stdin_port": 55498,
+  "control_port": 55500,
+  "hb_port": 55499,
+  "ip": "127.0.0.1",
+  "key": "9c491c2e-9985f02188f88914951f34eb",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "neural_env",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/Neural Network.ipynb"
+}

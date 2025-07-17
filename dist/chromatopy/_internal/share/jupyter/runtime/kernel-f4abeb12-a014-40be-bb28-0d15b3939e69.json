@@ -1,0 +1,13 @@
+{
+  "shell_port": 54484,
+  "iopub_port": 54485,
+  "stdin_port": 54486,
+  "control_port": 54488,
+  "hb_port": 54487,
+  "ip": "127.0.0.1",
+  "key": "ba70ce0a-786abac768afa64a4138726d",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "python3",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/dD processing/GC_IRMS_processing/Untitled1.ipynb"
+}

@@ -1,0 +1,12 @@
+{
+  "shell_port": 58156,
+  "iopub_port": 58157,
+  "stdin_port": 58158,
+  "control_port": 58160,
+  "hb_port": 58159,
+  "ip": "127.0.0.1",
+  "key": "7848c9da-55272ea2100899ec17dda95f",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pyleoclim"
+}

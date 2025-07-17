@@ -1,0 +1,13 @@
+{
+  "shell_port": 58626,
+  "iopub_port": 58627,
+  "stdin_port": 58628,
+  "control_port": 58630,
+  "hb_port": 58629,
+  "ip": "127.0.0.1",
+  "key": "92186548-82f7bbafc183daad06ea1957",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/GDGT Environment/GDGT Sort.ipynb"
+}

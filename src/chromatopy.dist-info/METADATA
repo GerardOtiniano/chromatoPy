@@ -1,0 +1,10 @@
+Metadata-Version: 2.1
+Briefcase-Version: 0.3.24
+Name: chromatopy
+Formal-Name: chromatopy
+App-ID: com.otiniano.chromatopy.chromatopy
+Version: 1.0.0
+Download-URL: 
+Author: Dr. Gerard Otiniano
+Author-email: gerardotiniano@gmail.com
+Summary: Peak integration software for GDGT analysis

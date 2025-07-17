@@ -1,0 +1,14 @@
+{
+ "argv": [
+  "/usr/local/anaconda3/envs/py3.8/bin/python",
+  "-m",
+  "ipykernel_launcher",
+  "-f",
+  "{connection_file}"
+ ],
+ "display_name": "Python 3 (ipykernel)",
+ "language": "python",
+ "metadata": {
+  "debugger": true
+ }
+}

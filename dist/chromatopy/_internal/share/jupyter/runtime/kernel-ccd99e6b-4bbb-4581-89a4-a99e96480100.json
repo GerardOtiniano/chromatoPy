@@ -1,0 +1,13 @@
+{
+  "shell_port": 57297,
+  "iopub_port": 57298,
+  "stdin_port": 57299,
+  "control_port": 57301,
+  "hb_port": 57300,
+  "ip": "127.0.0.1",
+  "key": "5edaf8a7-30ae697879b65b653723a7e3",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "Desktop/UB/Projects/RAW/BolSh/a9aade04-269f-4f89-bc62-6056e284b74e"
+}

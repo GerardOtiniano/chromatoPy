@@ -1,0 +1,13 @@
+{
+  "shell_port": 58148,
+  "iopub_port": 58149,
+  "stdin_port": 58150,
+  "control_port": 58152,
+  "hb_port": 58151,
+  "ip": "127.0.0.1",
+  "key": "6b05a19e-808ed3245f2232ff0f2bfd5e",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/PCA.ipynb"
+}

@@ -1,0 +1,16 @@
+{
+  "title": "@anaconda/assistant",
+  "description": "Anaconda integrations for cloud notebooks",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false,
+  "jupyter.lab.toolbars": {
+    "Cell": [
+      {
+        "name": "assistant:cell",
+        "command": "assistant:cell",
+        "rank": 10
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "shell_port": 63203,
+  "iopub_port": 63204,
+  "stdin_port": 63205,
+  "control_port": 63207,
+  "hb_port": 63206,
+  "ip": "127.0.0.1",
+  "key": "af15f7f9-deed7b9b92da63294cb4a534",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/Lake BS GDGT Figures.ipynb"
+}

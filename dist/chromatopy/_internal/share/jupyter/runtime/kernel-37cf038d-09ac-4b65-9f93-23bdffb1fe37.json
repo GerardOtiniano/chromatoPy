@@ -1,0 +1,13 @@
+{
+  "shell_port": 49648,
+  "iopub_port": 49649,
+  "stdin_port": 49650,
+  "control_port": 49652,
+  "hb_port": 49651,
+  "ip": "127.0.0.1",
+  "key": "f07c5c3e-bda7e9995ec2895a29a63618",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/dD processing/GC_IRMS_processing/Console 1"
+}

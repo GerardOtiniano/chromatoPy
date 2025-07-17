@@ -1,0 +1,13 @@
+{
+  "shell_port": 58845,
+  "iopub_port": 58846,
+  "stdin_port": 58847,
+  "control_port": 58849,
+  "hb_port": 58848,
+  "ip": "127.0.0.1",
+  "key": "112a06eb-7b5e627f78ddf5ef44310dec",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/PrySM/Lake Model Output.ipynb"
+}

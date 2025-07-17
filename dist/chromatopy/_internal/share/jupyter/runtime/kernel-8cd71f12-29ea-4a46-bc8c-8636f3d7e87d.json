@@ -1,0 +1,13 @@
+{
+  "shell_port": 51571,
+  "iopub_port": 51572,
+  "stdin_port": 51573,
+  "control_port": 51575,
+  "hb_port": 51574,
+  "ip": "127.0.0.1",
+  "key": "5bcbdb1b-e051952823e96bd33f022ae1",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "spyder",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/dD processing/GC_IRMS_processing/OSIBL GCIRM Processing - test_050224.ipynb"
+}

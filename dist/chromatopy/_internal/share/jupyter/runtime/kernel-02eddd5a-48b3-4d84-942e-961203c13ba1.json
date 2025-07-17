@@ -1,0 +1,13 @@
+{
+  "shell_port": 49998,
+  "iopub_port": 49999,
+  "stdin_port": 50000,
+  "control_port": 50002,
+  "hb_port": 50001,
+  "ip": "127.0.0.1",
+  "key": "04024e16-8243f6d30e1772291b779429",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/Lake BS local env.ipynb"
+}

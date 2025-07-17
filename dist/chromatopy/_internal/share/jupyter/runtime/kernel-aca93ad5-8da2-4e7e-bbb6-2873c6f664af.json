@@ -1,0 +1,13 @@
+{
+  "shell_port": 63385,
+  "iopub_port": 63386,
+  "stdin_port": 63387,
+  "control_port": 63389,
+  "hb_port": 63388,
+  "ip": "127.0.0.1",
+  "key": "eb623842-b1d3db08ec84d8e506b2f673",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/Emanda/PRYSM.ipynb"
+}

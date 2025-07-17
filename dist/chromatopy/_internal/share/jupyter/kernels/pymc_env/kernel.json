@@ -1,0 +1,14 @@
+{
+ "argv": [
+  "/Users/gerard/anaconda3/envs/pymc_env/bin/python",
+  "-m",
+  "ipykernel_launcher",
+  "-f",
+  "{connection_file}"
+ ],
+ "display_name": "pymc_env",
+ "language": "python",
+ "metadata": {
+  "debugger": true
+ }
+}

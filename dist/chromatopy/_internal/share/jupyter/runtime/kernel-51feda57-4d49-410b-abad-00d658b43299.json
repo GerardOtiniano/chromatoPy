@@ -1,0 +1,13 @@
+{
+  "shell_port": 63255,
+  "iopub_port": 63256,
+  "stdin_port": 63257,
+  "control_port": 63259,
+  "hb_port": 63258,
+  "ip": "127.0.0.1",
+  "key": "737100c2-81a98ad09d030c16b3f25ebb",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/Global GDGTs.ipynb"
+}

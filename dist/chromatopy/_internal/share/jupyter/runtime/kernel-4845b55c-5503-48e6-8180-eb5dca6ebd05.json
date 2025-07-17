@@ -1,0 +1,13 @@
+{
+  "shell_port": 50540,
+  "iopub_port": 50541,
+  "stdin_port": 50542,
+  "control_port": 50544,
+  "hb_port": 50543,
+  "ip": "127.0.0.1",
+  "key": "47f45efc-bbf8c9e044300e8298e961ab",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/dD processing/GC_IRMS_processing/Previous Iteration/\u03b4D Standard - Linear Approach.ipynb"
+}

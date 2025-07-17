@@ -1,0 +1,13 @@
+{
+  "shell_port": 49659,
+  "iopub_port": 49660,
+  "stdin_port": 49661,
+  "control_port": 49663,
+  "hb_port": 49662,
+  "ip": "127.0.0.1",
+  "key": "419241b5-e99e7c2921167afd234132dd",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/Emanda/Emanda \u03b4D FAMES.ipynb"
+}

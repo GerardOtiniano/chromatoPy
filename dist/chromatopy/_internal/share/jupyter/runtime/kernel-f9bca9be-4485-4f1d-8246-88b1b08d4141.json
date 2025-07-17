@@ -1,0 +1,13 @@
+{
+  "shell_port": 65371,
+  "iopub_port": 65372,
+  "stdin_port": 65373,
+  "control_port": 65375,
+  "hb_port": 65374,
+  "ip": "127.0.0.1",
+  "key": "0a9bd518-7fa56195e761e310a1566c3d",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/GDGT_Calibration/Notebooks/Lake Calibration Figures.ipynb"
+}

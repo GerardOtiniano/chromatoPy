@@ -1,0 +1,13 @@
+{
+  "shell_port": 51337,
+  "iopub_port": 51338,
+  "stdin_port": 51339,
+  "control_port": 51341,
+  "hb_port": 51340,
+  "ip": "127.0.0.1",
+  "key": "1cc19038-d8d2ac29c833c6791def62c7",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/Emanda/Untitled.ipynb"
+}

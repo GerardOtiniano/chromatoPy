@@ -1,0 +1,8 @@
+{
+  "title": "@anaconda/share_notebook",
+  "description": "Anaconda integrations for cloud notebooks",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false,
+  "jupyter.lab.toolbars": {}
+}

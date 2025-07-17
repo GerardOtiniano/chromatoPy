@@ -1,0 +1,13 @@
+{
+  "shell_port": 58379,
+  "iopub_port": 58380,
+  "stdin_port": 58381,
+  "control_port": 58383,
+  "hb_port": 58382,
+  "ip": "127.0.0.1",
+  "key": "4a282e8c-e74307f9fefbf8c80d2fff5f",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "python3",
+  "jupyter_session": "/Users/gerard/Desktop/Emanda Stuff.ipynb"
+}

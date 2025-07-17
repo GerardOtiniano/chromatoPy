@@ -1,0 +1,13 @@
+{
+  "shell_port": 65338,
+  "iopub_port": 65339,
+  "stdin_port": 65340,
+  "control_port": 65342,
+  "hb_port": 65341,
+  "ip": "127.0.0.1",
+  "key": "aca2b286-3c65883bf3772a33b2e6fcef",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/GDGT_Calibration/Notebooks/River Data.ipynb"
+}

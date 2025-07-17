@@ -1,0 +1,12 @@
+{
+  "base_url": "/",
+  "hostname": "localhost",
+  "notebook_dir": "/Users/Prawniano/pysheds",
+  "password": false,
+  "pid": 71107,
+  "port": 8888,
+  "secure": false,
+  "sock": "",
+  "token": "e386631de7418f34b65b90e55a7171433f46c512e841fcf8",
+  "url": "http://localhost:8888/"
+}

@@ -1,0 +1,12 @@
+{
+  "shell_port": 58210,
+  "iopub_port": 58211,
+  "stdin_port": 58212,
+  "control_port": 58214,
+  "hb_port": 58213,
+  "ip": "127.0.0.1",
+  "key": "f0f5b878-b52222d7229e90b1fdacb6b4",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pymcenv"
+}

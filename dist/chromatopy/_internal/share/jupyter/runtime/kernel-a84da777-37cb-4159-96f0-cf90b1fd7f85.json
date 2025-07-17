@@ -1,0 +1,13 @@
+{
+  "shell_port": 54641,
+  "iopub_port": 54642,
+  "stdin_port": 54643,
+  "control_port": 54645,
+  "hb_port": 54644,
+  "ip": "127.0.0.1",
+  "key": "ce2a8fda-603d3399f008f6d7b2cf7a7b",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/dD processing/GC_IRMS_processing/OSIBL GCIRM Processing - Bayes.ipynb"
+}

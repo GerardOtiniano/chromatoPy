@@ -1,0 +1,7 @@
+{
+  "NotebookApp": {
+    "nbserver_extensions": {
+      "aext_share_notebook": true
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "shell_port": 49412,
+  "iopub_port": 49413,
+  "stdin_port": 49414,
+  "control_port": 49416,
+  "hb_port": 49415,
+  "ip": "127.0.0.1",
+  "key": "3cb2e04e-9aaf822784ba33d9244cc991",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/MODIS Lake Ice Index.ipynb"
+}

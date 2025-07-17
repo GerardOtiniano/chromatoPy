@@ -1,0 +1,13 @@
+{
+  "shell_port": 56094,
+  "iopub_port": 56095,
+  "stdin_port": 56096,
+  "control_port": 56098,
+  "hb_port": 56097,
+  "ip": "127.0.0.1",
+  "key": "4c80ac73-5c4cde7f8546a76816dd7b21",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/UMass GDGT Integration/OrgPygami/orgpygami.ipynb"
+}

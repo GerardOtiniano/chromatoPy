@@ -1,0 +1,13 @@
+{
+  "shell_port": 49665,
+  "iopub_port": 49666,
+  "stdin_port": 49667,
+  "control_port": 49669,
+  "hb_port": 49668,
+  "ip": "127.0.0.1",
+  "key": "e9c50f47-2e984d0cff966a994fb57432",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/dD processing/GC_IRMS_processing/OSIBL Test.ipynb"
+}

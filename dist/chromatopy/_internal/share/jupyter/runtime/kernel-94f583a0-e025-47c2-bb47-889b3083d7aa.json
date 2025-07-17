@@ -1,0 +1,13 @@
+{
+  "shell_port": 57283,
+  "iopub_port": 57284,
+  "stdin_port": 57285,
+  "control_port": 57287,
+  "hb_port": 57286,
+  "ip": "127.0.0.1",
+  "key": "7aad4707-f3f8080265160e50f1c4a1e6",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "Desktop/UB/Projects/dD processing/GC_IRMS_processing/f1cbd488-c69e-4e2b-8c9c-e2eb231b7d10"
+}

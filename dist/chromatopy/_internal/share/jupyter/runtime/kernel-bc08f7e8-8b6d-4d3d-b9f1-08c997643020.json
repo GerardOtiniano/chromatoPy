@@ -1,0 +1,13 @@
+{
+  "shell_port": 52161,
+  "iopub_port": 52162,
+  "stdin_port": 52163,
+  "control_port": 52165,
+  "hb_port": 52164,
+  "ip": "127.0.0.1",
+  "key": "bfcd6adf-95720cf6b06fc16e5e17bae5",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pyleoclim",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/BolSh.ipynb"
+}

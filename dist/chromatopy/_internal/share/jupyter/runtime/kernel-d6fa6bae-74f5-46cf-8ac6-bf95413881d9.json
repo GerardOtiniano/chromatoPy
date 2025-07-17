@@ -1,0 +1,13 @@
+{
+  "shell_port": 63248,
+  "iopub_port": 63249,
+  "stdin_port": 63250,
+  "control_port": 63252,
+  "hb_port": 63251,
+  "ip": "127.0.0.1",
+  "key": "cf6e37a0-06198f08790e14357eedda5c",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/High lat clim function.ipynb"
+}

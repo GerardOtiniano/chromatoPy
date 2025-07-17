@@ -1,0 +1,13 @@
+{
+  "shell_port": 51262,
+  "iopub_port": 51263,
+  "stdin_port": 51264,
+  "control_port": 51266,
+  "hb_port": 51265,
+  "ip": "127.0.0.1",
+  "key": "dc33afa5-e3f7453da3aeb659d996dd15",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/Finnish Lake Manuscript/Lipd Files.ipynb"
+}

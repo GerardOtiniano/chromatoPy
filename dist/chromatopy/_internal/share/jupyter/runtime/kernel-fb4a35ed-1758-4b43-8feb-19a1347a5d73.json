@@ -1,0 +1,13 @@
+{
+  "shell_port": 55321,
+  "iopub_port": 55322,
+  "stdin_port": 55323,
+  "control_port": 55325,
+  "hb_port": 55324,
+  "ip": "127.0.0.1",
+  "key": "2b36c47c-44a03a1ed6177a651fa02299",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/dD processing/GC_IRMS_processing/Previous Iteration/dD processing.ipynb"
+}

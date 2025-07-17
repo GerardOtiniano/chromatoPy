@@ -1,0 +1,13 @@
+{
+  "shell_port": 51714,
+  "iopub_port": 51715,
+  "stdin_port": 51716,
+  "control_port": 51718,
+  "hb_port": 51717,
+  "ip": "127.0.0.1",
+  "key": "04abeee1-fca50d50debb0f68aa8f1fd7",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pyleoclim",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/Lake BS GDGT Figures.ipynb"
+}

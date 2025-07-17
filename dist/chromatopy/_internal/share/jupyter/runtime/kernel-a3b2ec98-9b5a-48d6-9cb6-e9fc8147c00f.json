@@ -1,0 +1,12 @@
+{
+  "shell_port": 60683,
+  "iopub_port": 60684,
+  "stdin_port": 60685,
+  "control_port": 60687,
+  "hb_port": 60686,
+  "ip": "127.0.0.1",
+  "key": "dde409bb-5783c42bd7757c4f84bd29e0",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "conda-env-phdenv-py"
+}

@@ -1,0 +1,13 @@
+{
+  "shell_port": 51160,
+  "iopub_port": 51161,
+  "stdin_port": 51162,
+  "control_port": 51164,
+  "hb_port": 51163,
+  "ip": "127.0.0.1",
+  "key": "f7aec63f-5d2b6972201ea183fea28667",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "jupyter_env",
+  "jupyter_session": "/Users/gerard/Desktop/Fake Matchmaker.ipynb"
+}

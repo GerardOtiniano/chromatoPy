@@ -1,0 +1,15 @@
+{
+ "argv": [
+  "/Users/gerard/anaconda3/envs/jupyter_env/bin/python",
+  "-Xfrozen_modules=off",
+  "-m",
+  "ipykernel_launcher",
+  "-f",
+  "{connection_file}"
+ ],
+ "display_name": "jupyter_env",
+ "language": "python",
+ "metadata": {
+  "debugger": true
+ }
+}

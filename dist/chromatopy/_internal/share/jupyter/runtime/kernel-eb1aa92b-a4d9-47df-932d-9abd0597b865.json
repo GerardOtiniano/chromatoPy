@@ -1,0 +1,13 @@
+{
+  "shell_port": 57777,
+  "iopub_port": 57778,
+  "stdin_port": 57779,
+  "control_port": 57781,
+  "hb_port": 57780,
+  "ip": "127.0.0.1",
+  "key": "543b9086-706b2864bdc78e7c97671182",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "python3",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/Finnish Lake Manuscript/Biomarker Processing 2.ipynb"
+}

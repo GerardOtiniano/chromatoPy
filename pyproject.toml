@@ -1,26 +1,57 @@
 [tool.poetry]
-name = "chromatopy"
-version = "2.0.0"
+name        = "chromatopy-app"
+version     = "1.0.0"
 description = "Peak integration software."
-authors = ["Dr. Gerard Otiniano <gerardotiniano@gmail.com>", "Dr. Elizabeth Thomas"]
-readme = "README.md"
-packages = [{include = "chromatopy", from = "src"}]
+authors     = ["Dr. Gerard Otiniano <gerardotiniano@gmail.com>", "Dr. Elizabeth Thomas"]
+readme      = "README.md"
+packages    = [{ include = "chromatopy", from = "src" }]
+include     = ["src/chromatopy/config/chromatopy_gdgt_config.json"]
+
+[tool.poetry.scripts]
+chromatopy = "chromatopy.__main__:main"
 
 [tool.poetry.dependencies]
-python = "^3.10"
-numpy = "^1.1.0"
-pandas = "^2.0.0"
-scikit-learn = "^1.0.0"
-scipy = "^1.0.0"
-setuptools = "69.5.1"
-matplotlib = "^3.6.0"
-rainbow-api = "1.0.9"
-pybaselines = "1.1.0"
-tqdm = "^2.0.0"
-pillow = "^11.0.0"
-imagehash = "^4.0.0"
-
+python      = "^3.10"
+numpy       = "^1.24"          # pulled in by scipy
+scipy       = "1.8.0rc1"
+pandas      = ">=2.2,<3.0"
+matplotlib  = ">=3.7,<4.0"
+pybaselines = "^1.2"
+tqdm        = ">=4.66,<5.0"
+toga        = "0.5.2"
 
 [build-system]
-requires = ["poetry-core"]
+requires    = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.briefcase]
+project_name   = "chromatopy-app"
+bundle         = "com.otiniano.chromatopy"
+version        = "1.0.0"
+description    = "Peak integration software."
+author         = "Dr. Gerard Otiniano"
+author_email   = "gerardotiniano@gmail.com"
+license        = { file = "LICENSE" }
+home_page      = "https://github.com/gerardotiniano/chromatopy"
+
+[tool.briefcase.app.chromatopy]
+formal_name    = "chromatopy"
+description    = "Peak integration software for GDGT analysis"
+sources        = ["src/chromatopy"]
+entry_point    = "chromatopy.__main__:main"
+icon           = "chromatopy_icon"
+python_version = "3.10"
+requires       = [
+  "scipy==1.8.0rc1",
+  "pybaselines==1.2.0",
+  "pandas>=2.2,<3.0",
+  "matplotlib>=3.7,<4.0",
+  "tqdm>=4.66,<5.0",
+  "toga==0.5.2",
+]
+
+# Inject environment variables into Info.plist so OpenBLAS uses
+# safe, non–self-modifying kernels on launch.
+[tool.briefcase.app.chromatopy.plist.LSEnvironment]
+OPENBLAS_CORETYPE    = "ARMV8"
+OPENBLAS_NUM_THREADS = "1"

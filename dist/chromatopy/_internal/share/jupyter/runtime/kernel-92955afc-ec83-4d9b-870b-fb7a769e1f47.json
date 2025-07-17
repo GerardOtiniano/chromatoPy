@@ -1,0 +1,13 @@
+{
+  "shell_port": 60063,
+  "iopub_port": 60064,
+  "stdin_port": 60065,
+  "control_port": 60067,
+  "hb_port": 60066,
+  "ip": "127.0.0.1",
+  "key": "0c55368b-5d76449d0918d39d5ddfb34f",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/Finnish Lake Manuscript/Drafts/Lake AJU/Notebooks/Biomarkers 2.ipynb"
+}

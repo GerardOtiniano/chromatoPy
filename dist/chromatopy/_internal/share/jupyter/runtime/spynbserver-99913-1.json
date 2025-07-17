@@ -1,0 +1,13 @@
+{
+  "base_url": "/",
+  "hostname": "localhost",
+  "password": false,
+  "pid": 99976,
+  "port": 8888,
+  "root_dir": "/var/folders/n9/pm6mg74j2bl4_crq7scjg9wm0000gn/T/spyder-gerard/notebooks",
+  "secure": false,
+  "sock": "",
+  "token": "8990c2c1421865af0aefd3cdf3f7d7daa8fce68e114e2612",
+  "url": "http://localhost:8888/",
+  "version": "2.14.2"
+}

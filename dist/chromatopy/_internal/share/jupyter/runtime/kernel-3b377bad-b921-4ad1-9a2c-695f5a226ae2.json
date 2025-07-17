@@ -1,0 +1,13 @@
+{
+  "shell_port": 51366,
+  "iopub_port": 51367,
+  "stdin_port": 51368,
+  "control_port": 51370,
+  "hb_port": 51369,
+  "ip": "127.0.0.1",
+  "key": "db24c8e6-6a4ec975e2e3894934a0e54a",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "Desktop/UB/Projects/GDGT-Climate Forward Model/10a1d081-7622-44b2-a040-012d0ceff320"
+}

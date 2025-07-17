@@ -1,0 +1,13 @@
+{
+  "shell_port": 53095,
+  "iopub_port": 53096,
+  "stdin_port": 53097,
+  "control_port": 53099,
+  "hb_port": 53098,
+  "ip": "127.0.0.1",
+  "key": "b9640fe2-d8ec7532a7c760104099e976",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pyleo",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/Finnish Lake Manuscript/Drafts/Lake AJU/Notebooks/Manuscript Figures - Previous Reconstructions.ipynb"
+}

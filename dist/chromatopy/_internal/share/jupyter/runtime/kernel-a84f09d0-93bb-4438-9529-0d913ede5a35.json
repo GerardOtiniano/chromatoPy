@@ -1,0 +1,13 @@
+{
+  "shell_port": 60604,
+  "iopub_port": 60605,
+  "stdin_port": 60606,
+  "control_port": 60608,
+  "hb_port": 60607,
+  "ip": "127.0.0.1",
+  "key": "af1def68-ba4e8d58a01496b52b8b196e",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/GRATE/Maps.ipynb"
+}

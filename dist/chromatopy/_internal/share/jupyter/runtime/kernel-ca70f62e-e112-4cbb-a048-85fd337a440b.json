@@ -1,0 +1,13 @@
+{
+  "shell_port": 50729,
+  "iopub_port": 50730,
+  "stdin_port": 50731,
+  "control_port": 50733,
+  "hb_port": 50732,
+  "ip": "127.0.0.1",
+  "key": "c64bb9ff-d091a799ec6de13135a2415c",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/OSIBL GCIRM Processing - test_050224.ipynb"
+}

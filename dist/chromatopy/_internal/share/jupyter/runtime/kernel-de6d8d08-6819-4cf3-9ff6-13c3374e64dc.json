@@ -1,0 +1,13 @@
+{
+  "shell_port": 52336,
+  "iopub_port": 52337,
+  "stdin_port": 52338,
+  "control_port": 52340,
+  "hb_port": 52339,
+  "ip": "127.0.0.1",
+  "key": "f831bc3a-82b56a169f04b2b36b7ef9a9",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/GRATE/Maps.ipynb"
+}

@@ -1,0 +1,13 @@
+{
+  "shell_port": 56421,
+  "iopub_port": 56422,
+  "stdin_port": 56423,
+  "control_port": 56425,
+  "hb_port": 56424,
+  "ip": "127.0.0.1",
+  "key": "87510ea1-2379149d80eea9ebf6194abd",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "pdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/GDGT-Climate Forward Model/GDGT Forward Model.ipynb"
+}

@@ -1,0 +1,13 @@
+{
+  "base_url": "/",
+  "hostname": "localhost",
+  "password": false,
+  "pid": 71144,
+  "port": 8888,
+  "root_dir": "/Users/gerard",
+  "secure": false,
+  "sock": "",
+  "token": "43dbd7da1954167c81e592bb24213304a6c3f381fcfe03eb",
+  "url": "http://localhost:8888/",
+  "version": "1.23.4"
+}

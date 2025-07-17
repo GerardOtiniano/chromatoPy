@@ -1,0 +1,13 @@
+{
+  "shell_port": 49676,
+  "iopub_port": 49677,
+  "stdin_port": 49678,
+  "control_port": 49680,
+  "hb_port": 49679,
+  "ip": "127.0.0.1",
+  "key": "787849a6-f81d5a0ee58cf5aa2376ae3d",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/Manuscripts/Finnish Lake Manuscript/Drafts/Lake AJU/Notebooks/AJU Manusctip Figures Updated Oct 5 2023.ipynb"
+}

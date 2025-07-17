@@ -1,0 +1,13 @@
+{
+  "shell_port": 61550,
+  "iopub_port": 61551,
+  "stdin_port": 61552,
+  "control_port": 61554,
+  "hb_port": 61553,
+  "ip": "127.0.0.1",
+  "key": "a0c721a4-588e0c1871dff2bdab8b010e",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "jupyter_env",
+  "jupyter_session": "/Users/gerard/Desktop/Untitled3.ipynb"
+}

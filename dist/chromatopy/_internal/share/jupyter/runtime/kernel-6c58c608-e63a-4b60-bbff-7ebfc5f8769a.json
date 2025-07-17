@@ -1,0 +1,13 @@
+{
+  "shell_port": 54392,
+  "iopub_port": 54393,
+  "stdin_port": 54394,
+  "control_port": 54396,
+  "hb_port": 54395,
+  "ip": "127.0.0.1",
+  "key": "3947cb11-07828819a949c7688944bfb3",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "spyder",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/dD processing/GC_IRMS_processing/Untitled.ipynb"
+}

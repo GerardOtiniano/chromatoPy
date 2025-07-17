@@ -1,0 +1,11 @@
+{
+  "base_url": "/",
+  "hostname": "localhost",
+  "notebook_dir": "/Users/Prawniano",
+  "password": false,
+  "pid": 91860,
+  "port": 8888,
+  "secure": false,
+  "token": "dbf75ae8fb24ed5a9c5c008390f8ecfa0229c0e976c5a2e0",
+  "url": "http://localhost:8888/"
+}

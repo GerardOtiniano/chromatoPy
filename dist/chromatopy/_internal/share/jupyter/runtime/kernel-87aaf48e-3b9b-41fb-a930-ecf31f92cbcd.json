@@ -1,0 +1,13 @@
+{
+  "shell_port": 62216,
+  "iopub_port": 62217,
+  "stdin_port": 62218,
+  "control_port": 62220,
+  "hb_port": 62219,
+  "ip": "127.0.0.1",
+  "key": "485ed290-d69985b881a43fa0d46a3eb2",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/Vegetation DNA.ipynb"
+}

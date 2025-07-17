@@ -1,0 +1,13 @@
+{
+  "shell_port": 52219,
+  "iopub_port": 52220,
+  "stdin_port": 52221,
+  "control_port": 52223,
+  "hb_port": 52222,
+  "ip": "127.0.0.1",
+  "key": "8c5ddff9-c93f2e5facd5840670c059ad",
+  "transport": "tcp",
+  "signature_scheme": "hmac-sha256",
+  "kernel_name": "phdenv",
+  "jupyter_session": "/Users/gerard/Desktop/UB/Projects/RAW/BolSh/BolSh.ipynb"
+}
