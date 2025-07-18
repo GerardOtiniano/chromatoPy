@@ -1161,7 +1161,7 @@ class SignalAnalyzer:
             self.waiting_for_input = False #WHY?
             plt.close(self.fig)  # Close the figure to resume script execution
         elif event.key == "d":
-            self.undo_last_action() #BUG
+            self.undo_last_action()
         elif event.key == "r":
             self.clear_peaks_subplot()
             # Clear the entries in self.intergrated_peaks
@@ -1203,6 +1203,9 @@ class SignalAnalyzer:
         if self.action_stack:
             last_action, ax, key = self.action_stack.pop()
             peak_data = self.integrated_peaks.pop(key, None)
+            self.peak_results['areas'].pop()
+            self.peak_results['rts'].pop()
+            self.peak_results['area_ensemble'].pop()
             if peak_data:
                 if "line" in peak_data:
                     for line in peak_data["line"]:
@@ -1241,3 +1244,4 @@ class SignalAnalyzer:
         ax.clear()
         self.setup_subplot(ax)
         plt.draw()
+
