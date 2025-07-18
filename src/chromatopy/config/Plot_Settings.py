@@ -39,7 +39,7 @@ PLOT_SCHEMA = [
         "name": "compounds",
         "default": "",
         "type": "str_or_none",
-        "description": "List of compounds separated by commas.",
+        "description": "Required input: List of compounds separated by commas.\n(Number of compounds should be equal to number  of peaks to be selected)",
     },
     {
         "name": "time_header",
@@ -111,7 +111,7 @@ def open_plot_settings(app):
 
     # Scrollable root container
     scroll = toga.ScrollContainer(horizontal=False)
-    root_box = toga.Box(style=Pack(direction=COLUMN, padding=10,background_color = "#F7ECE1"))
+    root_box = toga.Box(style=Pack(direction=COLUMN, margin=10,background_color = "#F7ECE1"))
     scroll.content = root_box
     prev_window = app.main_window.content
     prev_title = app.main_window.title
@@ -122,30 +122,31 @@ def open_plot_settings(app):
 
     # Build parameter rows
     for p in PLOT_SCHEMA:
-        param_box = toga.Box(style=Pack(direction=COLUMN, padding_top = 12, padding_left = 10))
+        param_box = toga.Box(style=Pack(direction=COLUMN, margin_top = 12, margin_left = 10))
         root_box.add(param_box)
 
         # Name (bold)
         param_box.add(
             toga.Label(
                 p["name"],
-                style=Pack(font_weight="bold", font_size=12, padding = 2,padding_left = 10, color="#0D1B1E"),
+                style=Pack(font_weight="bold", font_size=12, margin = 2, margin_left = 10, color="#0D1B1E"),
             )
         )
         # Description (grey)
         param_box.add(
             toga.Label(
                 p["description"],
-                style=Pack(color = "#0D1B1E", font_size=12, padding_bottom=4, padding_left = 10)
+                style=Pack(color = "#0D1B1E", font_size=12, margin_bottom=4, margin_left = 10)
             )
         )
         # Entry field
         if p["name"] == "compounds":
-            txt = toga.TextInput(placeholder= "Enter list of compounds.",
-                                 style=Pack(width=300, padding_left=10, background_color="#3B4954", color="#F7ECE1"))
+            txt = toga.TextInput(value=str(settings[p["name"]]) if settings[p["name"]] is not None else "",
+                placeholder= "Enter list of compounds.",
+                style=Pack(width=300, margin_left=10, background_color="#3B4954", color="#F7ECE1"))
         else:
             txt = toga.TextInput(value=str(settings[p["name"]]),
-                                 style=Pack(width=300, padding_left=10, background_color="#3B4954", color="#F7ECE1"))
+                                 style=Pack(width=300, margin_left=10, background_color="#3B4954", color="#F7ECE1"))
 
         param_box.add(txt)
         entry_vars[p["name"]] = (txt, p["type"])
@@ -194,10 +195,10 @@ def open_plot_settings(app):
     back_path = "Icons/back.png"
     back_icon = toga.Icon(back_path)
     button_row.add(toga.Button(icon=back_icon, on_press=go_back,
-                               style=Pack(margin_left = 60, margin_right = 170, height=40, width=60, padding_top=25)))
+                               style=Pack(margin_left = 60, margin_right = 170, height=40, width=60, margin_top=25)))
 
     button_row.add(toga.Button("Save", on_press=on_save,
-                               style=Pack( margin_left = 170, margin_right = 60, height=40, width=60, padding_top=25, background_color="#3B4954",
+                               style=Pack( margin_left = 170, margin_right = 60, height=40, width=60, margin_top=25, background_color="#3B4954",
                                           color="#F7ECE1",
                                           font_weight="bold", font_size=12)))
     root_box.add(button_row)
