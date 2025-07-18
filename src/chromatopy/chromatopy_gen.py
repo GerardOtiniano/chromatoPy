@@ -1203,6 +1203,9 @@ class SignalAnalyzer:
         if self.action_stack:
             last_action, ax, key = self.action_stack.pop()
             peak_data = self.integrated_peaks.pop(key, None)
+            self.peak_results['areas'].pop()
+            self.peak_results['rts'].pop()
+            self.peak_results['area_ensemble'].pop()
             if peak_data:
                 if "line" in peak_data:
                     for line in peak_data["line"]:

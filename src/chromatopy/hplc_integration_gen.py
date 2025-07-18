@@ -3,6 +3,7 @@ from . import chromatopy_gen
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
 import re
+import json
 
 def read_data_concurrently(folder_path, files, headers):
     def load_and_clean_data(file):
@@ -43,6 +44,45 @@ def folder_handling(folder_path):
     )
     return folder_path, csv_files
 
+def output_handling(folder_path):
+    output_folder = os.path.join(folder_path, "Output_chromatoPy")
+    os.makedirs(output_folder,exist_ok=True)
+    figures_folder = os.path.join(output_folder, "Figures_chromatoPy")
+    os.makedirs(figures_folder, exist_ok=True)
+    json_folder = os.path.join(output_folder, "Individual Samples")
+    os.makedirs(json_folder, exist_ok=True)
+    save_path = os.path.join(output_folder, "Output.csv")
+    paths = [figures_folder,json_folder,save_path]
+    return paths
+
+def abortion_handling(output, paths, abort_sample):
+    output_samples = output["Sample Name"].tolist()
+    output_samples.sort(key = numerical_sort_key)
+
+    if abort_sample in output_samples and abort_sample == output_samples[-1]:
+        samples_wanted = output_samples
+        samples_removed = []
+    else:
+        idx = output_samples.index(abort_sample)
+        samples_wanted = output_samples[:idx+1]
+        samples_removed = output_samples[idx+1:]
+
+    figs = []
+    for fig_file in os.listdir(paths[0]):
+        figs.append(fig_file.removesuffix("_fig.png"))
+    jsons = []
+    for json_file in os.listdir(paths[1]):
+        jsons.append(json_file.removesuffix(".json"))
+    for figf in figs:
+        if figf not in samples_wanted:
+            os.remove(os.path.join(paths[0], figf + "_fig.png"))
+    for jsonf in jsons:
+        if jsonf not in samples_wanted:
+            os.remove(os.path.join(paths[1], jsonf + ".json"))
+
+    for sample in samples_removed:
+        output.drop(output[output["Sample Name"] == sample].index, inplace=True)
+
 def hplc_integration_gen(folder_path=None, compounds=None, window_bounds=[10.5,20], headers=["RT (min)","Signal"], peak_neighborhood_n=5, smoothing_window=12, smoothing_factor=3, gaus_iterations=4000, maximum_peak_amplitude=None, peak_boundary_derivative_sensitivity=0.01, peak_prominence=0.001):
     folder_path, csv_files = folder_handling(folder_path)
     print("Reading data...")
@@ -50,13 +90,47 @@ def hplc_integration_gen(folder_path=None, compounds=None, window_bounds=[10.5,2
 
     iref = True
     ref = None
-    output = pd.DataFrame(columns="column names")
+    abort = False
+
+    paths = output_handling(folder_path)
+
+    if os.path.exists(paths[2]):
+        output = pd.read_csv(paths[2])
+    else:
+        output = pd.DataFrame(columns=['Sample Name'] + compounds)
+
     for df in data:
         sample_name = df["Sample Name"].iloc[0]
+
+        if sample_name in output["Sample Name"].values:
+            continue
+
         analyzer = chromatopy_gen.SignalAnalyzer(df, compounds, window_bounds, headers, gaus_iterations, sample_name, peak_neighborhood_n, smoothing_window,
                                   smoothing_factor, peak_boundary_derivative_sensitivity, peak_prominence,
                                   maximum_peak_amplitude, iref, ref)
         peaks, fig, ref_new, r_pressed, e_pressed = analyzer.run()
+
+        # Results dataframe population
+        areas = peaks['areas']
+        rts = peaks['rts']
+
+        # if compounds is None or len(compounds) != len(areas):
+        #     return "compound_error"
+
+        odf = pd.DataFrame(list(zip(areas, rts)), columns=['areas', 'rts'])
+        odf.sort_values(by="rts", inplace=True)
+        odf['compounds'] = compounds
+        output.loc[len(output)] = [sample_name] + odf["areas"].tolist()
+
+        # Figures saving process
+        fig_path = os.path.join(paths[0], f"{sample_name}_fig.png")
+        fig.savefig(fig_path)
+
+        # Peak structure saving process
+        json_path = os.path.join(paths[1], f"{sample_name}.json")
+        with open(json_path, "w", encoding="utf-8") as outfile:
+            json.dump(peaks, outfile, indent=3)
+
         if iref:
             ref = ref_new
             iref = False
@@ -64,28 +138,21 @@ def hplc_integration_gen(folder_path=None, compounds=None, window_bounds=[10.5,2
             ref = peaks
             print(f"Reference peaks updated using {sample_name}.")
         elif e_pressed:
+            abortion_handling(output, paths, sample_name)
             print(f"Integration aborted by user at sample: {sample_name}")
-            return "aborted"
+            abort = True
+            break
 
-'''
-Dataframe
-first column: sample names
-first row: peak names
-A1 empty (first cell)
-each column is a peak
-each row is a sample
-and cell contains peak area for that sample for that peak
+    output.sort_values(
+        by="Sample Name",
+        key=lambda col: col.map(numerical_sort_key),
+        inplace=True
+    )
 
-1) Take peak areas from peak results, put into dataframe first columns
-2) Take rts from peak results, put into second column
-3) sort by second column (rts)
-4) add names/compounds to third column 
-5) this dataframe goes into a new dataframe where first row: gets all third column values, row: sample name, areas.
+    output.to_csv(paths[2], index=False)
 
-1) Save peaks structure as json file.
-
-1) Figures folder storing every figure
-'''
+    if abort:
+        return "aborted"
 
 
 
