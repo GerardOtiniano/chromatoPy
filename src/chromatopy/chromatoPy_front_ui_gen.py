@@ -2,6 +2,7 @@ import os
 import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
+import asyncio
 
 from .hplc_integration_gen import hplc_integration_gen
 from .config.Integration_Settings import load_integration_settings, open_integration_settings
@@ -17,7 +18,7 @@ class ChromatoPyApp(toga.App):
         self.main_window = toga.MainWindow(title="ChromatoPy", size=(600, 600), resizable=True)
 
         # ─── Layout container ───
-        main_box = toga.Box(style=Pack(direction="column", padding=10, background_color = "#F7ECE1"))
+        main_box = toga.Box(style=Pack(direction="column", margin=10, background_color = "#F7ECE1"))
 
         # ─── Image ───
         image_path = "Icons/chromatoPy2.png"
@@ -34,17 +35,10 @@ class ChromatoPyApp(toga.App):
                                                background_color="#3B4954", color="#F7ECE1", font_weight="bold",
                                                font_size=12))
 
-        folder_row = toga.Box(style=Pack(direction= ROW, padding_top=20, padding_bottom=20))
+        folder_row = toga.Box(style=Pack(direction= ROW, margin=(20,0,20,0)))
         folder_row.add(self.path_input)
         folder_row.add(browse_button)
         main_box.add(folder_row)
-
-        # # Path input
-        # self.path_input = toga.TextInput(
-        #     placeholder="Enter/Path/To/Raw/Data",
-        #     style=Pack(height=25, width=400, margin=(20, 100, 0, 100), font_size = 12, background_color="#3B4954", color = "#F7ECE1"))
-        #
-        # main_box.add(self.path_input)
 
         settings_btn = toga.Button("Integration Settings", on_press= self.on_integration_settings,
                                    style=Pack(height=25, width=360, margin=(0, 120, 0, 120),
@@ -67,15 +61,15 @@ class ChromatoPyApp(toga.App):
         self.main_window.content = main_box
         self.main_window.show()
 
-    def on_integration_settings(self, widget):
-        open_integration_settings(self)
-
     async def select_folder(self, widget):
         home_dir = os.path.expanduser("~")
         dialog = toga.SelectFolderDialog(title="Select Raw Data Folder", initial_directory=home_dir)
         folder = await self.main_window.dialog(dialog)
         if folder:
             self.path_input.value = folder
+
+    def on_integration_settings(self, widget):
+        open_integration_settings(self)
 
     def on_plot_settings(self, widget):
         open_plot_settings(self)
@@ -116,7 +110,7 @@ class ChromatoPyApp(toga.App):
                 self.error_label.text = "Integration aborted by user."
                 return
 
-            self.main_window.info_dialog("Done", "HPLC integration completed successfully.") #Disappears immediately why?
+            self.info_dialog("Done", "HPLC integration completed successfully.") #Doesn't appear. Bug on Mac??
 
         except Exception as e:
             self.error_label.text = f"Error: {e}"
