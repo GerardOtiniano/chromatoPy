@@ -116,9 +116,11 @@ def hplc_integration_gen(folder_path=None, compounds=None, window_bounds=[10.5,2
                                   maximum_peak_amplitude, iref, ref)
         peaks, fig, ref_new, r_pressed, e_pressed = analyzer.run()
 
-        # Results dataframe population
-        areas = peaks['areas']
-        rts = peaks['rts']
+        if 'areas' not in peaks:
+           areas = []
+        else:
+            areas = peaks['areas']
+            rts = peaks['rts']
 
         if compounds is None or len(compounds) != len(areas):
             compound_error = True
