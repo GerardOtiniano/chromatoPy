@@ -121,14 +121,14 @@ def open_settings(app):
     """
     settings = load_integration_settings()
 
-    win = toga.Window(title="Integration Settings", size=(600, 500), resizable=True)
-    win.show()
-
     # Scrollable root container
     scroll = toga.ScrollContainer(horizontal=False)
-    root_box = toga.Box(style=Pack(direction=COLUMN, padding=10))
+    root_box = toga.Box(style=Pack(direction=COLUMN, margin=10, background_color = "#F7ECE1"))
     scroll.content = root_box
-    win.content = scroll
+    prev_window = app.main_window.content
+    prev_title = app.main_window.title
+    app.main_window.content = scroll
+    app.main_window.title = "Integration Settings"
 
     entry_vars = {}  # param-name → (TextInput, type)
 
@@ -138,25 +138,25 @@ def open_settings(app):
         if "name" not in p:
             continue
 
-        param_box = toga.Box(style=Pack(direction=COLUMN, padding_bottom=12))
+        param_box = toga.Box(style=Pack(direction=COLUMN, margin_top = 12, margin_left = 10))
         root_box.add(param_box)
 
         # Name (bold)
         param_box.add(
             toga.Label(
                 p["name"],
-                style=Pack(font_weight="bold", padding_bottom=2),
+                style=Pack(font_weight="bold", font_size=12, margin_bottom=2, margin_left = 10, color = "#0D1B1E")
             )
         )
         # Description (grey)
         param_box.add(
             toga.Label(
                 p["description"],
-                style=Pack(color="grey", font_size=12, padding_bottom=4),
+                style=Pack(color = "#0D1B1E", font_size=12, margin_bottom=4, margin_left = 10),
             )
         )
         # Entry field
-        txt = toga.TextInput(value=str(settings[p["name"]]), style=Pack(width=300))
+        txt = toga.TextInput(value=str(settings[p["name"]]), style=Pack(width=300, margin_left = 10, background_color="#3B4954", color = "#F7ECE1"))
         param_box.add(txt)
         entry_vars[p["name"]] = (txt, p["type"])
 
@@ -190,8 +190,20 @@ def open_settings(app):
                 new_settings[name] = value
 
         save_integration_settings(new_settings)
-        win.close()
 
-    root_box.add(toga.Button("Save", on_press=on_save, style=Pack(padding_top=20)))
+    def go_back(widget):
+        app.main_window.content = prev_window
+        app.main_window.title = prev_title
 
-    win.show()
+    button_row = toga.Box(style=Pack(direction=ROW))
+    back_path = "Icons/back.png"
+    back_icon = toga.Icon(back_path)
+    button_row.add(toga.Button(icon=back_icon, on_press=go_back,
+                               style=Pack(margin_left=60, margin_right=170, height=40, width=60, margin_top=25)))
+
+    button_row.add(toga.Button("Save", on_press=on_save,
+                               style=Pack(margin_left=170, margin_right=60, height=40, width=60, margin_top=25,
+                                          background_color="#3B4954",
+                                          color="#F7ECE1",
+                                          font_weight="bold", font_size=12)))
+    root_box.add(button_row)

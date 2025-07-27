@@ -126,11 +126,16 @@ def open_gdgt_selector(app: toga.App):
     """
     cfg = load_gdgt_config()
 
-    win = toga.Window(title="Target GDGTs", size=(960, 900), resizable=True)
-
-    # Root scroll box
-    root = toga.Box(style=Pack(direction=COLUMN, padding=16))
-    win.content = toga.ScrollContainer(horizontal=False, content=root)
+    # Scroll container and root box (updated for clean redraw)
+    prev_window = app.main_window.content
+    prev_title = app.main_window.title
+    prev_size = app.main_window.size
+    scroll = toga.ScrollContainer(horizontal=False)
+    root = toga.Box(style=Pack(direction=COLUMN, margin=16, background_color = "#F7ECE1"))
+    scroll.content = root
+    app.main_window.content = scroll
+    app.main_window.size = (960,960)
+    app.main_window.title = "GDGT Settings"
 
     # bookkeeping
     name_vars, chk_vars = {}, {}
@@ -147,40 +152,47 @@ def open_gdgt_selector(app: toga.App):
 
     # ── UI builder ───────────────────────────────────────────
     def redraw():
-        root.children.clear()
-        name_vars.clear(); chk_vars.clear()
-        trace_inputs.clear(); label_inputs.clear()
+        nonlocal root
+        root = toga.Box(style=Pack(direction=COLUMN, margin=16, background_color = "#F7ECE1"))
+        scroll.content = root
+
+        name_vars.clear()
+        chk_vars.clear()
+        trace_inputs.clear()
+        label_inputs.clear()
 
         for g_key, g_data in cfg.items():
             # card wrapper
-            card = toga.Box(style=Pack(direction=COLUMN, padding=12, padding_bottom=18))
+            card = toga.Box(style=Pack(direction=COLUMN, margin=12, margin_bottom=18))
             root.add(card)
 
             # header row (switch + name)
-            hdr = toga.Box(style=Pack(direction=ROW, alignment="center", padding_bottom=6))
+            hdr = toga.Box(style=Pack(direction=ROW, align_items="center", margin_bottom=6))
             card.add(hdr)
 
-            chk = toga.Switch("Enable", style=Pack(width=90))
+            chk_box = toga.Box(style=Pack(width=75, margin_right = 10, align_items = "center", background_color = "#3B4954"))
+            hdr.add(chk_box)
+            chk = toga.Switch("Enable", style=Pack(width=65, margin = (2,5,2,5)))
             chk.value = g_data.get("checked", True)
             chk_vars[g_key] = chk
-            hdr.add(chk)
+            chk_box.add(chk)
 
-            name_in = toga.TextInput(value=g_key, style=Pack(flex=2, padding_right=6))
+            name_in = toga.TextInput(value=g_key, style=Pack(flex=2, margin_right=6, background_color="#3B4954", color="#F7ECE1"))
             name_vars[g_key] = name_in
             hdr.add(name_in)
 
             # RT window row
-            win_row = toga.Box(style=Pack(direction=ROW, alignment="center", padding_bottom=6))
+            win_row = toga.Box(style=Pack(direction=ROW, align_items="center", margin_bottom=6))
             card.add(win_row)
 
-            win_row.add(toga.Label("RT min:", style=Pack(padding_left=4, padding_right=2)))
+            win_row.add(toga.Label("RT min:", style=Pack(margin_left=4, margin_right=2, color = "#0D1B1E", font_weight="bold")))
             min_in = toga.TextInput(value=str(g_data.get("window", [0, 0])[0]),
-                                    style=Pack(width=80, padding_right=8))
+                                    style=Pack(width=80, margin_right=8, background_color="#3B4954", color="#F7ECE1"))
             win_row.add(min_in)
 
-            win_row.add(toga.Label("RT max:", style=Pack(padding_right=2)))
+            win_row.add(toga.Label("RT max:", style=Pack(margin_right=2, color = "#0D1B1E", font_weight="bold")))
             max_in = toga.TextInput(value=str(g_data.get("window", [0, 0])[1]),
-                                    style=Pack(width=80))
+                                    style=Pack(width=80, background_color="#3B4954", color="#F7ECE1"))
             win_row.add(max_in)
 
             g_data["__min_rt_in__"] = min_in
@@ -189,15 +201,15 @@ def open_gdgt_selector(app: toga.App):
             # trace list
             trace_inputs[g_key], label_inputs[g_key] = {}, {}
             for t_key, lab in g_data["traces"].items():
-                row = toga.Box(style=Pack(direction=ROW, alignment="center", padding_bottom=4))
+                row = toga.Box(style=Pack(direction=ROW, align_items="center", margin_bottom=4))
                 card.add(row)
 
-                t_in = toga.TextInput(value=t_key, style=Pack(width=120, padding_right=6))
-                l_in = toga.TextInput(value=lab, style=Pack(flex=1, padding_right=6))
+                t_in = toga.TextInput(value=t_key, style=Pack(width=120, margin_right=6, background_color="#3B4954", color="#F7ECE1"))
+                l_in = toga.TextInput(value=lab, style=Pack(flex=1, margin_right=6, background_color="#3B4954", color="#F7ECE1"))
                 del_btn = toga.Button(
                     "✕",
                     on_press=lambda w, g=g_key, t=t_key: remove_trace(g, t),
-                    style=Pack(width=32),
+                    style=Pack(width=32, background_color="#3B4954", color="#F7ECE1", font_weight="bold"),
                 )
                 row.add(t_in); row.add(l_in); row.add(del_btn)
 
@@ -214,17 +226,26 @@ def open_gdgt_selector(app: toga.App):
                         ),
                         redraw(),
                     ),
-                    style=Pack(width=120, padding_top=4),
+                    style=Pack(width=120, margin_top=4, background_color="#3B4954", color="#F7ECE1", font_weight="bold"),
                 )
             )
 
             # subtle divider
-            div = toga.Box(style=Pack(height=1, background_color="silver"))
+            div = toga.Box(style=Pack(height=1, background_color="#3B4954"))
             root.add(div)
 
         # footer (once)
-        footer = toga.Box(style=Pack(direction=ROW, alignment="center", padding_top=12))
+        footer = toga.Box(style=Pack(direction=ROW, align_items="center", margin=(12,6,12,6)))
         root.add(footer)
+
+        def go_back(widget):
+            app.main_window.size = prev_size
+            app.main_window.content = prev_window
+            app.main_window.title = prev_title
+
+        back_path = "Icons/back.png"
+        back_icon = toga.Icon(back_path)
+        footer.add(toga.Button(icon=back_icon, on_press=go_back, style=Pack(margin_left = 10, margin_right = 245, height=30, width=50)))
 
         footer.add(
             toga.Button(
@@ -239,7 +260,7 @@ def open_gdgt_selector(app: toga.App):
                     }),
                     redraw(),
                 ),
-                style=Pack(padding_right=6),
+                style=Pack(margin_right = 6,height=30, width = 150 ,background_color="#3B4954", color="#F7ECE1", font_weight="bold"),
             )
         )
 
@@ -252,7 +273,7 @@ def open_gdgt_selector(app: toga.App):
                     cfg.update(json.loads(json.dumps(DEFAULT_CONFIG))),
                     redraw(),
                 ),
-                style=Pack(padding_right=6),
+                style=Pack(margin_right = 245, height=30, width = 150, background_color="#3B4954", color="#F7ECE1", font_weight="bold"),
             )
         )
 
@@ -276,13 +297,10 @@ def open_gdgt_selector(app: toga.App):
                         new_cfg[gname]["traces"][key] = val
 
             save_gdgt_config(new_cfg)
-            win.close()
 
-        footer.add(toga.Button("Save", on_press=on_save))
+        footer.add(toga.Button("Save", on_press=on_save, style = Pack(margin_right = 10, height=30, width=50, background_color="#3B4954", color="#F7ECE1", font_weight="bold")))
 
     redraw()
-    win.show()
-
 
 # ──────────────────────────────────────────────────────────────
 #  Data-loading helper (unchanged logic)
