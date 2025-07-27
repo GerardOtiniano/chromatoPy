@@ -4,6 +4,7 @@ import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
 import re
 import json
+import logging
 
 def read_data_concurrently(folder_path, files, headers):
     def load_and_clean_data(file):
@@ -86,11 +87,12 @@ def abortion_handling(output, paths, abort_sample):
 def hplc_integration_gen(folder_path=None, compounds=None, window_bounds=[10.5,20], headers=["RT (min)","Signal"], peak_neighborhood_n=5, smoothing_window=12, smoothing_factor=3, gaus_iterations=4000, maximum_peak_amplitude=None, peak_boundary_derivative_sensitivity=0.01, peak_prominence=0.001):
     folder_path, csv_files = folder_handling(folder_path)
     print("Reading data...")
+    logging.info("Data is being read from the inputted folder.")
     data = read_data_concurrently(folder_path, csv_files, headers)
 
     iref = True
+    aborted = compound_error = False
     ref = None
-    abort = False
 
     paths = output_handling(folder_path)
 
@@ -99,11 +101,15 @@ def hplc_integration_gen(folder_path=None, compounds=None, window_bounds=[10.5,2
     else:
         output = pd.DataFrame(columns=['Sample Name'] + compounds)
 
+    logging.info("Output directory has been setup.")
+
     for df in data:
         sample_name = df["Sample Name"].iloc[0]
 
         if sample_name in output["Sample Name"].values:
             continue
+
+        logging.info(f"{sample_name} is being processed.")
 
         analyzer = chromatopy_gen.SignalAnalyzer(df, compounds, window_bounds, headers, gaus_iterations, sample_name, peak_neighborhood_n, smoothing_window,
                                   smoothing_factor, peak_boundary_derivative_sensitivity, peak_prominence,
@@ -114,8 +120,9 @@ def hplc_integration_gen(folder_path=None, compounds=None, window_bounds=[10.5,2
         areas = peaks['areas']
         rts = peaks['rts']
 
-        # if compounds is None or len(compounds) != len(areas):
-        #     return "compound_error"
+        if compounds is None or len(compounds) != len(areas):
+            compound_error = True
+            break
 
         odf = pd.DataFrame(list(zip(areas, rts)), columns=['areas', 'rts'])
         odf.sort_values(by="rts", inplace=True)
@@ -136,11 +143,12 @@ def hplc_integration_gen(folder_path=None, compounds=None, window_bounds=[10.5,2
             iref = False
         elif r_pressed:
             ref = peaks
-            print(f"Reference peaks updated using {sample_name}.")
+            msg = f"Reference peaks updated using {sample_name}."
+            logging.info(msg)
+            print(msg)
         elif e_pressed:
             abortion_handling(output, paths, sample_name)
-            print(f"Integration aborted by user at sample: {sample_name}")
-            abort = True
+            aborted = True
             break
 
     output.sort_values(
@@ -151,8 +159,16 @@ def hplc_integration_gen(folder_path=None, compounds=None, window_bounds=[10.5,2
 
     output.to_csv(paths[2], index=False)
 
-    if abort:
-        return "aborted"
+    if compound_error:
+        print(f"The number of peak clicks weren't equal to the number of compounds for sample: {sample_name}")
+        return ("compound_error", sample_name)
+    elif aborted:
+        print(f"Integration aborted by user at sample: {sample_name}")
+        return ("aborted", sample_name)
+    else:
+        print("HPLC integration completed successfully.")
+        return ("success", sample_name)
+
 
 
 
