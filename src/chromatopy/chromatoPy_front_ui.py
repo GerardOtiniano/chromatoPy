@@ -1,6 +1,8 @@
 import os
 import toga
 from toga.style import Pack
+from toga.style.pack import ROW
+
 from .hplc_integration import hplc_integration
 from .config.GDGT_configuration import open_gdgt_selector
 from .config.Integration_Settings import open_settings, load_integration_settings
@@ -12,35 +14,63 @@ class ChromatoPyApp(toga.App):
 
     def startup(self):
         # Main window
-        self.main_window = toga.MainWindow(title="ChromatoPy", size=(400, 420), resizable=False)
+        self.main_window = toga.MainWindow(title="ChromatoPy-GDGT", size=(600, 600), resizable=True)
 
         # ─── Layout container ───
-        main_box = toga.Box(style=Pack(direction="column", padding=20))
+        main_box = toga.Box(style=Pack(direction="column", margin=10, background_color = "#F7ECE1"))
+
+        # ─── Image ───
+        image_path = "Icons/chromatoPy2.png"
+        # image_path = get_image_path(image_path)
+        image = toga.Image(image_path)
+        image_view = toga.ImageView(image, style=Pack(width=250, height=250, margin=(20, 175, 0, 175)))
+        main_box.add(image_view)
 
         # Path input
         self.path_input = toga.TextInput(
             placeholder="Enter/Path/To/Raw/Data",
-            style=Pack(width=360, padding=(0, 0, 10, 0)),
-        )
-        main_box.add(self.path_input)
+            style=Pack(margin_left = 90, height=25, width=330, font_size=12,
+                                        background_color="#3B4954", color="#F7ECE1"))
+
+        browse_button = toga.Button("Browse", on_press=self.select_folder,
+                                    style=Pack(margin_right=90, height=25, width=90,
+                                               background_color="#3B4954", color="#F7ECE1", font_weight="bold",
+                                               font_size=12))
+
+        folder_row = toga.Box(style=Pack(direction=ROW, margin=(20, 0, 20, 0)))
+        folder_row.add(self.path_input)
+        folder_row.add(browse_button)
+        main_box.add(folder_row)
 
         # GDGT selector & settings buttons
-        gdgt_btn = toga.Button("Target GDGTs", on_press=self.on_gdgt_selector, style=Pack(padding=5))
-        settings_btn = toga.Button("Integration Settings", on_press=self.on_settings, style=Pack(padding=5))
+        gdgt_btn = toga.Button("GDGT Settings", on_press=self.on_gdgt_selector, style=Pack(height=25, width=360, margin=(0, 120, 0, 120),
+                                              background_color="#3B4954", color = "#F7ECE1", font_weight = "bold", font_size = 12))
+
+        settings_btn = toga.Button("Integration Settings", on_press=self.on_settings, style=Pack(height=25, width=360, margin=(15, 120, 0, 120),
+                                                   background_color="#3B4954", color = "#F7ECE1", font_weight = "bold", font_size = 12))
+
         main_box.add(gdgt_btn)
         main_box.add(settings_btn)
 
         # Start-processing button
-        start_btn = toga.Button("Start Processing", on_press=self.validate_and_start, style=Pack(padding=(15, 0)))
+        start_btn = toga.Button("Start Processing", on_press=self.validate_and_start, style=Pack(height=30, width=400, margin=(20, 100, 0, 100),
+                                           background_color="#3B4954", color = "#F7ECE1", font_weight = "bold", font_size = 14))
         main_box.add(start_btn)
 
         # Error / status label
-        self.error_label = toga.Label("", style=Pack(color="red", padding=(5, 0)))
+        self.error_label = toga.Label("", style=Pack(color="#EA0F0B", margin=(20,300, 20, 20), font_weight = "bold", font_size = 12))
         main_box.add(self.error_label)
 
         # Set content & show
         self.main_window.content = main_box
         self.main_window.show()
+
+    async def select_folder(self, widget):
+        home_dir = os.path.expanduser("~")
+        dialog = toga.SelectFolderDialog(title="Select Raw Data Folder", initial_directory=home_dir)
+        folder = await self.main_window.dialog(dialog)
+        if folder:
+            self.path_input.value = folder
 
     def on_gdgt_selector(self, widget):
         open_gdgt_selector(self)
@@ -71,6 +101,7 @@ class ChromatoPyApp(toga.App):
                 return
 
             self.main_window.info_dialog("Done", "HPLC integration completed successfully.")
+
         except Exception as e:
             self.error_label.text = f"Error: {e}"
 

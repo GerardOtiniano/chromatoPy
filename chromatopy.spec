@@ -31,6 +31,14 @@ datas.append((
     os.path.join('chromatopy', 'config')
 ))
 
+icon_src_dir = os.path.join('src', 'chromatopy', 'Icons')
+for icon_file in os.listdir(icon_src_dir):
+    if icon_file.endswith('.png'):
+        datas.append((
+            os.path.join(icon_src_dir, icon_file),
+            os.path.join('chromatopy', 'Icons')
+        ))
+
 # 4) Build Analysis
 a = Analysis(
     ['src/chromatopy/__main__.py'],
@@ -58,7 +66,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,         # switch to True if you need a terminal window
+    console=True,         # switch to True if you need a terminal window
     icon='chromatopy_icon.icns',
 )
 
