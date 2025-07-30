@@ -123,7 +123,7 @@ def open_settings(app):
 
     # Scrollable root container
     scroll = toga.ScrollContainer(horizontal=False)
-    root_box = toga.Box(style=Pack(direction=COLUMN, margin=10, background_color = "#F7ECE1"))
+    root_box = toga.Box(style=Pack(direction=COLUMN, flex=1, justify_content='center', align_items= "center", margin=10, background_color = "#F7ECE1"))
     scroll.content = root_box
     prev_window = app.main_window.content
     prev_title = app.main_window.title
@@ -156,7 +156,8 @@ def open_settings(app):
             )
         )
         # Entry field
-        txt = toga.TextInput(value=str(settings[p["name"]]), style=Pack(width=300, margin_left = 10, background_color="#3B4954", color = "#F7ECE1"))
+        txt = toga.TextInput(value=str(settings[p["name"]]),
+                             style=Pack(flex=1, margin=(0, 20), background_color="#3B4954", color="#F7ECE1"))
         param_box.add(txt)
         entry_vars[p["name"]] = (txt, p["type"])
 
