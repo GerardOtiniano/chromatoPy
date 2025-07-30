@@ -7,54 +7,57 @@ from .hplc_integration import hplc_integration
 from .config.GDGT_configuration import open_gdgt_selector
 from .config.Integration_Settings import open_settings, load_integration_settings
 
-
 class ChromatoPyApp(toga.App):
     def __init__(self, formal_name, app_id):
         super().__init__(formal_name=formal_name, app_id=app_id)
 
     def startup(self):
         # Main window
-        self.main_window = toga.MainWindow(title="ChromatoPy-GDGT", size=(600, 600), resizable=True)
+        self.main_window = toga.MainWindow(title="ChromatoPy-GDGT", size=(700, 700), resizable=True)
 
         # ─── Layout container ───
-        main_box = toga.Box(style=Pack(direction="column", margin=10, background_color = "#F7ECE1"))
+        main_box = toga.Box(style=Pack(direction="column", flex=1, justify_content='center', margin=10, background_color = "#F7ECE1"))
 
         # ─── Image ───
         image_path = "Icons/chromatoPy2.png"
         # image_path = get_image_path(image_path)
         image = toga.Image(image_path)
-        image_view = toga.ImageView(image, style=Pack(width=250, height=250, margin=(20, 175, 0, 175)))
+        image_view = toga.ImageView(image, style=Pack(height = 400, flex = 1, align_items = "center", margin=(20, 175, 0, 175)))
         main_box.add(image_view)
 
         # Path input
-        self.path_input = toga.TextInput(
-            placeholder="Enter/Path/To/Raw/Data",
-            style=Pack(margin_left = 90, height=25, width=330, font_size=12,
-                                        background_color="#3B4954", color="#F7ECE1"))
-
         browse_button = toga.Button("Browse", on_press=self.select_folder,
-                                    style=Pack(margin_right=90, height=25, width=90,
+                                    style=Pack(margin_left=90, height=25, width=90,
                                                background_color="#3B4954", color="#F7ECE1", font_weight="bold",
                                                font_size=12))
 
+        self.path_input = toga.TextInput(placeholder="Enter/Path/To/Raw/Data",
+                                         style=Pack(margin_right=90, flex=1, font_size=12,
+                                                    background_color="#3B4954", color="#F7ECE1"))
+
         folder_row = toga.Box(style=Pack(direction=ROW, margin=(20, 0, 20, 0)))
-        folder_row.add(self.path_input)
         folder_row.add(browse_button)
+        folder_row.add(self.path_input)
         main_box.add(folder_row)
 
         # GDGT selector & settings buttons
-        gdgt_btn = toga.Button("GDGT Settings", on_press=self.on_gdgt_selector, style=Pack(height=25, width=360, margin=(0, 120, 0, 120),
-                                              background_color="#3B4954", color = "#F7ECE1", font_weight = "bold", font_size = 12))
-
-        settings_btn = toga.Button("Integration Settings", on_press=self.on_settings, style=Pack(height=25, width=360, margin=(15, 120, 0, 120),
-                                                   background_color="#3B4954", color = "#F7ECE1", font_weight = "bold", font_size = 12))
+        gdgt_btn = toga.Button("GDGT Settings", on_press=self.on_gdgt_selector,
+                                   style=Pack(align_items="center", flex=1, margin=(0, 120, 0, 120),
+                                              background_color="#3B4954", color="#F7ECE1", font_weight="bold",
+                                              font_size=12))
+        settings_btn = toga.Button("Integration Settings", on_press= self.on_settings,
+                                        style=Pack(align_items="center", flex=1, margin=(15, 120, 0, 120),
+                                                   background_color="#3B4954", color="#F7ECE1", font_weight="bold",
+                                                   font_size=12))
 
         main_box.add(gdgt_btn)
         main_box.add(settings_btn)
 
         # Start-processing button
-        start_btn = toga.Button("Start Processing", on_press=self.validate_and_start, style=Pack(height=30, width=400, margin=(20, 100, 0, 100),
-                                           background_color="#3B4954", color = "#F7ECE1", font_weight = "bold", font_size = 14))
+        start_btn = toga.Button("Start Processing", on_press=self.validate_and_start,
+                                style=Pack(align_items="center", flex=1, margin=(20, 100, 0, 100),
+                                           background_color="#3B4954", color="#F7ECE1", font_weight="bold",
+                                           font_size=14))
         main_box.add(start_btn)
 
         # Error / status label
