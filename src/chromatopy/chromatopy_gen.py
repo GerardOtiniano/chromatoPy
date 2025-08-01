@@ -19,7 +19,7 @@ To do:
     • Reference - look in hplc_integration.py for call
 """
 class SignalAnalyzer:
-    def __init__(self, df, compounds, window_bounds, headers, gaus_iterations, sample_name, max_peaks, sw, sf, pk_sns, pk_pr, max_PA, is_reference=True, reference_peaks=None):
+    def __init__(self, df, compounds, window_bounds, headers, gaus_iterations, sample_name, sample_no, sample_len, max_peaks, sw, sf, pk_sns, pk_pr, max_PA, is_reference=True, reference_peaks=None):
         self.fig, self.axs = None, None
         self.df = df
         self.window_bounds = window_bounds
@@ -43,7 +43,10 @@ class SignalAnalyzer:
         self.pk_pr = pk_pr
         self.r_pressed = False
         self.e_pressed = False
+        self.enter_pressed = False
         self.max_peak_amp = max_PA
+        self.sample_no = sample_no
+        self.sample_len = sample_len
 
     def run(self):
         """
@@ -56,21 +59,26 @@ class SignalAnalyzer:
         """
         self.fig, self.axs = self.plot_data()
         self.current_ax_idx = 0  # Initialize current axis index
+        self.enter_pressed = False
+
         if self.is_reference:
             # Reference samples handling
             self.fig.canvas.mpl_connect("button_press_event", self.on_click)
             self.fig.canvas.mpl_connect("key_press_event", self.on_key) # Connect general key events
             plt.show(block=True)  # Blocks script until plot window is closed
+
             if not self.reference_peaks:
                 self.reference_peaks = self.peak_results
             else:
                 self.reference_peaks.update(self.peak_results)
+
         else:
             # Non-reference samples handling
             self.auto_select_peaks()
             self.fig.canvas.mpl_connect("key_press_event", self.on_key)
             self.fig.canvas.mpl_connect("button_press_event", self.on_click)
             plt.show(block=True)  # Blocks script until plot window is closed
+
         return self.peak_results, self.fig, self.reference_peaks, self.r_pressed, self.e_pressed
 
     ######################################################
@@ -1156,9 +1164,14 @@ class SignalAnalyzer:
         - After clearing or navigating, the plot is redrawn using `plt.draw()` to reflect changes.
         """
         if event.key == "enter":
-            matching_peaks = [dict(sorted(self.integrated_peaks.items(), key=lambda item: item[1]['rt']))] #I don't think this is needed
+            # matching_peaks = [dict(sorted(self.integrated_peaks.items(), key=lambda item: item[1]['rt']))] #I don't think this is needed
             # matching_peaks is a list that has the intergrated_peaks dictionary BUT every peak: data key-value pair is sorted by the 'rt' key of value dictionary in the pair
-            self.waiting_for_input = False #WHY?
+            # self.waiting_for_input = False #WHY?
+
+            if self.sample_no == self.sample_len:
+                from .chromatoPy_front_ui_gen import MAIN
+                if MAIN:
+                    MAIN.info_dialog("Done", "HPLC integration completed successfully. The app will now close")
             plt.close(self.fig)  # Close the figure to resume script execution
         elif event.key == "d":
             self.undo_last_action() #BUG

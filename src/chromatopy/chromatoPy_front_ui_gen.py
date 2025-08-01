@@ -2,7 +2,7 @@ import os
 import asyncio
 import toga
 from toga.style import Pack
-from toga.style.pack import COLUMN, ROW
+from toga.style.pack import ROW
 from toga.dialogs import InfoDialog
 import logging
 from datetime import datetime
@@ -11,6 +11,7 @@ from .hplc_integration_gen import hplc_integration_gen
 from .config.Integration_Settings import load_integration_settings, open_integration_settings
 from .config.Plot_Settings import load_plot_settings, open_plot_settings
 
+MAIN = None
 
 class ChromatoPyApp(toga.App):
     def __init__(self, formal_name, app_id):
@@ -24,66 +25,73 @@ class ChromatoPyApp(toga.App):
         log_filename = os.path.join(logs_dir, f"chromatopy_{timestamp}.log")
 
         root_logger = logging.getLogger()
-        if root_logger.hasHandlers():
-            root_logger.handlers.clear()
+        # Remove existing handlers
+        while root_logger.handlers:
+            handler = root_logger.handlers[0]
+            root_logger.removeHandler(handler)
+            handler.close()
 
-        logging.basicConfig(
-            filename=log_filename,
-            filemode='w',
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            level=logging.INFO
-        )
+        # Create and add new file handler
+        file_handler = logging.FileHandler(log_filename, mode='w')
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        root_logger.addHandler(file_handler)
+
+        # Also set logging level (only once)
+        root_logger.setLevel(logging.INFO)
 
         logging.info("ChromatoPy initialized.")
 
     def startup(self):
         # Main window
-        self.main_window = toga.MainWindow(title="ChromatoPy", size=(600, 600), resizable=True)
+        global MAIN
+        self.main_window = toga.MainWindow(title="ChromatoPy", size=(700, 700), resizable=True)
+        MAIN = self.main_window
 
         # ─── Layout container ───
-        main_box = toga.Box(style=Pack(direction="column", margin=10, background_color="#F7ECE1"))
+        main_box = toga.Box(style=Pack(direction="column", flex=1, justify_content='center', margin=10, background_color="#F7ECE1"))
 
         # ─── Image ───
         image_path = "Icons/chromatoPy2.png"
         image = toga.Image(image_path)
-        image_view = toga.ImageView(image, style=Pack(width=250, height=250, margin=(20, 175, 0, 175)))
+        image_view = toga.ImageView(image, style=Pack(height = 400, flex = 1, align_items = "center", margin=(20, 175, 20, 175)))
         main_box.add(image_view)
 
         # Path Input
-        self.path_input = toga.TextInput(placeholder="Enter/Path/To/Raw/Data",
-                                         style=Pack(margin_left=90, height=25, width=330, font_size=12,
-                                                    background_color="#3B4954", color="#F7ECE1"))
-
         browse_button = toga.Button("Browse", on_press=self.select_folder,
-                                    style=Pack(margin_right=90, height=25, width=90,
+                                    style=Pack(margin_left=90, height=25, width=90,
                                                background_color="#3B4954", color="#F7ECE1", font_weight="bold",
                                                font_size=12))
 
+        self.path_input = toga.TextInput(placeholder="Enter/Path/To/Raw/Data",
+                                         style=Pack(margin_right=90, flex=1, font_size=12,
+                                                    background_color="#3B4954", color="#F7ECE1"))
+        
         folder_row = toga.Box(style=Pack(direction=ROW, margin=(20, 0, 20, 0)))
-        folder_row.add(self.path_input)
         folder_row.add(browse_button)
+        folder_row.add(self.path_input)
         main_box.add(folder_row)
 
         settings_btn = toga.Button("Integration Settings", on_press=self.on_integration_settings,
-                                   style=Pack(height=25, width=360, margin=(0, 120, 0, 120),
+                                   style=Pack(align_items="center", flex=1, margin=(0, 120, 0, 120),
                                               background_color="#3B4954", color="#F7ECE1", font_weight="bold",
                                               font_size=12))
         main_box.add(settings_btn)
         plot_settings_btn = toga.Button("Plot Settings", on_press=self.on_plot_settings,
-                                        style=Pack(height=25, width=360, margin=(15, 120, 0, 120),
+                                        style=Pack(align_items="center", flex=1, margin=(15, 120, 0, 120),
                                                    background_color="#3B4954", color="#F7ECE1", font_weight="bold",
                                                    font_size=12))
         main_box.add(plot_settings_btn)
 
         # Start-processing button
         start_btn = toga.Button("Start Processing", on_press=self.validate_and_start,
-                                style=Pack(height=30, width=400, margin=(20, 100, 0, 100),
+                                style=Pack(align_items="center", flex=1, margin=(20, 100, 0, 100),
                                            background_color="#3B4954", color="#F7ECE1", font_weight="bold",
                                            font_size=14))
         main_box.add(start_btn)
 
         # Error / status label
-        self.error_label = toga.Label("", style=Pack(color="#EA0F0B", margin=(20, 300, 20, 20), font_weight="bold",
+        self.error_label = toga.Label("", style=Pack(color="#EA0F0B", margin=(30, 300, 20, 20), font_weight="bold",
                                                      font_size=12))
 
         main_box.add(self.error_label)
@@ -159,9 +167,9 @@ class ChromatoPyApp(toga.App):
                 return
 
             if result[0] == "success":
-                logging.info("HPLC integration completed successfully.")
+                logging.info("This HPLC integration run was completed successfully.")
 
-            self.show_info_dialog("Done", "HPLC integration completed successfully.")
+            self.show_info_dialog("Try again", "All samples have already been analyzed for this run.")
 
         except Exception as e:
             self.error_label.text = f"Error: {e}"

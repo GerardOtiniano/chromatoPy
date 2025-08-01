@@ -111,7 +111,7 @@ def open_plot_settings(app):
 
     # Scrollable root container
     scroll = toga.ScrollContainer(horizontal=False)
-    root_box = toga.Box(style=Pack(direction=COLUMN, margin=10,background_color = "#F7ECE1"))
+    root_box = toga.Box(style=Pack(direction=COLUMN, flex=1, justify_content='center', align_items= "center", margin=10,background_color = "#F7ECE1"))
     scroll.content = root_box
     prev_window = app.main_window.content
     prev_title = app.main_window.title
@@ -143,10 +143,10 @@ def open_plot_settings(app):
         if p["name"] == "compounds":
             txt = toga.TextInput(value=str(settings[p["name"]]) if settings[p["name"]] is not None else "",
                 placeholder= "Enter list of compounds.",
-                style=Pack(width=300, margin_left=10, background_color="#3B4954", color="#F7ECE1"))
+                style=Pack(flex=1, margin = (0,20), background_color="#3B4954", color="#F7ECE1"))
         else:
             txt = toga.TextInput(value=str(settings[p["name"]]),
-                                 style=Pack(width=300, margin_left=10, background_color="#3B4954", color="#F7ECE1"))
+                                 style=Pack(flex=1, margin=(0, 20), background_color="#3B4954", color="#F7ECE1"))
 
         param_box.add(txt)
         entry_vars[p["name"]] = (txt, p["type"])
@@ -198,7 +198,7 @@ def open_plot_settings(app):
                                style=Pack(margin_left = 60, margin_right = 170, height=40, width=60, margin_top=25)))
 
     button_row.add(toga.Button("Save", on_press=on_save,
-                               style=Pack( margin_left = 170, margin_right = 60, height=40, width=60, margin_top=25, background_color="#3B4954",
+                               style=Pack(margin_left = 170, margin_right = 60, height=40, width=60, margin_top=25, background_color="#3B4954",
                                           color="#F7ECE1",
                                           font_weight="bold", font_size=12)))
     root_box.add(button_row)

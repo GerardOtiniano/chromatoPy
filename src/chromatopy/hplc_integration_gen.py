@@ -103,17 +103,23 @@ def hplc_integration_gen(folder_path=None, compounds=None, window_bounds=[10.5,2
 
     logging.info("Output directory has been setup.")
 
+    sample_len = len(data)
+    sample_no = 0
+
     for df in data:
         sample_name = df["Sample Name"].iloc[0]
+        sample_no += 1
 
         if sample_name in output["Sample Name"].values:
             continue
 
         logging.info(f"{sample_name} is being processed.")
 
-        analyzer = chromatopy_gen.SignalAnalyzer(df, compounds, window_bounds, headers, gaus_iterations, sample_name, peak_neighborhood_n, smoothing_window,
-                                  smoothing_factor, peak_boundary_derivative_sensitivity, peak_prominence,
-                                  maximum_peak_amplitude, iref, ref)
+        analyzer = chromatopy_gen.SignalAnalyzer(df, compounds, window_bounds, headers, gaus_iterations, sample_name,
+                                                 sample_no, sample_len, peak_neighborhood_n, smoothing_window,
+                                                 smoothing_factor, peak_boundary_derivative_sensitivity,
+                                                 peak_prominence, maximum_peak_amplitude, iref, ref)
+
         peaks, fig, ref_new, r_pressed, e_pressed = analyzer.run()
 
         if 'areas' not in peaks:
@@ -170,9 +176,3 @@ def hplc_integration_gen(folder_path=None, compounds=None, window_bounds=[10.5,2
     else:
         print("HPLC integration completed successfully.")
         return ("success", sample_name)
-
-
-
-
-
-
