@@ -114,7 +114,11 @@ def calculate_indices(df_fa, meth_df, cyc_df):
 
     ir_denom = df_fa.get("Ia", 0) + df_fa.get("IIa", 0) + df_fa.get("IIIa", 0) +df_fa.get("Ib", 0) + df_fa.get("IIb", 0) + df_fa.get("IIIb", 0) +df_fa.get("Ic", 0) + df_fa.get("IIc", 0) + df_fa.get("IIIc", 0) +  df_fa.get("IIa'", 0) + df_fa.get("IIIa'", 0) + df_fa.get("IIb'", 0) + df_fa.get("IIIb'", 0) + df_fa.get("IIc'", 0) + df_fa.get("IIIc'", 0)
     ir_numer =  df_fa.get("IIa'", 0) + df_fa.get("IIIa'", 0) + df_fa.get("IIb'", 0) + df_fa.get("IIIb'", 0) + df_fa.get("IIc'", 0) + df_fa.get("IIIc'", 0)
-    df['IR6Me'] = np.where(ir_denom !=0, (ir_numer)/(ir_denom))
+    # df['IR6Me'] = np.where(ir_denom !=0, (ir_numer)/(ir_denom))
+    df['IR6Me'] = (ir_numer / ir_denom).where(ir_denom != 0, np.nan)
+    
+    df["MAF Otiniano"] = 17-11.4*df_fa.IIa-17.4*df_fa.IIIa-15.9*df_fa["IIa'"]-124.4*df_fa.IIIb
+    df['tex86'] = (df_fa["GDGT-2"]+df_fa["GDGT-3"]+df_fa["GDGT-4'"])/(df_fa["GDGT-1"]+df_fa["GDGT-2"]+df_fa["GDGT-3"]+df_fa["GDGT-4'"])
     
     fc_denom = (
         df_fa.get("Ia", 0)
