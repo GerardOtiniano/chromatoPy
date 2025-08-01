@@ -129,12 +129,10 @@ def open_gdgt_selector(app: toga.App):
     # Scroll container and root box (updated for clean redraw)
     prev_window = app.main_window.content
     prev_title = app.main_window.title
-    prev_size = app.main_window.size
     scroll = toga.ScrollContainer(horizontal=False)
-    root = toga.Box(style=Pack(direction=COLUMN, margin=16, background_color = "#F7ECE1"))
+    root = toga.Box(style=Pack(direction=COLUMN, flex=1, align_items = "center", margin=16, background_color = "#F7ECE1"))
     scroll.content = root
     app.main_window.content = scroll
-    app.main_window.size = (960,960)
     app.main_window.title = "GDGT Settings"
 
     # bookkeeping
@@ -153,7 +151,7 @@ def open_gdgt_selector(app: toga.App):
     # ── UI builder ───────────────────────────────────────────
     def redraw():
         nonlocal root
-        root = toga.Box(style=Pack(direction=COLUMN, margin=16, background_color = "#F7ECE1"))
+        root = toga.Box(style=Pack(direction=COLUMN, align_items = "center", flex=1, margin=16, background_color = "#F7ECE1"))
         scroll.content = root
 
         name_vars.clear()
@@ -235,17 +233,16 @@ def open_gdgt_selector(app: toga.App):
             root.add(div)
 
         # footer (once)
-        footer = toga.Box(style=Pack(direction=ROW, align_items="center", margin=(12,6,12,6)))
+        footer = toga.Box(style=Pack(direction=ROW, flex=1, align_items="center", justify_content = "center", margin=(12,6,12,6)))
         root.add(footer)
 
         def go_back(widget):
-            app.main_window.size = prev_size
             app.main_window.content = prev_window
             app.main_window.title = prev_title
 
         back_path = "Icons/back.png"
         back_icon = toga.Icon(back_path)
-        footer.add(toga.Button(icon=back_icon, on_press=go_back, style=Pack(margin_left = 10, margin_right = 245, height=30, width=50)))
+        footer.add(toga.Button(icon=back_icon, on_press=go_back, style=Pack(margin_right = 100, height=30, width=50)))
 
         footer.add(
             toga.Button(
@@ -260,7 +257,7 @@ def open_gdgt_selector(app: toga.App):
                     }),
                     redraw(),
                 ),
-                style=Pack(margin_right = 6,height=30, width = 150 ,background_color="#3B4954", color="#F7ECE1", font_weight="bold"),
+                style=Pack(margin_right = 6,height=30, width=150, background_color="#3B4954", color="#F7ECE1", font_weight="bold"),
             )
         )
 
@@ -273,7 +270,7 @@ def open_gdgt_selector(app: toga.App):
                     cfg.update(json.loads(json.dumps(DEFAULT_CONFIG))),
                     redraw(),
                 ),
-                style=Pack(margin_right = 245, height=30, width = 150, background_color="#3B4954", color="#F7ECE1", font_weight="bold"),
+                style=Pack(margin_right = 100, height=30, width = 150, background_color="#3B4954", color="#F7ECE1", font_weight="bold"),
             )
         )
 
@@ -298,7 +295,7 @@ def open_gdgt_selector(app: toga.App):
 
             save_gdgt_config(new_cfg)
 
-        footer.add(toga.Button("Save", on_press=on_save, style = Pack(margin_right = 10, height=30, width=50, background_color="#3B4954", color="#F7ECE1", font_weight="bold")))
+        footer.add(toga.Button("Save", on_press=on_save, style = Pack(height=30, width=50, background_color="#3B4954", color="#F7ECE1", font_weight="bold")))
 
     redraw()
 
