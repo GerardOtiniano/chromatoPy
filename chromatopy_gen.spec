@@ -1,5 +1,3 @@
-# -*- mode: python ; coding: utf-8 -*-
-
 import os
 import matplotlib
 from PyInstaller.utils.hooks import collect_submodules
@@ -27,7 +25,12 @@ for root, dirs, files in os.walk(mpl_data):
 
 # 3) Include your ChromatoPy config JSON
 datas.append((
-    os.path.join('src', 'chromatopy', 'config', 'chromatopy_gdgt_config.json'),
+    os.path.join('src', 'chromatopy', 'config', 'integration_settings.json'),
+    os.path.join('chromatopy', 'config')
+))
+
+datas.append((
+    os.path.join('src', 'chromatopy', 'config', 'plot_settings.json'),
     os.path.join('chromatopy', 'config')
 ))
 
@@ -61,13 +64,13 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='chromatopy',
+    name='chromatopy_gen',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     console=True,         # switch to True if you need a terminal window
-    icon='chromatopy_icon.icns',
+    icon='AppIcon/chromatopy_icon.icns',
 )
 
 # 7) Collect into a folder
@@ -77,17 +80,17 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=True,
-    name='chromatopy',
+    name='chromatopy_gen',
 )
 
 # 8) Bundle as a macOS .app
 app = BUNDLE(
     coll,
-    name='chromatopy-GDGT.app',
-    icon='chromatopy_icon.icns',
-    bundle_identifier='com.otiniano.chromatopy',
+    name='chromatopy.app',
+    icon='AppIcon/chromatopy_icon.icns',
+    bundle_identifier='com.otiniano.chromatopygen',
     info_plist={
-        'CFBundleName':               'chromatopy',
+        'CFBundleName':               'chromatopy_gen',
         'CFBundleShortVersionString': '1.0.0',
         'CFBundleVersion':            '1',
         'LSMinimumSystemVersion':     '10.12',
