@@ -1,5 +1,4 @@
 from .utils import gdgt_settings, integration_settings
-from .utils.GDGT_compounds import *
 from .utils.GDGT_configuration import load_gdgt_window_data
 from .utils.Integration_configuration import load_integration_settings
 from .utils.folder_handling import *
