@@ -5,7 +5,6 @@ import pandas as pd
 
 from .GDGT_configuration import load_gdgt_window_data
 from .import_data import numerical_sort_key
-from .GDGT_compounds import *
 
 def folder_handling(folder_path):
     """
