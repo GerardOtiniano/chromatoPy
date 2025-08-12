@@ -1,4 +1,7 @@
+from .utils import gdgt_settings, integration_settings
 from .utils.GDGT_compounds import *
+from .utils.GDGT_configuration import load_gdgt_window_data
+from .utils.Integration_configuration import load_integration_settings
 from .utils.folder_handling import *
 from .utils.messages import *
 from .utils.handle_window_params import *
@@ -52,6 +55,16 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
 
 
     """
+    # Handle integration settings
+    settings = load_integration_settings()
+    peak_neighborhood_n = settings["peak_neighborhood_n"]
+    smoothing_window = settings["smoothing_window"]
+    smoothing_factor = settings["smoothing_factor"]
+    gaus_iterations = settings["gaus_iterations"]
+    maximum_peak_amplitude = settings["maximum_peak_amplitude"]
+    peak_boundary_derivative_sensitivity = settings["peak_boundary_derivative_sensitivity"]
+    peak_prominence = settings["peak_prominence"]
+
     # Error check smoothing values
     smooth           = smoothing_check(smoothing_window, smoothing_factor)
     smoothing_window = smooth['sw']
@@ -71,17 +84,21 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
     # results_rts_path = folder_info["results_rts_path"]
     # results_area_unc_path = folder_info["results_area_unc_path"]
     ref_pk            = folder_info["ref_pk"]
-    gdgt_oi           = folder_info["gdgt_oi"]
     gdgt_meta_set     = folder_info["gdgt_meta_set"]
     default_windows   = folder_info["default_windows"]
     gdgt_groups       = folder_info['names']
-    
+
     # Handle window operations
-    window_info = hand_window_params(windows, default_windows, gdgt_meta_set)
-    windows     = window_info["windows"]
-    GDGT_dict   = window_info["GDGT_dict"]
-    trace_ids   = window_info["trace_ids"]
-    
+    # window_info = hand_window_params(windows, default_windows, gdgt_meta_set)
+    # windows     = window_info["windows"]
+    # GDGT_dict   = window_info["GDGT_dict"]
+    # trace_ids   = window_info["trace_ids"]
+    window_info = load_gdgt_window_data()
+    windows = window_info["window"]
+    GDGT_dict = window_info["GDGT_dict"]
+    trace_ids_nested = window_info["Trace"]
+    trace_ids = [tid for group in trace_ids_nested for tid in group]
+
     # Handle data input
     data_info  = import_data(results_file_path, folder_path, csv_files, trace_ids) # results_rts_path, results_area_unc_path,
     data       = data_info["data"]
@@ -151,3 +168,11 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
         iref = False  # Only the first sample is treated as the reference
     
     print("Finished.")
+
+def open_gdgt_settings():
+    app = gdgt_settings.main()
+    app.main_loop()
+
+def open_integration_settings():
+    app = integration_settings.main()
+    app.main_loop()
