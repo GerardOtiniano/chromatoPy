@@ -14,9 +14,9 @@ def import_data(): # folder_path=None):
     if not txt_files:
         tqdm.write(f"No .txt files found in {folder_path}. Aborting.")
         raise SystemExit
-    
+
     output_path, figures_path = create_output_folders(folder_path)
-    
+
     no_time_col = []
     no_signal_col = []
     data_dict = {}
@@ -72,10 +72,10 @@ def import_data(): # folder_path=None):
             no_signal_col.append(filename)
         metadata = ''.join(lines[:table_start - 1])
         parsed_metadata = parse_metadata_block(metadata)
-        
+
         # Store in dictionary
         data_dict['Samples'][filename.replace(".txt", "")] = {
-        
+
             "Metadata": parsed_metadata,
             "Raw Data": {time_column:df[time_column].to_list(), signal_column:df[signal_column].to_list()}}#df.to_dict(orient="list")}
     tqdm.write(f"Found {len(txt_files)} .txt files.")
@@ -83,7 +83,7 @@ def import_data(): # folder_path=None):
         tqdm.write("Files missing time column:", no_time_col)
     if no_signal_col:
         tqdm.write("Files missing signal column:", no_signal_col)
-    
+
     # Check against any existing dataset
     data_dict, unprocessed_keys = check_existing_jsons(data_dict, output_path)
     return {
@@ -128,7 +128,7 @@ def parse_metadata_block(raw_text):
             tqdm.write("Skipping malformed line:", line)
 
     # return result
-    
+
 def create_output_folders(folder_path):
     """
     Creates a 'chromatoPy output' folder inside the given folder_path.
@@ -144,7 +144,7 @@ def create_output_folders(folder_path):
     """
     output_path = os.path.join(folder_path, "chromatoPy output")
     figures_path = os.path.join(output_path, "Figures")
-    
+
     os.makedirs(output_path, exist_ok=True)
     os.makedirs(figures_path, exist_ok=True)
 

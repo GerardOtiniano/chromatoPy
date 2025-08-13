@@ -363,8 +363,287 @@ def compile_mean_ci_peak_areas(folder_path, n_bootstrap=1000, ci=95, bound_type=
     return df
 
 
-folder_path = 'path/to/json/files/'
-output_csv = os.path.join(folder_path, "output.csv")
-df_compiled = compile_mean_ci_peak_areas(folder_path, n_bootstrap=100, ci=95, bound_type="percentile")
+folder_path = '/Users/gerard/Desktop/UB/GDGT Raw Data/Chromatopy/combined dataset for manuscript/individual samples'
+output_csv = os.path.join(folder_path, "output_TEST.csv")
+df_compiled = compile_mean_ci_peak_areas(folder_path, n_bootstrap=100, ci=100, bound_type="percentile")
 df_compiled.to_csv(output_csv, index=False)
+
+# %%
+import os
+import glob
+import json
+import numpy as np
+import pandas as pd
+
+def minmax_stats(data):
+    """
+    Returns the mean, min, and max of the given data.
+    
+    Parameters:
+      data (list or np.array): Input data.
+      
+    Returns:
+      dict: {"mean": mean_val, "lower_ci": min_val, "upper_ci": max_val}
+    """
+    data = np.array(data)
+    if data.size == 0:
+        return {"mean": 0, "lower_ci": 0, "upper_ci": 0}
+    
+    mean_val = np.mean(data)
+    lower_bound = np.min(data)
+    upper_bound = np.max(data)
+    
+    return {"mean": mean_val, "lower_ci": lower_bound, "upper_ci": upper_bound}
+
+def compile_mean_minmax_peak_areas(folder_path):
+    """
+    Processes all JSON files in folder_path and compiles a CSV file
+    with the sample name in the first column and, for each GDGT type found in
+    groups "Reference", "isoGDGTs", and "brGDGTs", the mean peak area and its
+    min and max values from the ensemble.
+    """
+    rows = []
+    json_files = glob.glob(os.path.join(folder_path, "*.json"))
+    
+    for file_path in json_files:
+        with open(file_path, 'r') as f:
+            sample_data = json.load(f)
+        row = {}
+        sample_name = sample_data.get("Sample Name", os.path.basename(file_path))
+        row["Sample Name"] = sample_name
+        
+        for group in ["Reference", "isoGDGTs", "brGDGTs"]:
+            if group in sample_data:
+                for gdgt_key, gdgt_info in sample_data[group].items():
+                    if isinstance(gdgt_info, dict) and "area_ensemble" in gdgt_info:
+                        ensemble = gdgt_info["area_ensemble"]
+                        if ensemble and len(ensemble) > 0:
+                            if isinstance(ensemble[0], list):
+                                data = ensemble[0]
+                            else:
+                                data = ensemble
+                        else:
+                            data = []
+                        
+                        stats = minmax_stats(data)
+                        row[gdgt_key] = stats["mean"]
+                        row[f"{gdgt_key}_lower_ci"] = stats["lower_ci"]
+                        row[f"{gdgt_key}_upper_ci"] = stats["upper_ci"]
+                    else:
+                        print(f"Warning: 'area_ensemble' not found for {group} {gdgt_key} in sample {sample_name}.")
+        
+        rows.append(row)
+    
+    df = pd.DataFrame(rows)
+    return df
+
+# Example usage:
+folder_path = '/Users/gerard/Desktop/UB/GDGT Raw Data/Chromatopy/combined dataset for manuscript/individual samples'
+output_csv = os.path.join(folder_path, "output_TEST2.csv")
+df_compiled = compile_mean_minmax_peak_areas(folder_path)
+df_compiled.to_csv(output_csv, index=False)
+
+
+# %%
+import os
+import glob
+import json
+import numpy as np
+import pandas as pd
+
+def minmax_error_stats(data):
+    """
+    Returns the mean, and the differences between the mean and min/max values.
+    
+    Parameters:
+      data (list or np.array): Input data.
+      
+    Returns:
+      dict: {"mean": mean_val, "lower_ci": mean-min_val, "upper_ci": max_val-mean}
+    """
+    data = np.array(data)
+    if data.size == 0:
+        return {"mean": 0, "lower_ci": 0, "upper_ci": 0}
+    
+    mean_val = np.mean(data)
+    lower_err = mean_val - np.min(data)
+    upper_err = np.max(data) - mean_val
+    
+    return {"mean": mean_val, "lower_ci": lower_err, "upper_ci": upper_err}
+
+def compile_mean_minmax_errors(folder_path):
+    """
+    Processes all JSON files in folder_path and compiles a CSV file
+    with the sample name in the first column and, for each GDGT type found in
+    groups "Reference", "isoGDGTs", and "brGDGTs", the mean peak area and
+    the differences from mean to min (lower_ci) and mean to max (upper_ci).
+    """
+    rows = []
+    json_files = glob.glob(os.path.join(folder_path, "*.json"))
+    
+    for file_path in json_files:
+        with open(file_path, 'r') as f:
+            sample_data = json.load(f)
+        row = {}
+        sample_name = sample_data.get("Sample Name", os.path.basename(file_path))
+        row["Sample Name"] = sample_name
+        
+        for group in ["Reference", "isoGDGTs", "brGDGTs"]:
+            if group in sample_data:
+                for gdgt_key, gdgt_info in sample_data[group].items():
+                    if isinstance(gdgt_info, dict) and "area_ensemble" in gdgt_info:
+                        ensemble = gdgt_info["area_ensemble"]
+                        if ensemble and len(ensemble) > 0:
+                            if isinstance(ensemble[0], list):
+                                data = ensemble[0]
+                            else:
+                                data = ensemble
+                        else:
+                            data = []
+                        
+                        stats = minmax_error_stats(data)
+                        row[gdgt_key] = stats["mean"]
+                        row[f"{gdgt_key}_lower_ci"] = stats["lower_ci"]
+                        row[f"{gdgt_key}_upper_ci"] = stats["upper_ci"]
+                    else:
+                        print(f"Warning: 'area_ensemble' not found for {group} {gdgt_key} in sample {sample_name}.")
+        
+        rows.append(row)
+    
+    df = pd.DataFrame(rows)
+    return df
+
+# Example usage:
+# folder_path = '/Users/gerard/Desktop/UB/GDGT Raw Data/Chromatopy/combined dataset for manuscript/individual samples'
+folder_path = '/Users/gerard/Documents/GitHub/chromatoPy_manuscript/Data/Sudip Comparison/Chromatopy-selected/Output_chromatoPy_isoGDGTs/Individual Samples'
+output_csv = os.path.join(folder_path, "output_TEST_sud_iso.csv")
+df_compiled = compile_mean_minmax_errors(folder_path)
+df_compiled.to_csv(output_csv, index=False)
+
+# %%
+import os
+import glob
+import json
+import numpy as np
+import pandas as pd
+
+# def percentile95_error_stats(data):
+#     """
+#     Returns the mean, and the differences between the mean and the
+#     2.5th / 97.5th percentiles of the data.
+    
+#     Parameters:
+#       data (list or np.array): Input data.
+      
+#     Returns:
+#       dict: {"mean": mean_val, "lower_ci": mean - p2.5, "upper_ci": p97.5 - mean}
+#     """
+#     data = np.array(data)
+#     if data.size == 0:
+#         return {"mean": 0, "lower_ci": 0, "upper_ci": 0}
+    
+#     mean_val = np.mean(data)
+#     lower_bound = np.percentile(data, 2.5)
+#     upper_bound = np.percentile(data, 97.5)
+    
+#     lower_err = mean_val - lower_bound
+#     upper_err = upper_bound - mean_val
+    
+#     return {"mean": mean_val, "lower_ci": lower_err, "upper_ci": upper_err}
+def percentile95_to_sigma_stats(data):
+    """
+    Returns the mean and the 1σ-equivalent lower/upper errors
+    derived from the 95% confidence interval (2.5th and 97.5th percentiles),
+    ignoring values < 1.
+
+    Parameters:
+      data (list or np.array): Input data.
+
+    Returns:
+      dict: {"mean": mean_val,
+             "lower_sigma": lower_err_sigma,
+             "upper_sigma": upper_err_sigma}
+    """
+    print_tick=False
+    # Convert to numpy array and filter out values < 1
+    data = np.array(data, dtype=float)
+    if np.any(data < 0):
+        print_tick = True
+    data = data[data >= 0]
+
+    # Handle empty case
+    if data.size == 0:
+        return {"mean": 0.0, "lower_sigma": 0.0, "upper_sigma": 0.0}, print_tick
+    
+    mean_val = np.nanmedian(data)
+    median_val = np.nanmedian(data)
+    lower_bound = np.nanpercentile(data, 2.5)
+    # print(lower_bound)
+    
+    upper_bound = np.nanpercentile(data, 97.5)
+    # print(upper_bound)
+    
+    lower_err_95 = mean_val - lower_bound
+    print(lower_err_95)
+    upper_err_95 = upper_bound - mean_val
+    print(upper_err_95)
+
+    # Here we keep the 95% CI half-widths directly (not converting to actual sigma scaling factor)
+    out_dict = {
+        "mean": mean_val,
+        "lower_sigma": lower_err_95,
+        "upper_sigma": upper_err_95}
+    return out_dict, print_tick
+
+def compile_mean_percentile95_errors(folder_path):
+    """
+    Processes all JSON files in folder_path and compiles a CSV file
+    with the sample name in the first column and, for each GDGT type found in
+    groups "Reference", "isoGDGTs", and "brGDGTs", the mean peak area and
+    the differences from mean to the 2.5th and 97.5th percentiles.
+    """
+    rows = []
+    json_files = glob.glob(os.path.join(folder_path, "*.json"))
+    
+    for file_path in json_files:
+        with open(file_path, 'r') as f:
+            sample_data = json.load(f)
+        row = {}
+        sample_name = sample_data.get("Sample Name", os.path.basename(file_path))
+        row["Sample Name"] = sample_name
+        for group in ["Reference", "isoGDGTs", "brGDGTs"]:
+
+            if group in sample_data:
+                for gdgt_key, gdgt_info in sample_data[group].items():
+                    if isinstance(gdgt_info, dict) and "area_ensemble" in gdgt_info:
+                        ensemble = gdgt_info["area_ensemble"]
+                        if sample_name=="H1801000119":
+                            if gdgt_key=="IIb'":
+                                print(gdgt_key)
+                                print(ensemble)
+                        if ensemble and len(ensemble) > 0:
+                            if isinstance(ensemble[0], list):
+                                data = ensemble[0]
+                            else:
+                                data = ensemble
+                        else:
+                            data = []
+                        stats, print_tick = percentile95_to_sigma_stats(data)
+                        row[gdgt_key] = stats["mean"]
+                        row[f"{gdgt_key}_lower_ci"] = stats["lower_sigma"]
+                        row[f"{gdgt_key}_upper_ci"] = stats["upper_sigma"]
+                    else:
+                        print(f"Warning: 'area_ensemble' not found for {group} {gdgt_key} in sample {sample_name}.")
+        
+        rows.append(row)
+    
+    df = pd.DataFrame(rows)
+    return df
+
+# Example usage:
+folder_path = '/Users/gerard/Desktop/redo/isogdgts/Largest peak/Output_chromatoPy/Individual Samples'
+output_csv = os.path.join(folder_path, "output_FINAL.csv")
+df_compiled = compile_mean_percentile95_errors(folder_path)
+df_compiled.to_csv(output_csv, index=False)
+
 
