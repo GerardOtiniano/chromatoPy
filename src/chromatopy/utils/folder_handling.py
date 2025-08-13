@@ -2,8 +2,9 @@
 
 import os
 import pandas as pd
+
+from .GDGT_configuration import load_gdgt_window_data
 from .import_data import numerical_sort_key
-from .GDGT_compounds import *
 
 def folder_handling(folder_path):
     """
@@ -39,10 +40,9 @@ def folder_handling(folder_path):
     
     # Initialize reference peaks
     ref_pk = {}
-    
-    # Prompt user for GDGTs of interest
-    gdgt_oi = get_gdgt_input()  # Ensure get_gdgt_input is defined or imported
-    gdgt_meta_set = get_gdgt(gdgt_oi)  # Ensure get_gdgt is defined or imported
+
+    # Loads GDGT Data from the GDGT Settings
+    gdgt_meta_set = load_gdgt_window_data()
     
     # Extract needed information
     default_windows = gdgt_meta_set["window"]
@@ -58,7 +58,6 @@ def folder_handling(folder_path):
         # "results_rts_path": results_rts_path,
         # "results_area_unc_path": results_area_unc_path,
         "ref_pk": ref_pk,
-        "gdgt_oi": gdgt_oi,
         "gdgt_meta_set": gdgt_meta_set,
         "default_windows": default_windows,
         "names": names

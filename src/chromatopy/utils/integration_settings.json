@@ -1,0 +1,9 @@
+{
+    "peak_neighborhood_n": 5,
+    "smoothing_window": 13,
+    "smoothing_factor": 3,
+    "gaus_iterations": 1000,
+    "maximum_peak_amplitude": null,
+    "peak_boundary_derivative_sensitivity": 0.01,
+    "peak_prominence": 0.001
+}
