@@ -66,11 +66,6 @@ def smoother(y, window_length, polyorder):
     return savgol_filter(y, window_length=window_length, polyorder=polyorder)
 
 def find_peak_neighborhood_boundaries(x, y_smooth, peaks, valleys, peak_idx, max_peaks, peak_properties, gi, smoothing_params, pk_sns):
-    # peak_distances = np.abs(x[peaks] - x[peak_idx])
-    # closest_peaks_indices = np.argsort(peak_distances)[:max_peaks]
-    # closest_peaks = np.sort(peaks[closest_peaks_indices])
-    # closest_peaks = [p for p in peaks if p != peak_idx]
-
     overlapping_peaks = []
     extended_boundaries = {}
     # Analyze each of the closest peaks
@@ -86,7 +81,6 @@ def find_peak_neighborhood_boundaries(x, y_smooth, peaks, valleys, peak_idx, max
             popt, _ = curve_fit(individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=gi)
         except RuntimeError:
             popt, _ = curve_fit(individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=gi*100)
-        # popt, _ = curve_fit(gaussian, x, y_smooth, p0=[height, mean, stddev, 0.1], maxfev=gi)
         # Extend Gaussian fit limits
         x_min, x_max = calculate_gaus_extension_limits(popt[1], popt[2], 0, factor=3)
         extended_x, extended_y = extrapolate_gaussian(x, popt[0], popt[1], popt[2], None, x_min - 2, x_max + 2)
@@ -127,19 +121,6 @@ def calculate_gaus_extension_limits(cen, wid, decay, factor=3, max_tail_sigma=5)
     else:
         tail = min(1/decay, sigma_effective * max_tail_sigma)
     return cen - sigma_effective-tail, cen+sigma_effective+tail
-    # extension_factor = 1 / decay if decay != 0 else sigma_effective  # Use decay to modify the extension if applicable
-    # x_min = cen - sigma_effective - np.abs(extension_factor)
-    # x_max = cen + sigma_effective + np.abs(extension_factor)
-    # return x_min, x_max
-
-# Modified to work with skewed Gaussian
-# def extrapolate_gaussian(x, amp, cen, wid, decay, x_min, x_max, step=0.0001):
-#     extended_x = np.arange(x_min, x_max, step)
-#     if decay is None:
-#         extended_y = individual_gaussian(extended_x, amp, cen, wid)
-#     else:
-#         extended_y = gaussian_decay(extended_x, amp, cen, wid, decay)
-#     return extended_x, extended_y
 
 def extrapolate_gaussian(x, amp, cen, wid, skew=None, x_min=None, x_max=None, step=0.0001):
     if x_min is None: x_min = cen - 3 * wid
@@ -213,8 +194,7 @@ def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi,
                 "pcov": best_fit_params_error,
                 "error": best_error,
                 "idx_interest": best_idx_interest,
-                "multi_flag": True
-            })
+                "multi_flag": True})
 
     # --- SINGLE-GAUSSIAN ---
     if mode in {"single", "both"}:
@@ -758,7 +738,7 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
                  'Model Parameters': model_parameters,
                  'Retention Time': float(x_peak_label)}
         except Exception as e:
-            # tqdm.write(f"[Warning] Failed to fit {label} in {key}: {e}")
+            tqdm.write(f"[Warning] Failed to fit {label} in {key}: {e}")
             data['Samples'][key]['Processed Data'][label] = [np.nan]
         
     

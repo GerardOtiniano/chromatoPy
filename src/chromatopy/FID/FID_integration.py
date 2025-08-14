@@ -8,7 +8,7 @@ import shutil
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 from matplotlib.widgets import TextBox, Button
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
@@ -42,7 +42,7 @@ def integration(
         # Peak integration parameters
         peak_neighborhood_n=3, smoothing_window=5, 
         smoothing_factor=3, gaus_iterations=1000, maximum_peak_amplitude=None, 
-        peak_boundary_derivative_sensitivity=0.01, peak_prominence=0.01):
+        peak_boundary_derivative_sensitivity=0.001, peak_prominence=0.01):
     """
     Main integration function for processing chromatographic samples.
 
@@ -141,7 +141,7 @@ def FID_integration_backend(data, time_column, signal_column, folder_path,
     
     # Get unprocessed samples only
     unprocessed_keys = [k for k in data["Samples"].keys() if 'Processed Data' not in data["Samples"][k].keys()]
-
+    
     # Identify peak locations
     if manual and peak_labels is not None:
         tqdm.write("Using stored peak labels for manual integration.")
@@ -152,29 +152,65 @@ def FID_integration_backend(data, time_column, signal_column, folder_path,
             "signal_column": signal_column}
     else:
         tqdm.write("Click the location of peaks and enter the chain length of interest (e.g., C22).\nUse 'shift+delete' to remove the last peak.\n'Select 'Finished' once satisfied.")
-        app = QApplication.instance() or QApplication(sys.argv)
+        # app = QApplication.instance() or QApplication(sys.argv)
+        # first_key = unprocessed_keys[0]
+        # time = data['Samples'][first_key]['Raw Data'][time_column]
+        # signal = data['Samples'][first_key]['Raw Data'][signal_column]
+    
+        # if sm == "nearest":
+        #     peak_positions, _ = find_peaks(signal)
+        # elif sm == "click":
+        #     peak_positions = None
+    
+        # peak_identifier = FID_Peak_ID(x=time, y=signal, selection_method=sm, peak_positions=peak_positions)
+        # app.exec_()
+        
+        app = QApplication.instance()
+        owns_app = False
+        if app is None:
+            app = QApplication(sys.argv)
+            owns_app = True  # we created it; safe to run/quit
+        
         first_key = unprocessed_keys[0]
         time = data['Samples'][first_key]['Raw Data'][time_column]
         signal = data['Samples'][first_key]['Raw Data'][signal_column]
-
+        
         if sm == "nearest":
             peak_positions, _ = find_peaks(signal)
         elif sm == "click":
             peak_positions = None
-
-        peak_identifier = FID_Peak_ID(x=time, y=signal, selection_method=sm, peak_positions=peak_positions)
-        app.exec_()
-
+        
+        peak_identifier = FID_Peak_ID(
+            x=time,
+            y=signal,
+            selection_method=sm,
+            peak_positions=peak_positions,
+            owns_app=owns_app)
+        
+        if owns_app:
+            # Script/terminal case: we own the event loop
+            app.exec_()
+        else:
+            # Spyder/Jupyter: event loop already integrated. Just wait until the figure closes.
+            # (Works with either `%matplotlib widget` (recommended) or `%matplotlib qt`)
+            while plt.fignum_exists(peak_identifier.fig.number) and not getattr(peak_identifier, "result", None):
+                plt.pause(0.1)
+        if peak_identifier.result is None:
+            # User closed the window without pressing Finish → cancel/abort
+            import tqdm as tqdmmod
+            tqdmmod.write("Integration cancelled: window closed without pressing 'Finish'.")
+            raise SystemExit
+    
         data['Integration Metadata'] = {
             "peak dictionary": peak_identifier.result,
             "time_column": time_column,
             "signal_column": signal_column}
-
+    
     for key in tqdm(unprocessed_keys, desc="Integrating samples", unit="sample", mininterval=0, maxinterval=0):
         if "Integratoin Result" in data['Samples'][key].keys():
             tqdm.write(f"{key} already processed")
             continue
-
+    
         if manual:
             run_peak_integrator_manual(data, key, gi=gaus_iterations,
                                        pk_sns=peak_boundary_derivative_sensitivity,
@@ -196,24 +232,24 @@ def FID_integration_backend(data, time_column, signal_column, folder_path,
                 existing_data["Samples"][sample_name] = sample_data
         else:
             existing_data = data
-
+    
         save_json({'data_dict':existing_data}, output_path)
         output_csv(existing_data, output_path)
     # return data
-
+    
 def output_csv(data, output_directory):
     """
     Generate two CSV files:
     1. output_peak_areas.csv: contains median peak areas per sample.
     2. output_retention_times.csv: contains retention times per sample.
-
+    
     Parameters
     ----------
     data : dict
         Data dictionary containing processed chromatographic data.
     output_directory : str
         Directory to save the output CSVs.
-
+    
     Returns
     -------
     df_areas : pandas.DataFrame
@@ -226,12 +262,12 @@ def output_csv(data, output_directory):
     for sample in data['Samples'].values():
         processed = sample.get("Processed Data", {})
         all_peaks.update(processed.keys())
-
+    
     all_peaks = sorted(all_peaks)
-
+    
     peak_area_rows = []
     retention_time_rows = []
-
+    
     for sample_name, sample in data['Samples'].items():
         row_area = {"Lab ID": sample_name}
         row_ret = {"Lab ID": sample_name}
@@ -246,11 +282,11 @@ def output_csv(data, output_directory):
                 row_ret[peak] = np.nan
         peak_area_rows.append(row_area)
         retention_time_rows.append(row_ret)
-
+    
     # Convert to DataFrames
     df_areas = pd.DataFrame(peak_area_rows)
     df_ret_times = pd.DataFrame(retention_time_rows)
-
+    
     # Save as CSVs
     os.makedirs(output_directory, exist_ok=True)
     area_path = os.path.join(output_directory, "output_peak_areas.csv")
@@ -379,7 +415,7 @@ def clean_for_json(obj):
 #                 result[key] = value
 #         else:
 #             # Unhandled line structure
-#             tqdm.write("Skipping malformed line:", line)
+#             #tqdm.write("Skipping malformed line:", line)
 
 #     return result
  
@@ -441,8 +477,227 @@ def merge_existing_jsons(data, output_path):
 #     return existing, unprocessed
 
 
+# class FID_Peak_ID:
+#     def __init__(self, x, y, selection_method, peak_positions=None, owns_app=False):
+#         self._owns_app = owns_app
+#         self.result=None
+#         self.finished=False
+#         self.closed_without_finish = False
+#         self.x = pd.Series(x)
+#         self.y = pd.Series(y)
+#         self.selection_method = selection_method
+#         self.lines = []
+#         self.labels = []
+#         self.positions = set()
+#         self.peak_dict = {}
+#         self.peak_order = []
+
+#         if peak_positions is None:
+#             self.peak_positions = []
+#         else:
+#             self.peak_positions = list(peak_positions)
+
+#         # Create figure and axes
+#         self.fig, self.ax = plt.subplots(figsize=(10, 5))
+#         self.ax.plot(self.x, self.y)
+
+#         # TextBoxes for axis limits
+#         self.textbox_minx_ax = self.fig.add_axes([0.15, 0.02, 0.1, 0.04])
+#         self.textbox_maxx_ax = self.fig.add_axes([0.3, 0.02, 0.1, 0.04])
+#         self.textbox_miny_ax = self.fig.add_axes([0.45, 0.02, 0.1, 0.04])
+#         self.textbox_maxy_ax = self.fig.add_axes([0.6, 0.02, 0.1, 0.04])
+#         self.textbox_minx = TextBox(self.textbox_minx_ax, 'X0')
+#         self.textbox_maxx = TextBox(self.textbox_maxx_ax, 'X1')
+#         self.textbox_miny = TextBox(self.textbox_miny_ax, 'Y0')
+#         self.textbox_maxy = TextBox(self.textbox_maxy_ax, 'Y1')
+
+#         # Initialize limits
+#         xmin, xmax = self.ax.get_xlim()
+#         ymin, ymax = self.ax.get_ylim()
+#         self.textbox_minx.set_val(str(round(xmin, 1)))
+#         self.textbox_maxx.set_val(str(round(xmax, 1)))
+#         self.textbox_miny.set_val(str(round(ymin, 1)))
+#         self.textbox_maxy.set_val(str(round(ymax, 1)))
+
+#         # Connect axis limit updates
+#         for box in [self.textbox_minx, self.textbox_maxx, self.textbox_miny, self.textbox_maxy]:
+#             box.on_submit(self.update_limits)
+
+#         # # Finish button
+#         # self.button_ax = self.fig.add_axes([0.85, 0.02, 0.1, 0.04])
+#         # self.finish_button = Button(self.button_ax, 'Finished')
+#         # self.finish_button.on_clicked(self.finish)
+#         self.fig.canvas.mpl_connect("close_event", self._on_close)
+        
+#         # def finish(self, event):
+#         #     # Store results for the caller
+#         #     self.result = dict(self.peak_dict)
+#         #     # Close the plot
+#         #     plt.close(self.fig)
+        
+#         #     # Only quit the app if THIS code created/owns it
+#         #     if self._owns_app:
+#         #         app = QApplication.instance()
+#         #         if app is not None:
+#         #             app.quit()
+#         def finish(self, event):
+#             self.result = dict(self.peak_dict)  # whatever you collect
+#             self.finished = True
+#             import matplotlib.pyplot as plt
+#             plt.close(self.fig)
+#             if self._owns_app:
+#                 from PyQt5.QtWidgets import QApplication
+#                 app = QApplication.instance()
+#                 if app is not None:
+#                     app.quit()
+#         def _on_close(self, event):
+#             if not self.finished:
+#                 self.closed_without_finish = True
+                
+#         # Connect events
+#         self.fig.canvas.mpl_connect('button_press_event', self.on_click)
+#         self.fig.canvas.mpl_connect('key_press_event', self.on_key)
+
+#         plt.show()
+
+#         # Focus - permits seeing key events
+#         self.fig.canvas.setFocusPolicy(Qt.StrongFocus)
+#         self.fig.canvas.setFocus()
+#         def _on_close(self, event):
+        
+#     def on_click(self, event):
+#             if event.inaxes != self.ax:
+#                 return
+#             # x_click = round(event.xdata, 5)
+#             # if x_click in self.positions:
+#             #     return
+
+#             if self.selection_method == "nearest" and self.peak_positions:
+#                 raw_x = event.xdata
+#                 # find the peak position closest to where they clicked
+#                 # x_click = min(self.x[self.peak_positions], key=lambda xp: abs(xp - raw_x))
+#                 peak_times = self.x.iloc[self.peak_positions].to_numpy()
+#                 x_click = min(peak_times, key=lambda t: abs(t - raw_x))
+#             else:
+#                 x_click = round(event.xdata, 5)
+
+#             if x_click in self.positions:
+#                 return
+
+#             # 1) draw the line immediately (so user sees it)
+#             line = self.ax.axvline(x_click, color='red', linestyle='--', alpha=0.7)
+#             self.lines.append(line)
+
+#             # 2) ask for the label via our Qt dialog
+#             prompt = f"Label for peak at x = {x_click:.2f}"
+#             dlg = LabelDialog(prompt=prompt, initial="peak", parent=self.fig.canvas)
+#             if dlg.exec_() == QDialog.Accepted:
+#                 text = dlg.value()
+#                 # duplicate‐name check
+#                 if text in self.peak_dict:
+#                     QMessageBox.warning(
+#                         self.fig.canvas, "Duplicate label",
+#                         f"'{text}' already exists—please pick another name."
+#                     )
+#                     # undo that line
+#                     self.lines.pop().remove()
+#                     return
+
+#                 # 3) record & draw the annotation
+#                 self.positions.add(x_click)
+#                 self.peak_order.append(text)
+#                 self.peak_dict[text] = x_click
+
+#                 y_top = self.ax.get_ylim()[1]
+#                 txt = self.ax.text(
+#                     x_click + 0.05, y_top * 0.95, text, #rotation=90,
+#                     verticalalignment='top', horizontalalignment='left',
+#                     color='red', fontsize=9,
+#                     bbox=dict(facecolor='white', alpha=0.5)
+#                 )
+#                 self.labels.append(txt)
+#                 self.fig.canvas.draw_idle()
+
+#             else:
+#                 # user cancelled → remove that line
+#                 self.lines.pop().remove()
+#                 self.fig.canvas.draw_idle()
+
+#     def on_key(self, event):
+#         qt_ev = getattr(event, "guiEvent", None)
+#         if not qt_ev:
+#             return
+
+#         keycode = qt_ev.key()
+#         # Qt.Key_Backspace = 16777219, Qt.Key_Delete = 16777223
+#         if (qt_ev.modifiers() & Qt.ShiftModifier) and keycode in (Qt.Key_Backspace, Qt.Key_Delete):
+#             if not self.peak_order:
+#                 return
+
+#             # 1) remove last vertical line
+#             line = self.lines.pop()
+#             line.remove()
+
+#             # 2) remove last text annotation
+#             txt = self.labels.pop()
+#             txt.remove()
+
+#             # 3) clean up bookkeeping
+#             last_label = self.peak_order.pop()
+#             x_removed = self.peak_dict.pop(last_label)
+#             self.positions.discard(x_removed)
+
+#             # 4) redraw
+#             self.fig.canvas.draw_idle()
+
+#     def update_limits(self, _):
+#         # Update axis limits from TextBox values
+#         try:
+#             xmin = float(self.textbox_minx.text)
+#             xmax = float(self.textbox_maxx.text)
+#             ymin = float(self.textbox_miny.text)
+#             ymax = float(self.textbox_maxy.text)
+#             self.ax.set_xlim(xmin, xmax)
+#             self.ax.set_ylim(ymin, ymax)
+#             self.fig.canvas.draw_idle()
+#         except ValueError:
+#             print("oh no")
+#             tqdm.write('Invalid axis limits entered.')
+#         finally:
+#             # force-release any mouse grab so next click is clean
+#             try:
+#                 self.fig.canvas.release_mouse(self.ax)
+#             except Exception:
+#                 pass
+
+#     # def finish(self, event):
+#     #     # Store the peaks dict so callers can grab it
+#     #     self.result = dict(self.peak_dict)
+#     #     # Close the plot
+#     #     plt.close(self.fig)
+#     #     # Quit the Qt event loop so exec_() returns
+#     #     QApplication.instance().quit()
+#     def finish(self, event):
+#         # Store results and mark as finished
+#         self.result = dict(self.peak_dict)
+#         self.finished = True
+    
+#         # Close the figure
+#         plt.close(self.fig)
+    
+#         # Only quit the Qt loop if WE created it
+#         if self._owns_app:
+#             app = QApplication.instance()
+#             if app is not None:
+#                 app.quit()
+    
 class FID_Peak_ID:
-    def __init__(self, x, y, selection_method, peak_positions=None):
+    def __init__(self, x, y, selection_method, peak_positions=None, owns_app=False):
+        self._owns_app = owns_app
+        self.result = None
+        self.finished = False
+        self.closed_without_finish = False
+
         self.x = pd.Series(x)
         self.y = pd.Series(y)
         self.selection_method = selection_method
@@ -451,27 +706,23 @@ class FID_Peak_ID:
         self.positions = set()
         self.peak_dict = {}
         self.peak_order = []
+        self.peak_positions = list(peak_positions) if peak_positions is not None else []
 
-        if peak_positions is None:
-            self.peak_positions = []
-        else:
-            self.peak_positions = list(peak_positions)
-
-        # Create figure and axes
+        # Figure & plot
         self.fig, self.ax = plt.subplots(figsize=(10, 5))
         self.ax.plot(self.x, self.y)
+        self.fig.canvas.mpl_connect("close_event", self._on_close)
 
-        # TextBoxes for axis limits
+        # Axis limit text boxes
         self.textbox_minx_ax = self.fig.add_axes([0.15, 0.02, 0.1, 0.04])
-        self.textbox_maxx_ax = self.fig.add_axes([0.3, 0.02, 0.1, 0.04])
+        self.textbox_maxx_ax = self.fig.add_axes([0.30, 0.02, 0.1, 0.04])
         self.textbox_miny_ax = self.fig.add_axes([0.45, 0.02, 0.1, 0.04])
-        self.textbox_maxy_ax = self.fig.add_axes([0.6, 0.02, 0.1, 0.04])
+        self.textbox_maxy_ax = self.fig.add_axes([0.60, 0.02, 0.1, 0.04])
         self.textbox_minx = TextBox(self.textbox_minx_ax, 'X0')
         self.textbox_maxx = TextBox(self.textbox_maxx_ax, 'X1')
         self.textbox_miny = TextBox(self.textbox_miny_ax, 'Y0')
         self.textbox_maxy = TextBox(self.textbox_maxy_ax, 'Y1')
 
-        # Initialize limits
         xmin, xmax = self.ax.get_xlim()
         ymin, ymax = self.ax.get_ylim()
         self.textbox_minx.set_val(str(round(xmin, 1)))
@@ -479,112 +730,97 @@ class FID_Peak_ID:
         self.textbox_miny.set_val(str(round(ymin, 1)))
         self.textbox_maxy.set_val(str(round(ymax, 1)))
 
-        # Connect axis limit updates
         for box in [self.textbox_minx, self.textbox_maxx, self.textbox_miny, self.textbox_maxy]:
             box.on_submit(self.update_limits)
 
-        # Finish button
+        # Finished button (UNCOMMENTED & hooked up)
         self.button_ax = self.fig.add_axes([0.85, 0.02, 0.1, 0.04])
         self.finish_button = Button(self.button_ax, 'Finished')
         self.finish_button.on_clicked(self.finish)
 
-        # Connect events
+        # Events
         self.fig.canvas.mpl_connect('button_press_event', self.on_click)
         self.fig.canvas.mpl_connect('key_press_event', self.on_key)
 
         plt.show()
 
-        # Focus - permits seeing key events
+        # Focus for key events
         self.fig.canvas.setFocusPolicy(Qt.StrongFocus)
         self.fig.canvas.setFocus()
 
+    # ---------- event handlers (class methods, not nested) ----------
+    def _on_close(self, event):
+        if not self.finished:
+            self.closed_without_finish = True
+
+    def finish(self, event):
+        self.result = dict(self.peak_dict)
+        self.finished = True
+        plt.close(self.fig)
+        if self._owns_app:
+            app = QApplication.instance()
+            if app is not None:
+                app.quit()
+
     def on_click(self, event):
-            if event.inaxes != self.ax:
-                return
-            # x_click = round(event.xdata, 5)
-            # if x_click in self.positions:
-            #     return
+        if event.inaxes != self.ax:
+            return
 
-            if self.selection_method == "nearest" and self.peak_positions:
-                raw_x = event.xdata
-                # find the peak position closest to where they clicked
-                # x_click = min(self.x[self.peak_positions], key=lambda xp: abs(xp - raw_x))
-                peak_times = self.x.iloc[self.peak_positions].to_numpy()
-                x_click = min(peak_times, key=lambda t: abs(t - raw_x))
-            else:
-                x_click = round(event.xdata, 5)
+        if self.selection_method == "nearest" and self.peak_positions:
+            raw_x = event.xdata
+            peak_times = self.x.iloc[self.peak_positions].to_numpy()
+            x_click = min(peak_times, key=lambda t: abs(t - raw_x))
+        else:
+            x_click = round(event.xdata, 5)
 
-            if x_click in self.positions:
-                return
+        if x_click in self.positions:
+            return
 
-            # 1) draw the line immediately (so user sees it)
-            line = self.ax.axvline(x_click, color='red', linestyle='--', alpha=0.7)
-            self.lines.append(line)
+        line = self.ax.axvline(x_click, color='red', linestyle='--', alpha=0.7)
+        self.lines.append(line)
 
-            # 2) ask for the label via our Qt dialog
-            prompt = f"Label for peak at x = {x_click:.2f}"
-            dlg = LabelDialog(prompt=prompt, initial="peak", parent=self.fig.canvas)
-            if dlg.exec_() == QDialog.Accepted:
-                text = dlg.value()
-                # duplicate‐name check
-                if text in self.peak_dict:
-                    QMessageBox.warning(
-                        self.fig.canvas, "Duplicate label",
-                        f"'{text}' already exists—please pick another name."
-                    )
-                    # undo that line
-                    self.lines.pop().remove()
-                    return
-
-                # 3) record & draw the annotation
-                self.positions.add(x_click)
-                self.peak_order.append(text)
-                self.peak_dict[text] = x_click
-
-                y_top = self.ax.get_ylim()[1]
-                txt = self.ax.text(
-                    x_click + 0.05, y_top * 0.95, text, #rotation=90,
-                    verticalalignment='top', horizontalalignment='left',
-                    color='red', fontsize=9,
-                    bbox=dict(facecolor='white', alpha=0.5)
-                )
-                self.labels.append(txt)
-                self.fig.canvas.draw_idle()
-
-            else:
-                # user cancelled → remove that line
+        prompt = f"Label for peak at x = {x_click:.2f}"
+        dlg = LabelDialog(prompt=prompt, initial="peak", parent=self.fig.canvas)
+        if dlg.exec_() == QDialog.Accepted:
+            text = dlg.value()
+            if text in self.peak_dict:
+                QMessageBox.warning(self.fig.canvas, "Duplicate label",
+                                    f"'{text}' already exists—please pick another name.")
                 self.lines.pop().remove()
-                self.fig.canvas.draw_idle()
+                return
+
+            self.positions.add(x_click)
+            self.peak_order.append(text)
+            self.peak_dict[text] = x_click
+
+            y_top = self.ax.get_ylim()[1]
+            txt = self.ax.text(
+                x_click + 0.05, y_top * 0.95, text,
+                va='top', ha='left', color='red', fontsize=9,
+                bbox=dict(facecolor='white', alpha=0.5)
+            )
+            self.labels.append(txt)
+            self.fig.canvas.draw_idle()
+        else:
+            self.lines.pop().remove()
+            self.fig.canvas.draw_idle()
 
     def on_key(self, event):
         qt_ev = getattr(event, "guiEvent", None)
         if not qt_ev:
             return
-
         keycode = qt_ev.key()
-        # Qt.Key_Backspace = 16777219, Qt.Key_Delete = 16777223
         if (qt_ev.modifiers() & Qt.ShiftModifier) and keycode in (Qt.Key_Backspace, Qt.Key_Delete):
             if not self.peak_order:
                 return
-
-            # 1) remove last vertical line
-            line = self.lines.pop()
-            line.remove()
-
-            # 2) remove last text annotation
-            txt = self.labels.pop()
-            txt.remove()
-
-            # 3) clean up bookkeeping
+            self.lines.pop().remove()
+            self.labels.pop().remove()
             last_label = self.peak_order.pop()
             x_removed = self.peak_dict.pop(last_label)
             self.positions.discard(x_removed)
-
-            # 4) redraw
             self.fig.canvas.draw_idle()
 
     def update_limits(self, _):
-        # Update axis limits from TextBox values
         try:
             xmin = float(self.textbox_minx.text)
             xmax = float(self.textbox_maxx.text)
@@ -594,21 +830,12 @@ class FID_Peak_ID:
             self.ax.set_ylim(ymin, ymax)
             self.fig.canvas.draw_idle()
         except ValueError:
-            tqdm.write('Invalid axis limits entered.')
+            print('Invalid axis limits entered.')
         finally:
-            # force-release any mouse grab so next click is clean
             try:
                 self.fig.canvas.release_mouse(self.ax)
             except Exception:
-                pass
-
-    def finish(self, event):
-        # Store the peaks dict so callers can grab it
-        self.result = dict(self.peak_dict)
-        # Close the plot
-        plt.close(self.fig)
-        # Quit the Qt event loop so exec_() returns
-        QApplication.instance().quit()
+                pass 
 
 class LabelDialog(QDialog):
     def __init__(self, prompt="Enter peak label:", initial="peak", parent=None):

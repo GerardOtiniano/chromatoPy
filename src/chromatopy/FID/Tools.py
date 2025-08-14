@@ -24,13 +24,13 @@ def save_results(data, output_path):
 #             tqdm.write("Error loading existing JSON:", e)
 #     return None
 
-def load_results(output_path, filename="FID_output.json", list_samples=False, list_processed=False):
+def load_results(results_path, list_samples=False, list_processed=False):
     """
     Try to load FID_output.json from output_path.
     If it doesn’t exist, return None.
     Otherwise return the dict, rebuilding any Raw Data dicts into DataFrames.
     """
-    js_file = os.path.join(output_path, "FID_output.json")
+    js_file = os.path.join(results_path)
     if not os.path.exists(js_file):
         return None
 

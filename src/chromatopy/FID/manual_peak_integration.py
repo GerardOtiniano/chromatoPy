@@ -8,7 +8,7 @@ import shutil
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 from matplotlib.widgets import TextBox, Button
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
@@ -71,8 +71,19 @@ def run_peak_integrator_manual(data, key, gi, pk_sns, smoothing_params, max_peak
         pk_sns,
         gi,
         gaussian_fit_mode)
-    app = QApplication.instance() or QApplication(sys.argv)
-    app.exec_()
+    # app = QApplication.instance() or QApplication(sys.argv)
+    # app.exec_()
+    app = QApplication.instance()
+    owns_app = False
+    if app is None:
+        app = QApplication(sys.argv)
+        owns_app = True
+    
+    if owns_app:
+        app.exec_()
+    else:
+        while not getattr(peak_selector, "finished", False) and plt.fignum_exists(peak_selector.fig.number):
+            plt.pause(0.1)
     
     
     if peak_selector.force_exit:
@@ -96,7 +107,9 @@ class ManualPeakIntegrator:
                  smoothing_params,
                  pk_sns,
                  gi,
-                 gaussian_fit_mode):
+                 gaussian_fit_mode,
+                 owns_app=False):
+        self._owns_app = owns_app
         self.x, self.y = pd.Series(x), pd.Series(y)
         self.valleys = valleys
         self.peaks = np.asarray(peaks)
@@ -145,66 +158,173 @@ class ManualPeakIntegrator:
         self.force_exit = True
         self.text.set_text("Exiting...")
         self.fig.canvas.draw()
-        QApplication.quit()
+        # QApplication.quit()
+        if getattr(self, "_owns_app", False):
+            app = QApplication.instance()
+            if app is not None:
+                app.quit()
         plt.close(self.fig)
         
+    # def onclick(self, event):
+    #     if event.inaxes != self.ax:
+    #         return
+    #     # Check if peaks are selected
+    #     if self.index >= len(self.labels):
+    #        msg = "[Manual] All peaks have already been selected. No more selections expected."
+    #        try:
+    #            tqdm.write(msg)
+    #        except Exception:
+    #            print(msg)
+    #        # (optional) stop processing further clicks
+    #        try:
+    #            self.fig.canvas.mpl_disconnect(self.cid_click)
+    #        except Exception:
+    #            pass
+    #        return
+        
+    #     click_time = event.xdata
+    #     peak_times = self.x.to_numpy()[self.peaks]
+    #     dists = np.abs(peak_times - click_time)
+    #     best = dists.argmin()
+   
+    #     # if the nearest real peak is > tolerance, treat as “no peak”
+    #     if dists[best] <= self.click_tolerance:
+    #         peak_idx = int(self.peaks[best])
+    #     else:
+    #         # no valid peak → grey dashed line & record NaN
+    #         line = self.ax.axvline(click_time, color='grey', linestyle='--')
+    #         self.artists_stack.append([line])
+    #         self.processed_data[self.labels[self.index]] = {'Values': [np.nan]}
+    #         self._advance_prompt()
+    #         return
+    #     drawn = []
+    #     try:
+    #         if self.gaussian_fit_mode in {"multi","both"}:
+    #             _, _, neigh = find_peak_neighborhood_boundaries(
+    #                 self.x, self.y, self.peaks, self.valleys,
+    #                 peak_idx, self.pk_sns,
+    #                 peak_properties=self.peak_properties,
+    #                 gi=self.gi,
+    #                 smoothing_params=self.smoothing_params,
+    #                 pk_sns=self.pk_sns)
+    #         else:
+    #             neigh = [peak_idx]
+    #         # print("debug 1")   
+    #         x_fit, y_fit, _, area_ensemble, model_params = fit_gaussians(
+    #             self.x, self.y, peak_idx, neigh,
+    #             self.smoothing_params, self.pk_sns,
+    #             gi=self.gi,
+    #             mode=self.gaussian_fit_mode)
+    #         # print("debug 2")
+    #         poly = self.ax.fill_between(x_fit, 0, y_fit, color='red', alpha=0.4)
+    #         drawn.append(poly)
+    #         self.processed_data[self.labels[self.index]] = {
+    #             'Peak Area - median': np.median(area_ensemble),
+    #             'Peak Area - mean': np.mean(area_ensemble),
+    #             'Peak Area - standard deviation': np.std(area_ensemble, ddof=1),
+    #             'Peak Area - number of ensemble members': len(area_ensemble),
+    #             'Model Parameters': model_params,
+    #             'Retention Time': float(click_time)}
+   
+    #     except Exception as e:
+    #         tqdm.write(f"[Manual Warning] Failed to fit {self.labels[self.index]}: {e}")
+    #         line = self.ax.axvline(click_time, color='grey', linestyle='--')
+    #         drawn.append(line)
+    #         self.processed_data[self.labels[self.index]] = {'Values':[np.nan]}
+   
+    #     # save for undo, then advance
+    #     self.artists_stack.append(drawn)
+    #     self._advance_prompt()
     def onclick(self, event):
-         if event.inaxes != self.ax:
-             return
+        if event.inaxes != self.ax:
+            return
     
-         click_time = event.xdata
-         peak_times = self.x.to_numpy()[self.peaks]
-         dists = np.abs(peak_times - click_time)
-         best = dists.argmin()
+        # ---- Guard: all expected peaks already selected ----
+        if self.index >= len(self.labels):
+            msg = "[Manual] All peaks have already been selected. No more selections expected."
+            try:
+                tqdm.write(msg)
+            except Exception:
+                print(msg)
+            return
     
-         # if the nearest real peak is > tolerance, treat as “no peak”
-         if dists[best] <= self.click_tolerance:
-             peak_idx = int(self.peaks[best])
-         else:
-             # no valid peak → grey dashed line & record NaN
-             line = self.ax.axvline(click_time, color='grey', linestyle='--')
-             self.artists_stack.append([line])
-             self.processed_data[self.labels[self.index]] = {'Values': [np.nan]}
-             self._advance_prompt()
-             return
-         drawn = []
-         try:
-             if self.gaussian_fit_mode in {"multi","both"}:
-                 _, _, neigh = find_peak_neighborhood_boundaries(
-                     self.x, self.y, self.peaks, self.valleys,
-                     peak_idx, self.pk_sns,
-                     peak_properties=self.peak_properties,
-                     gi=self.gi,
-                     smoothing_params=self.smoothing_params,
-                     pk_sns=self.pk_sns)
-             else:
-                 neigh = [peak_idx]
-             # print("debug 1")   
-             x_fit, y_fit, _, area_ensemble, model_params = fit_gaussians(
-                 self.x, self.y, peak_idx, neigh,
-                 self.smoothing_params, self.pk_sns,
-                 gi=self.gi,
-                 mode=self.gaussian_fit_mode)
-             # print("debug 2")
-             poly = self.ax.fill_between(x_fit, 0, y_fit, color='red', alpha=0.4)
-             drawn.append(poly)
-             self.processed_data[self.labels[self.index]] = {
-                 'Peak Area - median': np.median(area_ensemble),
-                 'Peak Area - mean': np.mean(area_ensemble),
-                 'Peak Area - standard deviation': np.std(area_ensemble, ddof=1),
-                 'Peak Area - number of ensemble members': len(area_ensemble),
-                 'Model Parameters': model_params,
-                 'Retention Time': float(click_time)}
+        # Safe current label (use after the guard above)
+        current_label = self.labels[self.index]
     
-         except Exception as e:
-             tqdm.write(f"[Manual Warning] Failed to fit {self.labels[self.index]}: {e}")
-             line = self.ax.axvline(click_time, color='grey', linestyle='--')
-             drawn.append(line)
-             self.processed_data[self.labels[self.index]] = {'Values':[np.nan]}
+        click_time = event.xdata
+        peak_times = self.x.to_numpy()[self.peaks]
+        dists = np.abs(peak_times - click_time)
+        best = dists.argmin()
     
-         # save for undo, then advance
-         self.artists_stack.append(drawn)
-         self._advance_prompt()
+        # if the nearest real peak is > tolerance, treat as “no peak”
+        if dists[best] > self.click_tolerance:
+            # no valid peak → grey dashed line & record NaN
+            line = self.ax.axvline(click_time, color='grey', linestyle='--')
+            self.artists_stack.append([line])
+            self.processed_data[current_label] = {'Values': [np.nan]}
+            self._advance_prompt()
+            return
+    
+        peak_idx = int(self.peaks[best])
+    
+        drawn = []
+        try:
+            if self.gaussian_fit_mode in {"multi", "both"}:
+                _, _, neigh = find_peak_neighborhood_boundaries(
+                    self.x, self.y, self.peaks, self.valleys,
+                    peak_idx, self.pk_sns,
+                    peak_properties=self.peak_properties,
+                    gi=self.gi,
+                    smoothing_params=self.smoothing_params,
+                    pk_sns=self.pk_sns
+                )
+            else:
+                neigh = [peak_idx]
+    
+            x_fit, y_fit, _, area_ensemble, model_params = fit_gaussians(
+                self.x, self.y, peak_idx, neigh,
+                self.smoothing_params, self.pk_sns,
+                gi=self.gi,
+                mode=self.gaussian_fit_mode)
+    
+            poly = self.ax.fill_between(x_fit, 0, y_fit, color='red', alpha=0.4)
+            drawn.append(poly)
+    
+            self.processed_data[current_label] = {
+                'Peak Area - median': float(np.median(area_ensemble)),
+                'Peak Area - mean': float(np.mean(area_ensemble)),
+                'Peak Area - standard deviation': float(np.std(area_ensemble, ddof=1)),
+                'Peak Area - number of ensemble members': int(len(area_ensemble)),
+                'Model Parameters': model_params,
+                'Retention Time': float(click_time),
+            }
+    
+        except Exception as e:
+            # Don't index self.labels[self.index] here – use current_label captured earlier
+            # try:
+            #     tqdm.write(f"[Manual Warning] Failed to fit {current_label}: {e}")
+            # except Exception:
+            #     print(f"[Manual Warning] Failed to fit {current_label}: {e}")
+            tqdm.write(f"[Manual Warning] Failed to fit {current_label}: {e}")
+            line = self.ax.axvline(click_time, color='grey', linestyle='--')
+            drawn.append(line)
+            self.processed_data[current_label] = {'Values': [np.nan]}
+    
+        # save for undo, then advance
+        self.artists_stack.append(drawn)
+        self._advance_prompt()
+    
+        # If that was the last label, optionally inform user & disconnect clicks
+        if self.index >= len(self.labels):
+            done_msg = "[Manual] All peaks selected. You can press Finished."
+            try:
+                tqdm.write(done_msg)
+            except Exception:
+                print(done_msg)
+            try:
+                self.fig.canvas.mpl_disconnect(self.cid_click)
+            except Exception:
+                pass
     
     def _advance_prompt(self):
         """increment index, update the onscreen prompt, redraw."""
@@ -236,4 +356,8 @@ class ManualPeakIntegrator:
         self.fig.canvas.mpl_disconnect(self.cid_click)
         self.fig.canvas.mpl_disconnect(self.cid_key)
         self.finished=True
-        QApplication.quit()
+        # QApplication.quit()
+        if getattr(self, "_owns_app", False):
+            app = QApplication.instance()
+            if app is not None:
+                app.quit()

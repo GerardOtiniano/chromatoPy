@@ -37,6 +37,7 @@ def import_data(): # folder_path=None):
 
         if table_start is None or table_start + 1 >= len(lines):
             tqdm.write(f"Could not find table start in {filename}")
+            print(f"Could not find table start in {filename}")
             continue
 
         # Read headers
@@ -48,6 +49,7 @@ def import_data(): # folder_path=None):
             df = pd.DataFrame([l.strip().split('\t') for l in data_lines if l.strip() != ''], columns=headers)
         except Exception as e:
             tqdm.write(f"Failed to parse table in {filename}: {e}")
+            print(f"Failed to parse table in {filename}: {e}")
             continue
 
         # Header matching
@@ -126,6 +128,7 @@ def parse_metadata_block(raw_text):
         else:
             # Unhandled line structure
             tqdm.write("Skipping malformed line:", line)
+            print("Skipping malformed line:", line())
 
     # return result
 

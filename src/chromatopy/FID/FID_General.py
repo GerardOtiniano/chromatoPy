@@ -103,7 +103,7 @@ def move_files_to_cluster_subfolder(file_names, cluster_var, source_folder):
             name_without_ext = os.path.splitext(filename)[0]
             if name_without_ext in file_names:
                 shutil.move(full_path, os.path.join(dest_folder, filename))
-                tqdm.write(f"Moved {filename} → cluster_{cluster_var}/")
+                tqdm.write(f"Moved {filename} to cluster_{cluster_var}/")
 
     tqdm.write(f"All matching files moved to {dest_folder}.")
     
