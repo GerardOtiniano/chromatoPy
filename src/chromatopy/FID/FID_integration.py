@@ -197,8 +197,7 @@ def FID_integration_backend(data, time_column, signal_column, folder_path,
                 plt.pause(0.1)
         if peak_identifier.result is None:
             # User closed the window without pressing Finish → cancel/abort
-            import tqdm as tqdmmod
-            tqdmmod.write("Integration cancelled: window closed without pressing 'Finish'.")
+            tqdm.write("Integration cancelled: window closed without pressing 'Finish'.")
             raise SystemExit
     
         data['Integration Metadata'] = {
