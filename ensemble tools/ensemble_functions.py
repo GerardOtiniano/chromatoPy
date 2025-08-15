@@ -584,9 +584,7 @@ def percentile95_to_sigma_stats(data):
     # print(upper_bound)
     
     lower_err_95 = mean_val - lower_bound
-    print(lower_err_95)
     upper_err_95 = upper_bound - mean_val
-    print(upper_err_95)
 
     # Here we keep the 95% CI half-widths directly (not converting to actual sigma scaling factor)
     out_dict = {
