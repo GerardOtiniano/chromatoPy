@@ -114,7 +114,7 @@ def find_peak_neighborhood_boundaries(x, y_smooth, peaks, valleys, peak_idx, max
 
 
 # Gaussian fitting
-def calculate_gaus_extension_limits(cen, wid, decay, factor=3, max_tail_sigma=5):
+def calculate_gaus_extension_limits(cen, wid, decay, factor=2, max_tail_sigma=2):#5):
     sigma_effective = wid * factor  # Adjust factor for tail thinness
     if decay <= 0:
         tail = sigma_effective * max_tail_sigma
@@ -329,7 +329,7 @@ def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi,
     #     # print("debug 1.9")
     else:
         amp, cen, wid = best_fit_params[:3]
-        tail_factor = 3
+        tail_factor = 1.5#3
         print("debug 1.8")
         if model_used == "asymmetric":
             # skewed Gaussian (alpha)
@@ -622,7 +622,7 @@ def peak_area_distribution( params, params_uncertainty, ind, x, x_full, ind_peak
             wid = max(abs(wid), 1e-6)
             print(wid)
             print("debug 1.13.5")
-            x_min, x_max = calculate_gaus_extension_limits(cen, wid, decay_eff, factor=3)
+            x_min, x_max = calculate_gaus_extension_limits(cen, wid, decay_eff, factor=2)#3)
             print(x_min)
             print(x_max)
             print("debug 1.13.6")
