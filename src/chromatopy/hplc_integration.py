@@ -1,3 +1,4 @@
+from multiprocessing import Process
 from .utils import gdgt_settings, integration_settings
 from .utils.GDGT_configuration import load_gdgt_window_data
 from .utils.Integration_configuration import load_integration_settings
@@ -169,9 +170,11 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=5, smoo
     print("Finished.")
 
 def open_gdgt_settings():
-    app = gdgt_settings.main()
-    app.main_loop()
+    p = Process(target=gdgt_settings.run_ui)
+    p.start()
+    p.join()
 
 def open_integration_settings():
-    app = integration_settings.main()
-    app.main_loop()
+    p = Process(target=integration_settings.run_ui)
+    p.start()
+    p.join()
