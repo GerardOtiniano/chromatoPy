@@ -10,8 +10,19 @@ class GDGTSettings(toga.App):
     def open_gdgt_settings(self):
         open_gdgt_selector(self)
 
+# def main():
+#     return GDGTSettings("ChromatoPy", "com.GerardOtiniano.chromatopy")
+#
+# if __name__ == "__main__":
+#     main().main_loop()
+
+def run_ui():
+    """Launch the settings window and block until closed."""
+    app = GDGTSettings("ChromatoPy", "com.GerardOtiniano.chromatopy")
+    app.main_loop()
+
 def main():
     return GDGTSettings("ChromatoPy", "com.GerardOtiniano.chromatopy")
 
 if __name__ == "__main__":
-    main().main_loop()
+    run_ui()
