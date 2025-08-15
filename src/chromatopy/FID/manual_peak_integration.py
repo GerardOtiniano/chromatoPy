@@ -70,7 +70,7 @@ def run_peak_integrator_manual(data, key, gi, pk_sns, smoothing_params, max_peak
         smoothing_params,
         pk_sns,
         gi,
-        gaussian_fit_mode)
+        gaussian_fit_mode, max_peaks_for_neighborhood)
     # app = QApplication.instance() or QApplication(sys.argv)
     # app.exec_()
     app = QApplication.instance()
@@ -108,6 +108,7 @@ class ManualPeakIntegrator:
                  pk_sns,
                  gi,
                  gaussian_fit_mode,
+                 max_peaks_for_neighborhood,
                  owns_app=False):
         self._owns_app = owns_app
         self.x, self.y = pd.Series(x), pd.Series(y)
@@ -239,7 +240,6 @@ class ManualPeakIntegrator:
         if event.inaxes != self.ax:
             return
     
-        # ---- Guard: all expected peaks already selected ----
         if self.index >= len(self.labels):
             msg = "[Manual] All peaks have already been selected. No more selections expected."
             try:
@@ -269,24 +269,24 @@ class ManualPeakIntegrator:
     
         drawn = []
         try:
+            print("debug 1")
             if self.gaussian_fit_mode in {"multi", "both"}:
                 _, _, neigh = find_peak_neighborhood_boundaries(
                     self.x, self.y, self.peaks, self.valleys,
-                    peak_idx, self.pk_sns,
+                    peak_idx, self.max_peaks_for_neighborhood, #self.pk_sns,
                     peak_properties=self.peak_properties,
                     gi=self.gi,
                     smoothing_params=self.smoothing_params,
-                    pk_sns=self.pk_sns
-                )
+                    pk_sns=self.pk_sns)
             else:
                 neigh = [peak_idx]
-    
             x_fit, y_fit, _, area_ensemble, model_params = fit_gaussians(
                 self.x, self.y, peak_idx, neigh,
                 self.smoothing_params, self.pk_sns,
                 gi=self.gi,
                 mode=self.gaussian_fit_mode)
-    
+            print(x_fit)
+            print(y_fit)
             poly = self.ax.fill_between(x_fit, 0, y_fit, color='red', alpha=0.4)
             drawn.append(poly)
     
@@ -296,15 +296,9 @@ class ManualPeakIntegrator:
                 'Peak Area - standard deviation': float(np.std(area_ensemble, ddof=1)),
                 'Peak Area - number of ensemble members': int(len(area_ensemble)),
                 'Model Parameters': model_params,
-                'Retention Time': float(click_time),
-            }
+                'Retention Time': float(click_time),}
     
         except Exception as e:
-            # Don't index self.labels[self.index] here – use current_label captured earlier
-            # try:
-            #     tqdm.write(f"[Manual Warning] Failed to fit {current_label}: {e}")
-            # except Exception:
-            #     print(f"[Manual Warning] Failed to fit {current_label}: {e}")
             tqdm.write(f"[Manual Warning] Failed to fit {current_label}: {e}")
             line = self.ax.axvline(click_time, color='grey', linestyle='--')
             drawn.append(line)
