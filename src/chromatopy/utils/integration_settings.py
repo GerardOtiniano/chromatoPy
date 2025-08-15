@@ -1,6 +1,9 @@
 import toga
 from .Integration_configuration import open_settings
 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 class IntegrationSettings(toga.App):
 
     def startup(self):
@@ -10,8 +13,19 @@ class IntegrationSettings(toga.App):
     def open_integration_settings(self):
         open_settings(self)
 
+# def main():
+#     return IntegrationSettings("ChromatoPy", "com.GerardOtiniano.chromatopy")
+#
+# if __name__ == "__main__":
+#     main().main_loop()
+
+def run_ui():
+    """Launch the settings window and block until closed."""
+    app = IntegrationSettings("ChromatoPy", "com.GerardOtiniano.chromatopy")
+    app.main_loop()
+
 def main():
     return IntegrationSettings("ChromatoPy", "com.GerardOtiniano.chromatopy")
 
 if __name__ == "__main__":
-    main().main_loop()
+    run_ui()
