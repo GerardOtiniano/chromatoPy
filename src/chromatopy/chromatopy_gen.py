@@ -868,7 +868,7 @@ class SignalAnalyzer:
         Creates subplots for each trace and adds two text boxes to allow the user to update the x-window boundaries.
         """
         # Create subplots as before
-        fig, ax = plt.subplots(figsize=(8, 10))
+        fig, ax = plt.subplots(figsize=(8, 8))
         axs = [ax]
 
         # Create the subplots and store the full data and line objects
