@@ -228,144 +228,371 @@ class GDGTAnalyzer:
             valleys.append(np.argmin(y[peaks[poi - 1] : peaks[poi]]) + peaks[poi - 1])
             valleys.append(np.argmin(y[peaks[poi] : peaks[poi + 1]]) + peaks[poi])
         return valleys
-
-    def find_peak_neighborhood_boundaries(self, x, y_smooth, peaks, valleys, peak_idx, ax, max_peaks, trace):
+    
+    def find_peak_neighborhood_boundaries(self, x, y_smooth, peaks, valleys,
+                                          peak_idx, ax, max_peaks, trace):
         """
-        Finds the extended boundaries of a peak's neighborhood by analyzing the closest peaks and their overlaps.
-
-        Parameters
-        ----------
-        x : numpy.ndarray or pandas.Series
-            Array of x-values (e.g., retention times or wavelengths) where the peaks are located.
-        y_smooth : numpy.ndarray or pandas.Series
-            Array of smoothed y-values (e.g., intensity or absorbance) corresponding to the x-values.
-        peaks : numpy.ndarray or list of int
-            List of indices representing the positions of the detected peaks.
-        valleys : numpy.ndarray or list of int
-            List of indices representing the positions of the detected valleys between peaks.
-        peak_idx : int
-            Index of the peak of interest around which to find the neighborhood boundaries.
-        ax : matplotlib.axes.Axes
-            The axis object used for plotting (if needed).
-        max_peaks : int
-            Maximum number of nearby peaks to consider when determining the neighborhood.
-        trace : str
-            Identifier for the trace being analyzed (e.g., which sample or dataset the peaks belong to).
-
-        Returns
-        -------
-        neighborhood_left_boundary : float
-            The x-value of the left boundary of the peak's neighborhood.
-        neighborhood_right_boundary : float
-            The x-value of the right boundary of the peak's neighborhood.
-        overlapping_peaks : list of int
-            List of peaks that overlap with the peak of interest based on their extended boundaries.
-
-        Notes
-        -----
-        - The function calculates Gaussian fits for nearby peaks to extend their boundaries and check for overlaps.
-        - The boundaries of the peak of interest are determined based on its closest neighboring peaks and their overlaps.
-        - If overlapping peaks are found, the neighborhood boundaries are adjusted accordingly.
-        - If no peaks overlap, the neighborhood is confined to the bounds of the peak of interest.
+        Find the extended neighborhood of peak_idx by fitting nearby peaks,
+        extending each as a Gaussian, then taking the union of intervals that
+        overlap the POI interval (symmetric interval intersection).
         """
-        peak_distances = np.abs(x[peaks] - x[peak_idx])
-        closest_peaks_indices = np.argsort(peak_distances)[:max_peaks]
+        import numpy as np
+        x_arr = np.asarray(x)
+        y_arr = np.asarray(y_smooth)
+    
+        # Find closest peaks
+        dists = np.abs(x_arr[peaks] - x_arr[peak_idx])
+        closest_peaks_indices = np.argsort(dists)[:max_peaks]
         closest_peaks = np.sort(peaks[closest_peaks_indices])
-
-        overlapping_peaks = []
+    
         extended_boundaries = {}
-        # Analyze each of the closest peaks
-        for peak in closest_peaks:
-            peak_pos = np.where(peak == peaks)
-            l_lim = self.peak_properties[trace]["left_bases"][peak_pos][0]
-            r_lim = self.peak_properties[trace]["right_bases"][peak_pos][0]
-            heights, means, stddevs = self.estimate_initial_gaussian_params(x[l_lim : r_lim + 1], y_smooth[l_lim : r_lim + 1], peak)
-            height, mean, stddev = heights[0], means[0], stddevs[0]
-
-            # Fit Gaussian and get best fit parameters
+    
+        # ---- Fit and extend each candidate peak ----
+        for p in closest_peaks:
+            # Map to properties index
             try:
-                popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=self.gi)
-            except RuntimeError:
-                popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=self.gi*100)
-            # popt, _ = curve_fit(self.gaussian, x, y_smooth, p0=[height, mean, stddev, 0.1], maxfev=self.gi)
-            # Extend Gaussian fit limits
-            x_min, x_max = self.calculate_gaus_extension_limits(popt[1], popt[2], 0, factor=3)
-            extended_x, extended_y = self.extrapolate_gaussian(x, popt[0], popt[1], popt[2], None, x_min - 2, x_max + 2)
-            # Find the boundaries based on the derivative test
-            peak_x_value = x[peak]
-            n_peak_idx = np.argmin(np.abs(extended_x - peak_x_value))
-            left_idx, right_idx = self.calculate_boundaries(extended_x, extended_y, n_peak_idx)
-            extended_boundaries[peak] = (extended_x[left_idx], extended_x[right_idx])
-
-        # Determine the peak of interest boundaries
-        poi_bounds = extended_boundaries.get(peak_idx, (None, None))
-
-        # Check for overlaps and determine the neighborhood
-        for peak, bounds in extended_boundaries.items():
-            if peak < peak_idx and bounds[1] > poi_bounds[0]:  # Overlaps to the left
-                overlapping_peaks.append(peak)
-            elif peak > peak_idx and bounds[0] < poi_bounds[1]:  # Overlaps to the right
-                overlapping_peaks.append(peak)
-
-        # Calculate neighborhood boundaries based on the left-most and right-most overlapping peaks
+                ppos = int(np.where(peaks == p)[0][0])
+            except Exception:
+                continue
+    
+            # Left/right base indices from scipy.find_peaks properties
+            try:
+                l_lim = int(self.peak_properties[trace]["left_bases"][ppos])
+                r_lim = int(self.peak_properties[trace]["right_bases"][ppos])
+            except Exception:
+                # Fallback to a small window around the peak
+                l_lim = max(p - 5, 0)
+                r_lim = min(p + 5, len(x_arr) - 1)
+    
+            # Windowed data for a more stable single-Gaussian fit
+            xw = x_arr[l_lim:r_lim + 1]
+            yw = y_arr[l_lim:r_lim + 1]
+            if xw.size < 3 or np.all(yw == 0):
+                continue
+    
+            # Initial guess from local window
+            try:
+                heights, means, stddevs = self.estimate_initial_gaussian_params(
+                    pd.Series(xw), pd.Series(yw), int(np.argmin(np.abs(xw - x_arr[p]))))
+                height, mean, stddev = heights[0], means[0], stddevs[0]
+                stddev = max(float(stddev), 1e-6)
+            except Exception:
+                # Crude fallback
+                height = float(y_arr[p])
+                mean = float(x_arr[p])
+                stddev = max((xw.max() - xw.min()) / 6.0, 1e-6)
+    
+            # Fit a single Gaussian to the local window
+            from scipy.optimize import curve_fit
+            try:
+                popt, _ = curve_fit(self.individual_gaussian, xw, yw,
+                                    p0=[height, mean, stddev],
+                                    maxfev=self.gi)
+            except Exception:
+                # Retry with looser maxfev; if it fails, skip this peak
+                try:
+                    popt, _ = curve_fit(self.individual_gaussian, xw, yw,
+                                        p0=[height, mean, stddev],
+                                        maxfev=self.gi * 10)
+                except Exception:
+                    continue
+    
+            amp, cen, wid = float(popt[0]), float(popt[1]), max(float(popt[2]), 1e-6)
+    
+            # Extend this Gaussian to get an "influence interval"
+            x_min, x_max = self.calculate_gaus_extension_limits(cen, wid, decay=0.0, factor=1.0)
+            ext_x, ext_y = self.extrapolate_gaussian(xw, amp, cen, wid, None, x_min, x_max, step=0.01)
+    
+            # Find left/right boundaries on the extended curve (derivative-based)
+            try:
+                # index of this peak center in ext_x
+                n_idx = int(np.argmin(np.abs(ext_x - cen)))
+                L, R = self.calculate_boundaries(ext_x, ext_y, n_idx)
+                # Guard / normalize
+                L = max(int(L), 0)
+                R = min(int(R), len(ext_x) - 1)
+                if L >= R:
+                    # Degenerate; fallback to a small interval around center
+                    hw = max(int(round(5)), 1)
+                    L = max(n_idx - hw, 0)
+                    R = min(n_idx + hw, len(ext_x) - 1)
+                extended_boundaries[p] = (float(ext_x[L]), float(ext_x[R]))
+            except Exception:
+                # Fallback interval if derivative boundaries fail
+                hw = max((x_max - x_min) * 0.05, np.median(np.diff(ext_x)) * 5.0)
+                extended_boundaries[p] = (float(cen - hw), float(cen + hw))
+    
+        # ---- Ensure POI (peak of interest) has bounds ----
+        poi_left, poi_right = extended_boundaries.get(peak_idx, (None, None))
+        if poi_left is None or poi_right is None:
+            # Build a conservative fallback around the POI center
+            cen = float(x_arr[peak_idx])
+            # Half-width fallback ~ 5 samples (or 0.005 min if spacing is extremely fine)
+            dx = np.median(np.diff(x_arr)) if len(x_arr) > 1 else 0.01
+            hw = max(5 * dx, 1e-3)
+            poi_left, poi_right = cen - hw, cen + hw
+            extended_boundaries[peak_idx] = (poi_left, poi_right)
+    
+        # ---- Symmetric interval overlap test (no left/right bias) ----
+        def intervals_overlap(aL, aR, bL, bR, eps=0.0):
+            if aL > aR: aL, aR = aR, aL
+            if bL > bR: bL, bR = bR, bL
+            return (aL <= bR - eps) and (bL <= aR - eps)
+    
+        overlapping_peaks = []
+        for p, (L, R) in extended_boundaries.items():
+            if p == peak_idx:
+                continue
+            if L is None or R is None:
+                continue
+            if intervals_overlap(L, R, poi_left, poi_right, eps=0.0):
+                overlapping_peaks.append(p)
+    
+        # ---- Neighborhood bounds from overlaps (or POI-only if none) ----
         if overlapping_peaks:
-            left_most_peak = min(overlapping_peaks, key=lambda p: extended_boundaries[p][0])
-            right_most_peak = max(overlapping_peaks, key=lambda p: extended_boundaries[p][1])
+            left_most_peak = min(overlapping_peaks, key=lambda q: extended_boundaries[q][0])
+            right_most_peak = max(overlapping_peaks, key=lambda q: extended_boundaries[q][1])
             neighborhood_left_boundary = extended_boundaries[left_most_peak][0]
             neighborhood_right_boundary = extended_boundaries[right_most_peak][1]
         else:
-            # Use the peak of interest's bounds if no other peaks are overlapping
-            neighborhood_left_boundary = poi_bounds[0]
-            neighborhood_right_boundary = poi_bounds[1]
+            neighborhood_left_boundary, neighborhood_right_boundary = poi_left, poi_right
+    
         return neighborhood_left_boundary, neighborhood_right_boundary, overlapping_peaks
+    # def find_peak_neighborhood_boundaries(self, x, y_smooth, peaks, valleys, peak_idx, ax, max_peaks, trace):
+    #     """
+    #     Finds the extended boundaries of a peak's neighborhood by analyzing the closest peaks and their overlaps.
 
+    #     Parameters
+    #     ----------
+    #     x : numpy.ndarray or pandas.Series
+    #         Array of x-values (e.g., retention times or wavelengths) where the peaks are located.
+    #     y_smooth : numpy.ndarray or pandas.Series
+    #         Array of smoothed y-values (e.g., intensity or absorbance) corresponding to the x-values.
+    #     peaks : numpy.ndarray or list of int
+    #         List of indices representing the positions of the detected peaks.
+    #     valleys : numpy.ndarray or list of int
+    #         List of indices representing the positions of the detected valleys between peaks.
+    #     peak_idx : int
+    #         Index of the peak of interest around which to find the neighborhood boundaries.
+    #     ax : matplotlib.axes.Axes
+    #         The axis object used for plotting (if needed).
+    #     max_peaks : int
+    #         Maximum number of nearby peaks to consider when determining the neighborhood.
+    #     trace : str
+    #         Identifier for the trace being analyzed (e.g., which sample or dataset the peaks belong to).
+
+    #     Returns
+    #     -------
+    #     neighborhood_left_boundary : float
+    #         The x-value of the left boundary of the peak's neighborhood.
+    #     neighborhood_right_boundary : float
+    #         The x-value of the right boundary of the peak's neighborhood.
+    #     overlapping_peaks : list of int
+    #         List of peaks that overlap with the peak of interest based on their extended boundaries.
+
+    #     Notes
+    #     -----
+    #     - The function calculates Gaussian fits for nearby peaks to extend their boundaries and check for overlaps.
+    #     - The boundaries of the peak of interest are determined based on its closest neighboring peaks and their overlaps.
+    #     - If overlapping peaks are found, the neighborhood boundaries are adjusted accordingly.
+    #     - If no peaks overlap, the neighborhood is confined to the bounds of the peak of interest.
+    #     """
+    #     peak_distances = np.abs(x[peaks] - x[peak_idx])
+    #     closest_peaks_indices = np.argsort(peak_distances)[:max_peaks]
+    #     closest_peaks = np.sort(peaks[closest_peaks_indices])
+
+    #     overlapping_peaks = []
+    #     extended_boundaries = {}
+    #     # Analyze each of the closest peaks
+    #     for peak in closest_peaks:
+    #         peak_pos = np.where(peak == peaks)
+    #         l_lim = self.peak_properties[trace]["left_bases"][peak_pos][0]
+    #         r_lim = self.peak_properties[trace]["right_bases"][peak_pos][0]
+    #         heights, means, stddevs = self.estimate_initial_gaussian_params(x[l_lim : r_lim + 1], y_smooth[l_lim : r_lim + 1], peak)
+    #         height, mean, stddev = heights[0], means[0], stddevs[0]
+
+    #         # Fit Gaussian and get best fit parameters
+    #         try:
+    #             popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=self.gi)
+    #         except RuntimeError:
+    #             popt, _ = curve_fit(self.individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=self.gi*100)
+    #         # popt, _ = curve_fit(self.gaussian, x, y_smooth, p0=[height, mean, stddev, 0.1], maxfev=self.gi)
+    #         # Extend Gaussian fit limits
+    #         x_min, x_max = self.calculate_gaus_extension_limits(popt[1], popt[2], 0, factor=3)
+    #         extended_x, extended_y = self.extrapolate_gaussian(x, popt[0], popt[1], popt[2], None, x_min - 2, x_max + 2)
+    #         # Find the boundaries based on the derivative test
+    #         peak_x_value = x[peak]
+    #         n_peak_idx = np.argmin(np.abs(extended_x - peak_x_value))
+    #         left_idx, right_idx = self.calculate_boundaries(extended_x, extended_y, n_peak_idx)
+    #         extended_boundaries[peak] = (extended_x[left_idx], extended_x[right_idx])
+
+    #     # Determine the peak of interest boundaries
+    #     poi_bounds = extended_boundaries.get(peak_idx, (None, None))
+
+    #     # Check for overlaps and determine the neighborhood
+    #     for peak, bounds in extended_boundaries.items():
+    #         if peak < peak_idx and bounds[1] > poi_bounds[0]:  # Overlaps to the left
+    #             print("overlapping left")
+    #             overlapping_peaks.append(peak)
+    #         elif peak > peak_idx and bounds[0] < poi_bounds[1]:  # Overlaps to the right
+    #             print("overlapping right")
+    #             overlapping_peaks.append(peak)
+
+    #     # Calculate neighborhood boundaries based on the left-most and right-most overlapping peaks
+    #     if overlapping_peaks:
+    #         left_most_peak = min(overlapping_peaks, key=lambda p: extended_boundaries[p][0])
+    #         right_most_peak = max(overlapping_peaks, key=lambda p: extended_boundaries[p][1])
+    #         neighborhood_left_boundary = extended_boundaries[left_most_peak][0]
+    #         neighborhood_right_boundary = extended_boundaries[right_most_peak][1]
+    #     else:
+    #         # Use the peak of interest's bounds if no other peaks are overlapping
+    #         neighborhood_left_boundary = poi_bounds[0]
+    #         neighborhood_right_boundary = poi_bounds[1]
+    #     print(overlapping_peaks)
+    #     return neighborhood_left_boundary, neighborhood_right_boundary, overlapping_peaks
+   
+    # def calculate_boundaries(self, x, y, ind_peak):
+    #     """
+    #      Calculates the left and right boundaries of a single peak based on the first derivative test.
+
+    #      Parameters
+    #      ----------
+    #      x : numpy.ndarray or pandas.Series
+    #          Array of x-values (e.g., retention times) where the peak and signal data are located.
+    #      y : numpy.ndarray or pandas.Series
+    #          Array of y-values (e.g., intensity or absorbance) corresponding to the x-values.
+    #      ind_peak : int
+    #          Index of the peak of interest in the x and y data for which the boundaries are to be determined.
+
+    #      Returns
+    #      -------
+    #      A : int
+    #          The index of the left boundary of the peak.
+    #      B : int
+    #          The index of the right boundary of the peak.
+
+    #      Notes
+    #      -----
+    #      - This method uses the first derivative of the signal to detect the peak's boundaries.
+    #      - The signal is smoothed before calculating the derivative to reduce noise.
+    #      - The left boundary (`A`) is found by searching for the first point before the peak where the derivative
+    #        is smaller than a specified sensitivity threshold (`self.pk_sns`).
+    #      - The right boundary (`B`) is found by searching for the first point after the peak where the derivative
+    #        becomes larger than the negative of the same sensitivity threshold.
+    #      - If no left boundary is found, the function defaults to the start of the signal (index 1).
+    #        If no right boundary is found, the function defaults to the end of the signal.
+    #      """
+    #     smooth_y = self.smoother(y)
+    #     velocity, X1 = self.forward_derivative(x, smooth_y)
+    #     velocity /= np.max(np.abs(velocity))
+    #     # velocity = self.normalize_signal(velocity)
+    #     smooth_velo = self.smoother(velocity)
+    #     dt = int(np.ceil(0.025 / np.mean(np.diff(x))))
+    #     A = np.where(smooth_velo[: ind_peak - 3 * dt] < self.pk_sns)[0]  # 0.05)[0]
+    #     B = np.where(smooth_velo[ind_peak + 3 * dt :] > -self.pk_sns)[0]  # -0.05)[0]
+
+    #     if A.size > 0:
+    #         A = A[-1] + 1
+    #     else:
+    #         A = 1
+    #     if B.size > 0:
+    #         B = B[0] + ind_peak + 3 * dt - 1
+    #     else:
+    #         B = len(x) - 1
+    #     return A, B
     def calculate_boundaries(self, x, y, ind_peak):
         """
-         Calculates the left and right boundaries of a single peak based on the first derivative test.
-
-         Parameters
-         ----------
-         x : numpy.ndarray or pandas.Series
-             Array of x-values (e.g., retention times) where the peak and signal data are located.
-         y : numpy.ndarray or pandas.Series
-             Array of y-values (e.g., intensity or absorbance) corresponding to the x-values.
-         ind_peak : int
-             Index of the peak of interest in the x and y data for which the boundaries are to be determined.
-
-         Returns
-         -------
-         A : int
-             The index of the left boundary of the peak.
-         B : int
-             The index of the right boundary of the peak.
-
-         Notes
-         -----
-         - This method uses the first derivative of the signal to detect the peak's boundaries.
-         - The signal is smoothed before calculating the derivative to reduce noise.
-         - The left boundary (`A`) is found by searching for the first point before the peak where the derivative
-           is smaller than a specified sensitivity threshold (`self.pk_sns`).
-         - The right boundary (`B`) is found by searching for the first point after the peak where the derivative
-           becomes larger than the negative of the same sensitivity threshold.
-         - If no left boundary is found, the function defaults to the start of the signal (index 1).
-           If no right boundary is found, the function defaults to the end of the signal.
-         """
+        Returns (A, B) indexes for left/right peak boundaries.
+        Robust to flat/NaN derivatives and weird spacing.
+        """
+        x = np.asarray(x, float)
+        y = np.asarray(y, float)
+    
+        # 1) Smooth signal first
         smooth_y = self.smoother(y)
-        velocity, X1 = self.forward_derivative(x, smooth_y)
-        velocity /= np.max(np.abs(velocity))
+    
+        # 2) Derivative and sanitization
+        velocity, X1 = self.forward_derivative(x, smooth_y)  # same shapes as x[1:] typically
+        velocity = np.asarray(velocity, float)
+    
+        # Align lengths (depends on your forward_derivative implementation)
+        # If velocity has len N-1, pad to N for indexing consistency
+        if velocity.size == x.size - 1:
+            velocity = np.r_[velocity, velocity[-1]]
+    
+        # Replace non-finite with 0
+        velocity[~np.isfinite(velocity)] = 0.0
+    
+        vmax = np.max(np.abs(velocity)) if velocity.size else 0.0
+        if vmax > 0:
+            velocity = velocity / vmax
+        else:
+            # flat derivative; keep zeros and we'll use a fallback later
+            velocity = np.zeros_like(velocity)
+    
+        # Optional: a little smoothing on the normalized derivative
         smooth_velo = self.smoother(velocity)
-        dt = int(np.ceil(0.025 / np.mean(np.diff(x))))
-        A = np.where(smooth_velo[: ind_peak - 3 * dt] < self.pk_sns)[0]  # 0.05)[0]
-        B = np.where(smooth_velo[ind_peak + 3 * dt :] > -self.pk_sns)[0]  # -0.05)[0]
-
-        if A.size > 0:
-            A = A[-1] + 1
+    
+        # 3) Safe dt computation
+        dx = np.diff(x)
+        dx = dx[np.isfinite(dx) & (dx > 0)]
+        mean_dx = np.mean(dx) if dx.size else np.nan
+        if not np.isfinite(mean_dx) or mean_dx <= 0:
+            # Worst case: default to 1 sample step
+            dt = 1
+        else:
+            dt = int(np.ceil(0.025 / mean_dx))
+            dt = max(dt, 1)
+    
+        # Make sure slices don’t go negative/out of range
+        N = smooth_velo.size
+        left_end = max(ind_peak - 3 * dt, 1)
+        right_start = min(ind_peak + 3 * dt, N - 1)
+    
+        # 4) Look for boundaries with thresholds
+        A_idx = np.where(smooth_velo[:left_end] < self.pk_sns)[0]
+        B_rel = np.where(smooth_velo[right_start:] > -self.pk_sns)[0]
+    
+        if A_idx.size > 0:
+            A = int(A_idx[-1] + 1)
         else:
             A = 1
-        if B.size > 0:
-            B = B[0] + ind_peak + 3 * dt - 1
+    
+        if B_rel.size > 0:
+            B = int(B_rel[0] + right_start - 1)
         else:
-            B = len(x) - 1
+            B = N - 1
+    
+        # 5) Fallback if derivative is flat everywhere (A>=B or both near defaults)
+        if vmax == 0 or A >= B:
+            # Use a simple intensity-based fallback: expand from peak until
+            # the signal stops decreasing (local minima) or a small fraction of peak height.
+            peak_idx = int(np.clip(ind_peak, 0, N - 1))
+            peak_y = smooth_y[peak_idx]
+            frac = 0.02  # 2% of peak as cutoff; tune if you like
+    
+            # Walk left
+            i = peak_idx
+            while i > 1 and smooth_y[i] >= smooth_y[i - 1]:
+                i -= 1
+            while i > 1 and smooth_y[i] > frac * peak_y:
+                i -= 1
+            A = max(i, 1)
+    
+            # Walk right
+            j = peak_idx
+            while j < N - 2 and smooth_y[j] >= smooth_y[j + 1]:
+                j += 1
+            while j < N - 2 and smooth_y[j] > frac * peak_y:
+                j += 1
+            B = min(j, N - 1)
+    
+            # Final sanity
+            if A >= B:
+                pad = max(1, 3 * dt)
+                A = max(1, peak_idx - pad)
+                B = min(N - 1, peak_idx + pad)
+    
         return A, B
 
     def find_peak_boundaries(self, x, y, center, trace, threshold=0.1):
@@ -451,7 +678,10 @@ class GDGTAnalyzer:
         if param_1 == None:
             param_1 = self.smoothing_params[1]
         # return savgol_filter(y, self.smoothing_params[0], self.smoothing_params[1], deriv=0, mode='interp')
-        return savgol_filter(y, param_0, param_1)
+        if len(y) > param_0:
+            return savgol_filter(y, param_0, param_1)
+        else:
+            return y
 
     def forward_derivative(self, x, y):
         """
@@ -480,6 +710,26 @@ class GDGTAnalyzer:
         fd = np.diff(y) / np.diff(x)
         x_n = x[:-1]
         return fd, x_n
+    #     x = np.asarray(x, float)
+    #     y = np.asarray(y, float)
+    #     if x.size < 2 or y.size < 2:
+    #         return np.array([]), np.array([])
+    #     dx = np.diff(x)
+    #     dy = np.diff(y)
+    #     # guard against zero/near-zero spacing
+    #     eps_dx = np.finfo(float).eps
+    #     dx = np.where(np.abs(dx) < eps_dx, eps_dx, dx)
+    #     d = dy / dx
+    #     x_mid = x[:-1]
+    #     return d, x_mid
+    
+    # def normalize_signal(self, v):
+    #     """Normalize to [-1,1] without divide-by-zero; returns zeros if flat."""
+    #     v = np.asarray(v, float)
+    #     vmax = np.max(np.abs(v)) if v.size else 0.0
+    #     if not np.isfinite(vmax) or vmax <= np.finfo(float).eps:
+    #         return np.zeros_like(v)
+    #     return v / vmax
 
     def extrapolate_gaussian(self, x, amp, cen, wid, decay, x_min, x_max, step=0.01):
         """
@@ -523,39 +773,59 @@ class GDGTAnalyzer:
             extended_y = self.gaussian_decay(extended_x, amp, cen, wid, decay)
         return extended_x, extended_y
 
-    def calculate_gaus_extension_limits(self, cen, wid, decay, factor=3):  # decay, factor=3):
-        """
-        Calculates the extension limits for the Gaussian tails based on the 3-sigma rule, optionally accounting for decay.
+    # def calculate_gaus_extension_limits(self, cen, wid, decay, factor=3):  # decay, factor=3):
+    #     """
+    #     Calculates the extension limits for the Gaussian tails based on the 3-sigma rule, optionally accounting for decay.
 
-        Parameters
-        ----------
-        cen : float
-            Center of the Gaussian function (peak position).
-        wid : float
-            Width of the Gaussian function (standard deviation of the distribution).
-        decay : float
-            Decay factor to modify the extension of the Gaussian tails. If decay is 0, it will be ignored.
-        factor : float, optional
-            Factor to extend the Gaussian tails, typically 3 to represent the 3-sigma rule. Default is 3.
+    #     Parameters
+    #     ----------
+    #     cen : float
+    #         Center of the Gaussian function (peak position).
+    #     wid : float
+    #         Width of the Gaussian function (standard deviation of the distribution).
+    #     decay : float
+    #         Decay factor to modify the extension of the Gaussian tails. If decay is 0, it will be ignored.
+    #     factor : float, optional
+    #         Factor to extend the Gaussian tails, typically 3 to represent the 3-sigma rule. Default is 3.
 
-        Returns
-        -------
-        x_min : float
-            The lower limit (x-value) to which the Gaussian tail is extended.
-        x_max : float
-            The upper limit (x-value) to which the Gaussian tail is extended.
+    #     Returns
+    #     -------
+    #     x_min : float
+    #         The lower limit (x-value) to which the Gaussian tail is extended.
+    #     x_max : float
+    #         The upper limit (x-value) to which the Gaussian tail is extended.
 
-        Notes
-        -----
-        - The function uses the 3-sigma rule to calculate the limits for Gaussian tail extension, scaling by the `factor`.
-        - If `decay` is non-zero, it modifies the extension limits based on the decay rate.
-        - If `decay` is 0, the limits are calculated purely based on the Gaussian width and `factor`.
-        """
-        sigma_effective = wid * factor  # Adjust factor for tail thinness
-        extension_factor = 1 / decay if decay != 0 else sigma_effective  # Use decay to modify the extension if applicable
-        x_min = cen - sigma_effective - np.abs(extension_factor)
-        x_max = cen + sigma_effective + np.abs(extension_factor)
+    #     Notes
+    #     -----
+    #     - The function uses the 3-sigma rule to calculate the limits for Gaussian tail extension, scaling by the `factor`.
+    #     - If `decay` is non-zero, it modifies the extension limits based on the decay rate.
+    #     - If `decay` is 0, the limits are calculated purely based on the Gaussian width and `factor`.
+    #     """
+    #     sigma_effective = wid * factor  # Adjust factor for tail thinness
+    #     extension_factor = 1 / decay if decay != 0 else sigma_effective  # Use decay to modify the extension if applicable
+    #     x_min = cen - sigma_effective - np.abs(extension_factor)
+    #     x_max = cen + sigma_effective + np.abs(extension_factor)
+    #     return x_min, x_max
+    
+    # def calculate_gaus_extension_limits(self, cen, wid, decay, factor=2.0, max_tail_sigma=3.0):
+    #     sigma_effective = wid * factor
+    #     if decay and decay > 0:
+    #         tail = min(1.0 / decay, sigma_effective * max_tail_sigma)
+    #     else:
+    #         tail = sigma_effective * max_tail_sigma
+    #     return cen - sigma_effective - tail, cen + sigma_effective + tail
+    def calculate_gaus_extension_limits(self, cen, wid, decay, factor=2.0, max_tail_sigma=3.0):
+        sigma = wid * factor
+        tail_cap = sigma * max_tail_sigma
+        tail = min(1.0 / decay, tail_cap) if decay > 0 else tail_cap
+    
+        x_min = cen - sigma - tail
+        x_max = cen + sigma + tail
+        if not np.isfinite(x_min) or not np.isfinite(x_max) or x_max <= x_min:
+            pad = max(1e-6, 0.01 * max(sigma, 1.0))
+            x_min, x_max = cen - pad, cen + pad
         return x_min, x_max
+
 
     def fit_gaussians(self, x_full, y_full, ind_peak, trace, peaks, ax):
         """
@@ -617,7 +887,7 @@ class GDGTAnalyzer:
             bounds_lower = []
             bounds_upper = []
             for peak in current_peaks:
-                height, center, width = self.estimate_initial_gaussian_params(x, y, peak)  # peak)
+                height, center, width = self.estimate_initial_gaussian_params(x, y, peak)  # 
                 height = height[0]
                 center = center[0]
                 width = width[0]
@@ -630,7 +900,9 @@ class GDGTAnalyzer:
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    popt, pcov = curve_fit(self.multigaussian, x, y, p0=initial_guesses, method="dogbox", bounds=bounds, maxfev=self.gi)  # , ftol=1e-4, xtol=1e-4)
+                    # popt, pcov = curve_fit(self.multigaussian, x, y, p0=initial_guesses, method="dogbox", bounds=bounds, maxfev=self.gi)  # , ftol=1e-4, xtol=1e-4)
+                # fitted_y = self.multigaussian(x, *popt)
+                    popt, pcov = curve_fit(self.multigaussian, x, y, p0=initial_guesses, method="trf", bounds=bounds, maxfev=self.gi)  # , ftol=1e-4, xtol=1e-4)
                 fitted_y = self.multigaussian(x, *popt)
                 # ax.plot(x, fitted_y, c="fuchsia") # plots the multi gaussian curve
                 error = np.sqrt(((fitted_y - y) ** 2).mean())  # RMSE
@@ -643,7 +915,6 @@ class GDGTAnalyzer:
                     best_idx_interest = index_of_interest
             except RuntimeError:
                 pass
-
             distances = np.abs(x[current_peaks] - x_full[ind_peak])
             if distances.size > 0:
                 max_dist_idx = np.argmax(distances)
@@ -669,7 +940,8 @@ class GDGTAnalyzer:
                 # Initial try with given maxfev
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian_decay(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi)
+                    # single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian_decay(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi)
+                    single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian_decay(x, amp, cen, wid, dec), x, y, p0=p0, method="trf", bounds=bounds, maxfev=self.gi)
                 single_fitted_y = self.gaussian_decay(x, *single_popt)
                 error = np.sqrt(((single_fitted_y - y) ** 2).mean())  # RMSE
                 if error < best_error:
@@ -686,7 +958,8 @@ class GDGTAnalyzer:
                 try:
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
-                        single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian_decay(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi* 1000) # comment out to speed up debug
+                        # single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian_decay(x, amp, cen, wid, dec), x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=self.gi* 1000) # comment out to speed up debug
+                        single_popt, single_pcov = curve_fit(lambda x, amp, cen, wid, dec: self.gaussian_decay(x, amp, cen, wid, dec), x, y, p0=p0, method="trf", bounds=bounds, maxfev=self.gi)
                     single_fitted_y = self.gaussian_decay(x, *single_popt)
                     error = np.sqrt(((single_fitted_y - y) ** 2).mean())  # RMSE)
                     if error < best_error:
@@ -712,7 +985,7 @@ class GDGTAnalyzer:
 
         else:
             # print("picked single", trace)
-            x_min, x_max = self.calculate_gaus_extension_limits(best_fit_params[1], best_fit_params[2], best_fit_params[3], factor=3)
+            x_min, x_max = self.calculate_gaus_extension_limits(best_fit_params[1], best_fit_params[2], best_fit_params[3], factor=2)
             best_x, best_fit_y = self.extrapolate_gaussian(best_x, best_fit_params[0], best_fit_params[1], best_fit_params[2], best_fit_params[3], x_min, x_max, step=0.01)
             new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
             left_boundary, right_boundary = self.calculate_boundaries(best_x, best_fit_y, new_ind_peak)
@@ -724,36 +997,166 @@ class GDGTAnalyzer:
 
     def peak_area_distribution(self, params, params_uncertainty, ind, x, x_full, ax, ind_peak, multi, n_samples= 250):
         area_ensemble = []
+        # if multi:
+        #     amp_i, cen_i, wid_i = params[ind * 3], params[ind * 3 + 1], params[ind * 3 + 2]
+        #     start = 3*ind
+        #     end = start+3
+        #     pcov = params_uncertainty[start:end, start:end]
+        #     # amp_unc_i, cen_unc_i, wid_unc_i = params_uncertainty[0], params_uncertainty[1], params_uncertainty[2]
+        #     samples = np.random.multivariate_normal(np.array([amp_i, cen_i, wid_i]), pcov, size=n_samples)
+        #     for i in range(0,n_samples):
+        #         amp, cen, wid = samples[i,0], samples[i,1], samples[i,2]
+        #         best_fit_y = self.individual_gaussian(x, amp, cen, wid)
+        #         best_x, best_fit_y = self.extrapolate_gaussian(x, amp, cen, wid, None, x.min() - 1, x.max() + 1, step=0.01)
+        #         new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
+        #         left_boundary, right_boundary = self.calculate_boundaries(best_x, best_fit_y, new_ind_peak)
+        #         best_x = best_x[left_boundary - 1 : right_boundary + 1]
+        #         best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
+        #         best_fit_y = np.maximum(best_fit_y, 0)
+        #         area = simpson(y=best_fit_y, x=best_x)
+        #         if area > 0:
+        #             area_ensemble.append()
+        #         else:
+        #             area_ensemble.append(0)
+        #     return np.mean(area_ensemble), area_ensemble
+        # else:
+        #     print(params)
+        #     print(params_uncertainty)
+        #     print(n_samples)
+        #     samples = np.random.multivariate_normal(params, params_uncertainty, size=n_samples)
+        #     for i in range(0,n_samples):
+        #         x_min, x_max = self.calculate_gaus_extension_limits(samples[i,1], samples[i,2], samples[i,3], factor=2)
+        #         if x_min > x_max:
+        #             continue
+        #         print(f"x_min: {x_min}")
+        #         print(f"x_max: {x_max}")
+        #         best_x, best_fit_y = self.extrapolate_gaussian(x, samples[i,0], samples[i,1], samples[i,2], samples[i,3], x_min, x_max, step=0.01)
+        #         new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
+        #         left_boundary, right_boundary = self.calculate_boundaries(best_x, best_fit_y, new_ind_peak)
+        #         best_x = best_x[left_boundary - 1 : right_boundary + 1]
+        #         best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
+        #         best_fit_y = np.maximum(best_fit_y, 0)
+        #         area = simpson(y=best_fit_y, x=best_x)
+        #         if area > 0:
+        #             area_ensemble.append()
+        #         else:
+        #             area_ensemble.append(0)
+        #     return np.mean(area_ensemble), area_ensemble
         if multi:
-            amp_i, cen_i, wid_i = params[ind * 3], params[ind * 3 + 1], params[ind * 3 + 2]
-            start = 3*ind
-            end = start+3
+            amp_i, cen_i, wid_i = params[ind*3], params[ind*3+1], params[ind*3+2]
+            start, end = 3*ind, 3*ind+3
             pcov = params_uncertainty[start:end, start:end]
-            # amp_unc_i, cen_unc_i, wid_unc_i = params_uncertainty[0], params_uncertainty[1], params_uncertainty[2]
-            samples = np.random.multivariate_normal(np.array([amp_i, cen_i, wid_i]), pcov, size=n_samples)
-            for i in range(0,n_samples):
-                amp, cen, wid = samples[i,0], samples[i,1], samples[i,2]
+        
+            # Sample with wid in log space
+            samples = self._sample_mvnorm_with_log(
+                mean=np.array([amp_i, cen_i, wid_i]),
+                cov=pcov,
+                log_idx=[2],                # wid only
+                n=n_samples
+            )
+        
+            for i in range(n_samples):
+                amp, cen, wid = samples[i]
+                # (Optional) enforce non-negative amplitude
+                if amp < 0: 
+                    amp = 0.0
+        
                 best_fit_y = self.individual_gaussian(x, amp, cen, wid)
-                best_x, best_fit_y = self.extrapolate_gaussian(x, amp, cen, wid, None, x.min() - 1, x.max() + 1, step=0.01)
+                best_x, best_fit_y = self.extrapolate_gaussian(
+                    x, amp, cen, wid, None, x.min()-1, x.max()+1, step=0.01
+                )
+                if best_x.size == 0: 
+                    continue  # skip pathological draw
+        
                 new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
                 left_boundary, right_boundary = self.calculate_boundaries(best_x, best_fit_y, new_ind_peak)
-                best_x = best_x[left_boundary - 1 : right_boundary + 1]
-                best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
+                L = max(left_boundary - 1, 0)
+                R = min(right_boundary + 1, best_x.size - 1)
+                if R < L: 
+                    continue
+                best_x = best_x[L:R+1]
+                best_fit_y = np.maximum(best_fit_y[L:R+1], 0)
                 area_ensemble.append(simpson(y=best_fit_y, x=best_x))
             return np.mean(area_ensemble), area_ensemble
         else:
-            samples = np.random.multivariate_normal(params, params_uncertainty, size=n_samples)
-            for i in range(0,n_samples):
-                x_min, x_max = self.calculate_gaus_extension_limits(samples[i,1], samples[i,2], samples[i,3], factor=3)
-                best_x, best_fit_y = self.extrapolate_gaussian(x, samples[i,0], samples[i,1], samples[i,2], samples[i,3], x_min, x_max, step=0.01)
+            # params is [amp, cen, wid, dec]; params_uncertainty is 4x4
+            samples = self._sample_mvnorm_with_log(
+                mean=np.asarray(params, float),
+                cov=np.asarray(params_uncertainty, float),
+                log_idx=[2, 3],            # wid and decay in log space
+                n=n_samples
+            )
+        
+            for i in range(n_samples):
+                amp, cen, wid, dec = samples[i]
+                if amp < 0:
+                    amp = 0.0  # optional clamp
+        
+                x_min, x_max = self.calculate_gaus_extension_limits(cen, wid, dec, factor=2)
+                # quick sanity on bounds
+                if not (np.isfinite(x_min) and np.isfinite(x_max)) or x_max <= x_min:
+                    continue
+        
+                best_x, best_fit_y = self.extrapolate_gaussian(
+                    x, amp, cen, wid, dec, x_min, x_max, step=0.01
+                )
+                if best_x.size == 0:
+                    continue
+        
                 new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
                 left_boundary, right_boundary = self.calculate_boundaries(best_x, best_fit_y, new_ind_peak)
-                best_x = best_x[left_boundary - 1 : right_boundary + 1]
-                best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
+                L = max(left_boundary - 1, 0)
+                R = min(right_boundary + 1, best_x.size - 1)
+                if R < L:
+                    continue
+                best_x = best_x[L:R+1]
+                best_fit_y = np.maximum(best_fit_y[L:R+1], 0)
                 area_ensemble.append(simpson(y=best_fit_y, x=best_x))
             return np.mean(area_ensemble), area_ensemble
 
-
+    def _mvnorm_to_logspace(self, mean, cov, log_idx):
+        """
+        First-order transform (delta method) to log-parameter space.
+        mean: 1D array of parameters in original space
+        cov : covariance in original space
+        log_idx: indices to be log-transformed (e.g., [2] or [2,3])
+        Returns (mean_log, cov_log).
+        """
+        mean = np.asarray(mean, float).copy()
+        cov = np.asarray(cov, float).copy()
+        eps = 1e-12
+    
+        # Ensure positivity before taking logs
+        for j in log_idx:
+            if not np.isfinite(mean[j]) or mean[j] <= eps:
+                mean[j] = max(eps, abs(mean[j]))
+    
+        mean_log = mean.copy()
+        for j in log_idx:
+            mean_log[j] = np.log(mean[j])
+    
+        # Jacobian of (id for linear dims, d/dx log x = 1/x for log dims)
+        J = np.eye(mean.size)
+        for j in log_idx:
+            J[j, j] = 1.0 / mean[j]
+    
+        cov_log = J @ cov @ J.T
+        return mean_log, cov_log
+    
+    
+    def _sample_mvnorm_with_log(self, mean, cov, log_idx, n):
+        """
+        Draw samples in log space for indices in log_idx, then map back.
+        """
+        m_log, C_log = self._mvnorm_to_logspace(mean, cov, log_idx)
+        # Draw in transformed space
+        s_log = np.random.multivariate_normal(
+            m_log, C_log, size=n, check_valid='ignore', tol=1e-8)
+        # Map back
+        s = s_log.copy()
+        for j in log_idx:
+            s[:, j] = np.exp(s_log[:, j])
+        return s
     def handle_peak_selection(self, ax, ax_idx, xdata, y_bcorr, peak_idx, peaks, trace):
         """
         Handles the selection of a peak, fits a Gaussian to the selected peak, and updates the plot and internal data structures.
@@ -843,8 +1246,6 @@ class GDGTAnalyzer:
 
         text_box_min.on_submit(submit_callback)
         text_box_max.on_submit(submit_callback)
-
-        # Mark that we've added controls
         self.window_controls_added = True
         plt.draw()
 
@@ -903,6 +1304,7 @@ class GDGTAnalyzer:
 
         # Set the current x-limits based on the current window_bounds
         ax.set_xlim(self.window_bounds)
+        ax.set_ylabel(trace)
 
         # Adjust y-limits based on data within the current window
         within_xlim = (x_values >= self.window_bounds[0]) & (x_values <= self.window_bounds[1])
@@ -918,9 +1320,9 @@ class GDGTAnalyzer:
         self.axs_to_traces[ax] = trace
         self.datasets[trace_idx] = (x_values, y_bcorr)
         if self.max_peak_amp is not None:
-            peaks_total, properties = find_peaks(y_filtered, height=(min_peak_amp, self.max_peak_amp), width=0.05, prominence=self.pk_pr)
+            peaks_total, properties = find_peaks(y_filtered, height=(min_peak_amp, self.max_peak_amp), prominence=self.pk_pr)
         else:
-            peaks_total, properties = find_peaks(y_filtered, height=min_peak_amp, width=0.05, prominence=self.pk_pr)
+            peaks_total, properties = find_peaks(y_filtered, height=min_peak_amp, prominence=self.pk_pr)
         self.peaks[trace] = peaks_total
         self.peak_properties[trace] = properties
         self.peaks_indices[trace_idx] = peaks_total
@@ -977,6 +1379,88 @@ class GDGTAnalyzer:
         # min_peak_amp = (base.max()-base.min())*3
         # min_peak_amp = np.std(original_y-base)*3
         return base, min_peak_amp # return base
+    # def baseline(self, x, y, deg=500, max_it=1000, tol=1e-4):
+    #     """
+    #     Iterative polynomial baseline (on a normalized basis) + robust noise estimate
+    #     for peak thresholding computed on the REAL x-axis.
+    
+    #     Returns
+    #     -------
+    #     base : np.ndarray         # estimated baseline (same length as y)
+    #     min_peak_amp : float      # threshold for find_peaks height
+    #     """
+    #     # --- Ensure array form and copy ---
+    #     x_real = np.asarray(x, dtype=float)
+    #     y_orig = np.asarray(y, dtype=float)
+    #     y_work = y_orig.copy()
+    
+    #     n = y_work.size
+    #     if n < 3:
+    #         # Degenerate case: too short to fit a polynomial convincingly
+    #         base = np.zeros_like(y_work)
+    #         return base, float(np.std(y_work) * 6.0)  # fallback threshold
+    
+    #     # --- Build a normalized basis for polynomial fitting ONLY ---
+    #     # We do NOT overwrite x_real; we only use x_basis for the Vandermonde
+    #     x_basis = np.linspace(0.0, 1.0, n)
+    
+    #     order = int(deg) + 1
+    #     order = max(order, 1)
+    #     # Guard against silly degrees
+    #     order = min(order, max(10, n))  # never exceed n, keep something reasonable
+    
+    #     # Vandermonde on normalized basis (better-conditioned than real x)
+    #     vander = np.vander(x_basis, order)
+    #     # Precompute pseudo-inverse once
+    #     vander_pinv = np.linalg.pinv(vander)
+    
+    #     # --- Iterative "envelope" style baseline fit ---
+    #     coeffs = np.ones(order)
+    #     for _ in range(int(max_it)):
+    #         # Least-squares fit of current y_work to polynomial basis
+    #         coeffs_new = vander_pinv @ y_work
+    #         # Convergence check
+    #         num = np.linalg.norm(coeffs_new - coeffs)
+    #         den = np.linalg.norm(coeffs) if np.linalg.norm(coeffs) > 0 else 1.0
+    #         if (num / den) < tol:
+    #             coeffs = coeffs_new
+    #             break
+    #         coeffs = coeffs_new
+    
+    #         # Rebuild baseline on the SAME x_basis grid
+    #         base = vander @ coeffs
+    #         # Envelope step: clamp signal down toward the baseline
+    #         y_work = np.minimum(y_work, base)
+    
+    #     # Final baseline reconstruction
+    #     base = vander @ coeffs
+    
+    #     # --- Robust threshold on the REAL x grid using pybaselines ---
+    #     # (pybaselines wants the true x, not the synthetic basis)
+    #     # We use the baseline-adjusted signal y_work to identify "noise-only" regions.
+    #     try:
+    #         baseline_fitter = Baseline(x_real)
+    #         # std_distribution returns (baseline, params); we only need the mask
+    #         _, params = baseline_fitter.std_distribution(y_work, 45)
+    #         mask = params.get("mask", np.ones_like(y_work, dtype=bool))
+    #         # If mask is pathological, fall back
+    #         if mask.sum() < max(5, n // 10):
+    #             mask = np.ones_like(y_work, dtype=bool)
+    #     except Exception:
+    #         # If pybaselines hiccups, degrade gracefully
+    #         mask = np.ones_like(y_work, dtype=bool)
+    
+    #     # Compute a conservative minimum peak height:
+    #     # 2 * sigma (noise) * 3 (≈ 6σ)
+    #     noise_sigma = float(np.std(y_work[mask])) if mask.any() else float(np.std(y_work))
+    #     min_peak_amp = max(noise_sigma * 6.0, 0.0)
+    
+    #     # Ensure no negative baseline correction later
+    #     # (You clamp negatives elsewhere, but baseline itself should be sane)
+    #     base = np.asarray(base, dtype=float)
+    #     base[~np.isfinite(base)] = 0.0
+    
+    #     return base, min_peak_amp
 
 
     ######################################################
@@ -1057,7 +1541,7 @@ class GDGTAnalyzer:
         rel_click_pos = np.abs(xdata[peaks] - event.xdata)
         peak_found = False
         for peak_index, peak_pos in enumerate(rel_click_pos):
-            if peak_pos < 0.15:  # Threshold to consider a click close enough to a peak
+            if peak_pos < 0.1:  # Threshold to consider a click close enough to a peak
                 peak_found = True
                 selected_peak = peaks[np.argmin(np.abs(xdata[peaks] - event.xdata))]
                 # Correctly pass the trace identifier to handle_peak_selection
