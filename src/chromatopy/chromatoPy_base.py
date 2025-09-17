@@ -406,44 +406,231 @@ class GDGTAnalyzer:
             warnings.warn("[chromatoPy DBG] <logging failed>", stacklevel=2)
 
 
+    # def find_peak_neighborhood_boundaries(self, x, y_smooth, peaks, valleys,
+    #                                       peak_idx, ax, max_peaks, trace):
+    #     """
+    #     Fit nearby peaks with single Gaussians, extend each to an 'influence' interval,
+    #     take union of intervals overlapping the peak-of-interest (POI).
+    #     Returns (neighborhood_left_boundary, neighborhood_right_boundary, overlapping_peaks)
+    #     """
+    #     # Preconditions
+    #     assert len(x) == len(y_smooth), f"Length mismatch: x={len(x)} y={len(y_smooth)}"
+    #     assert np.all(np.isfinite(x)), "x has non-finite"
+    #     assert np.all(np.diff(x) >= 0), "x must be sorted/non-decreasing"
+    
+    #     x_arr = np.asarray(x, dtype=float)
+    #     y_arr = np.asarray(y_smooth, dtype=float)
+    
+    #     # Ensure peak_idx is an index into x (not into peaks array)
+    #     if 0 <= peak_idx < len(peaks) and (0 <= int(peaks[peak_idx]) < len(x_arr)):
+    #         peak_idx = int(peaks[peak_idx])
+    #         self._dbg(peak_idx_remapped=True, new_peak_idx=peak_idx)
+    
+    #     peak_idx = int(np.clip(peak_idx, 0, len(x_arr) - 1))
+    
+    #     # Find closest peaks by distance in x
+    #     dists = np.abs(x_arr[peaks] - x_arr[peak_idx])
+    #     closest_peaks_indices = np.argsort(dists)[:max_peaks]
+    #     closest_peaks = np.sort(peaks[closest_peaks_indices])
+    
+    #     extended_boundaries = {}
+    
+    #     # ---- Fit and extend each candidate peak ----
+    #     for p in closest_peaks:
+    #         try:
+    #             ppos = int(np.where(peaks == p)[0][0])
+    #         except Exception as e:
+    #             self._dbg(skip_peak_no_ppos=True, p=int(p), exc=str(e))
+    #             continue
+    
+    #         # Initial bases from find_peaks
+    #         try:
+    #             l_lim = int(self.peak_properties[trace]["left_bases"][ppos])
+    #             r_lim = int(self.peak_properties[trace]["right_bases"][ppos])
+    #         except Exception as e:
+    #             l_lim = max(int(p) - 5, 0)
+    #             r_lim = min(int(p) + 5, len(x_arr) - 1)
+    #             self._dbg(bases_missing=True, p=int(p), l_lim=l_lim, r_lim=r_lim, exc=str(e))
+    #         # --- Clamp window by valleys and width ---
+    #         dx = np.median(np.diff(x_arr)) if len(x_arr) > 1 else 0.01
+    #         v_left = max([v for v in valleys if v < p], default=l_lim)
+    #         v_right = min([v for v in valleys if v > p], default=r_lim)
+    #         l_lim = max(l_lim, v_left)
+    #         r_lim = min(r_lim, v_right)
+    
+    #         # crude sigma estimate (fallback to a few points)
+    #         sig_est = max((x_arr[r_lim] - x_arr[l_lim]) / 20.0, 3 * dx)
+    #         max_span = int(np.ceil(6 * sig_est / dx))
+    #         l_lim = max(p - max_span, l_lim, 0)
+    #         r_lim = min(p + max_span, r_lim, len(x_arr) - 1)
+    
+    #         # Hard guard: cap window size
+    #         if (r_lim - l_lim) > 1000:
+    #             self._dbg(clamp_huge_window=True, p=int(p), span=r_lim-l_lim)
+    #             half = 200
+    #             l_lim = max(p - half, 0)
+    #             r_lim = min(p + half, len(x_arr)-1)    
+    #         xw = x_arr[l_lim:r_lim+1]
+    #         yw = y_arr[l_lim:r_lim+1]
+    #         if xw.size < 3 or np.all(yw == 0):
+    #             self._dbg(skip_peak_tiny_or_flat=True, p=int(p), xw_n=int(xw.size))
+    #             continue
+    
+    #         # --- Initial guess ---
+    #         try:
+    #             heights, means, stddevs = self.estimate_initial_gaussian_params(
+    #                 pd.Series(xw), pd.Series(yw), int(np.argmin(np.abs(xw - x_arr[p]))))
+    #             height, mean, stddev = heights[0], means[0], max(float(stddevs[0]), 1e-6)
+    #         except Exception as e:
+    #             height = float(y_arr[p])
+    #             mean = float(x_arr[p])
+    #             stddev = max((xw.max() - xw.min()) / 6.0, 1e-6)
+    #             self._dbg(init_guess_fallback=True, p=int(p), exc=str(e),
+    #                       height=height, mean=mean, stddev=stddev)
+    
+    #         # --- Fit Gaussian with bounds ---
+    #         lb = [0.0, xw.min(), dx]  # amp>=0, center>=min, width>=dx
+    #         ub = [np.inf, xw.max(), (xw.max()-xw.min())/2.0]
+    #         try:
+    #             popt, _ = curve_fit(self.individual_gaussian, xw, yw,
+    #                                 p0=[height, mean, stddev],
+    #                                 bounds=(lb, ub),
+    #                                 maxfev=self.gi)
+    #         except Exception as e1:
+    #             try:
+    #                 popt, _ = curve_fit(self.individual_gaussian, xw, yw,
+    #                                     p0=[height, mean, stddev],
+    #                                     bounds=(lb, ub),
+    #                                     maxfev=self.gi*5)
+    #                 self._dbg(refit_success=True, p=int(p))
+    #             except Exception as e2:
+    #                 self._err(skip_peak_fit_fail=True, p=int(p),
+    #                           e1=str(e1), e2=str(e2), xw_n=len(xw))
+    #                 continue
+    
+    #         amp, cen, wid = float(popt[0]), float(popt[1]), max(float(popt[2]), 1e-6)
+    
+    #         # --- Extend Gaussian ---
+    #         x_min, x_max = self.calculate_gaus_extension_limits(cen, wid, decay=0.0, factor=1.0)
+    #         ext_x, ext_y = self.extrapolate_gaussian(xw, amp, cen, wid, None, x_min, x_max, step=0.01)
+    
+    #         self._dbg(peak_index=int(p), cen=cen, wid=wid,
+    #                   x_min=x_min, x_max=x_max, ext_n=len(ext_x))
+    
+    #         # --- Boundaries ---
+    #         try:
+    #             n_idx = int(np.argmin(np.abs(ext_x - cen)))
+    #             L, R = self.calculate_boundaries(ext_x, ext_y, n_idx)
+    #             L = max(int(L), 0)
+    #             R = min(int(R), len(ext_x) - 1)
+    #             if L >= R:  # fallback
+    #                 hw = max(5, 1)
+    #                 L = max(n_idx - hw, 0)
+    #                 R = min(n_idx + hw, len(ext_x)-1)
+    #             extended_boundaries[p] = (float(ext_x[L]), float(ext_x[R]))
+    #         except Exception as e:
+    #             self._err(err="calc_boundaries_failed", p=int(p), exc=str(e),
+    #                       ext_n=len(ext_x), cen=cen, wid=wid)
+    #             dx_ext = np.median(np.diff(ext_x)) if len(ext_x) > 1 else dx
+    #             hw = max((x_max - x_min)*0.05, dx_ext*5.0)
+    #             extended_boundaries[p] = (float(cen - hw), float(cen + hw))
+    
+    #     # ---- Ensure POI has bounds ----
+    #     poi_left, poi_right = extended_boundaries.get(peak_idx, (None, None))
+    #     if poi_left is None or poi_right is None:
+    #         cen = float(x_arr[peak_idx])
+    #         dx = np.median(np.diff(x_arr)) if len(x_arr) > 1 else 0.01
+    #         hw = max(5 * dx, 1e-3)
+    #         poi_left, poi_right = cen - hw, cen + hw
+    #         extended_boundaries[peak_idx] = (poi_left, poi_right)
+    #         self._dbg(poi_fallback=True, cen=cen, hw=hw)
+    
+    #     # ---- Overlap check ----
+    #     def intervals_overlap(aL, aR, bL, bR, eps=0.0):
+    #         if aL > aR: aL, aR = aR, aL
+    #         if bL > bR: bL, bR = bR, aL
+    #         return (aL <= bR - eps) and (bL <= aR - eps)
+    
+    #     overlapping_peaks = []
+    #     for p, (L, R) in extended_boundaries.items():
+    #         if p == peak_idx: continue
+    #         if L is None or R is None: continue
+    #         if intervals_overlap(L, R, poi_left, poi_right):
+    #             overlapping_peaks.append(p)
+    
+    #     # ---- Final neighborhood ----
+    #     if overlapping_peaks:
+    #         left_most = min(overlapping_peaks, key=lambda q: extended_boundaries[q][0])
+    #         right_most = max(overlapping_peaks, key=lambda q: extended_boundaries[q][1])
+    #         neighborhood_left_boundary = extended_boundaries[left_most][0]
+    #         neighborhood_right_boundary = extended_boundaries[right_most][1]
+    #     else:
+    #         neighborhood_left_boundary, neighborhood_right_boundary = poi_left, poi_right
+    #     self._dbg(neighborhood=True, poi=(poi_left, poi_right),
+    #               bounds=(neighborhood_left_boundary, neighborhood_right_boundary),
+    #               overlaps=[int(v) for v in overlapping_peaks])
+    #     return neighborhood_left_boundary, neighborhood_right_boundary, overlapping_peaks
+    
     def find_peak_neighborhood_boundaries(self, x, y_smooth, peaks, valleys,
                                           peak_idx, ax, max_peaks, trace):
         """
-        Fit nearby peaks with single Gaussians, extend each to an 'influence' interval,
-        take union of intervals overlapping the peak-of-interest (POI).
+        Transitive-overlap neighborhood:
+          1) Fit+extend intervals for peaks as needed.
+          2) Start at POI. If a neighbor overlaps, include it and move the frontier.
+          3) Repeat left/right until no overlap.
         Returns (neighborhood_left_boundary, neighborhood_right_boundary, overlapping_peaks)
         """
+        import numpy as np
+        import pandas as pd
+    
         # Preconditions
         assert len(x) == len(y_smooth), f"Length mismatch: x={len(x)} y={len(y_smooth)}"
-        assert np.all(np.isfinite(x)), "x has non-finite"
-        assert np.all(np.diff(x) >= 0), "x must be sorted/non-decreasing"
-    
         x_arr = np.asarray(x, dtype=float)
         y_arr = np.asarray(y_smooth, dtype=float)
+        assert np.all(np.isfinite(x_arr)), "x has non-finite"
+        assert np.all(np.diff(x_arr) >= 0), "x must be sorted/non-decreasing"
     
-        # Ensure peak_idx is an index into x (not into peaks array)
+        # Ensure peak_idx indexes into x (not peaks array)
         if 0 <= peak_idx < len(peaks) and (0 <= int(peaks[peak_idx]) < len(x_arr)):
             peak_idx = int(peaks[peak_idx])
             self._dbg(peak_idx_remapped=True, new_peak_idx=peak_idx)
-    
         peak_idx = int(np.clip(peak_idx, 0, len(x_arr) - 1))
     
-        # Find closest peaks by distance in x
-        dists = np.abs(x_arr[peaks] - x_arr[peak_idx])
-        closest_peaks_indices = np.argsort(dists)[:max_peaks]
-        closest_peaks = np.sort(peaks[closest_peaks_indices])
+        peaks = np.asarray(peaks, dtype=int)
+        if peaks.size == 0:
+            # Fallback: just a tiny window around POI
+            cen = float(x_arr[peak_idx])
+            dx = np.median(np.diff(x_arr)) if len(x_arr) > 1 else 0.01
+            hw = max(5 * dx, 1e-3)
+            return cen - hw, cen + hw, []
     
-        extended_boundaries = {}
+        # ---- Helpers ----
+        def intervals_overlap(aL, aR, bL, bR, eps=0.0):
+            if aL > aR: aL, aR = aR, aL
+            if bL > bR: bL, bR = bR, bL
+            return (aL <= bR - eps) and (bL <= aR - eps)
     
-        # ---- Fit and extend each candidate peak ----
-        for p in closest_peaks:
+        # Cache: extended boundaries for peaks we touch
+        extended_boundaries = {}   # peak_idx_in_x -> (xL, xR)
+    
+        def fit_extend_peak(p):
+            """Fit single Gaussian to local window around peak p; return (xL, xR) extended boundaries."""
+            if p in extended_boundaries:
+                return extended_boundaries[p]
+    
+            # Locate this peak's position within `peaks` (for bases/valleys)
             try:
                 ppos = int(np.where(peaks == p)[0][0])
             except Exception as e:
                 self._dbg(skip_peak_no_ppos=True, p=int(p), exc=str(e))
-                continue
+                # minimal fallback interval around apex
+                cen = float(x_arr[p])
+                dx = np.median(np.diff(x_arr)) if len(x_arr) > 1 else 0.01
+                hw = max(5 * dx, 1e-3)
+                extended_boundaries[p] = (cen - hw, cen + hw)
+                return extended_boundaries[p]
     
-            # Initial bases from find_peaks
+            # Initial bases from find_peaks properties (fallback if missing)
             try:
                 l_lim = int(self.peak_properties[trace]["left_bases"][ppos])
                 r_lim = int(self.peak_properties[trace]["right_bases"][ppos])
@@ -451,32 +638,37 @@ class GDGTAnalyzer:
                 l_lim = max(int(p) - 5, 0)
                 r_lim = min(int(p) + 5, len(x_arr) - 1)
                 self._dbg(bases_missing=True, p=int(p), l_lim=l_lim, r_lim=r_lim, exc=str(e))
-            # --- Clamp window by valleys and width ---
-            dx = np.median(np.diff(x_arr)) if len(x_arr) > 1 else 0.01
-            v_left = max([v for v in valleys if v < p], default=l_lim)
+    
+            # Clamp window by nearest valleys around this peak
+            dx_med = np.median(np.diff(x_arr)) if len(x_arr) > 1 else 0.01
+            v_left  = max([v for v in valleys if v < p], default=l_lim)
             v_right = min([v for v in valleys if v > p], default=r_lim)
             l_lim = max(l_lim, v_left)
             r_lim = min(r_lim, v_right)
     
-            # crude sigma estimate (fallback to a few points)
-            sig_est = max((x_arr[r_lim] - x_arr[l_lim]) / 20.0, 3 * dx)
-            max_span = int(np.ceil(6 * sig_est / dx))
+            # crude sigma estimate + max span
+            sig_est = max((x_arr[r_lim] - x_arr[l_lim]) / 20.0, 3 * dx_med)
+            max_span = int(np.ceil(6 * sig_est / dx_med))
             l_lim = max(p - max_span, l_lim, 0)
             r_lim = min(p + max_span, r_lim, len(x_arr) - 1)
     
-            # Hard guard: cap window size
+            # Cap window size hard
             if (r_lim - l_lim) > 1000:
-                self._dbg(clamp_huge_window=True, p=int(p), span=r_lim-l_lim)
+                self._dbg(clamp_huge_window=True, p=int(p), span=r_lim - l_lim)
                 half = 200
                 l_lim = max(p - half, 0)
-                r_lim = min(p + half, len(x_arr)-1)    
-            xw = x_arr[l_lim:r_lim+1]
-            yw = y_arr[l_lim:r_lim+1]
+                r_lim = min(p + half, len(x_arr) - 1)
+    
+            xw = x_arr[l_lim:r_lim + 1]
+            yw = y_arr[l_lim:r_lim + 1]
             if xw.size < 3 or np.all(yw == 0):
                 self._dbg(skip_peak_tiny_or_flat=True, p=int(p), xw_n=int(xw.size))
-                continue
+                cen = float(x_arr[p])
+                hw = max(5 * dx_med, 1e-3)
+                extended_boundaries[p] = (cen - hw, cen + hw)
+                return extended_boundaries[p]
     
-            # --- Initial guess ---
+            # Initial guess
             try:
                 heights, means, stddevs = self.estimate_initial_gaussian_params(
                     pd.Series(xw), pd.Series(yw), int(np.argmin(np.abs(xw - x_arr[p]))))
@@ -488,9 +680,9 @@ class GDGTAnalyzer:
                 self._dbg(init_guess_fallback=True, p=int(p), exc=str(e),
                           height=height, mean=mean, stddev=stddev)
     
-            # --- Fit Gaussian with bounds ---
-            lb = [0.0, xw.min(), dx]  # amp>=0, center>=min, width>=dx
-            ub = [np.inf, xw.max(), (xw.max()-xw.min())/2.0]
+            # Fit Gaussian with bounds
+            lb = [0.0, xw.min(), dx_med]                      # amp>=0, center>=min, width>=dx_med
+            ub = [np.inf, xw.max(), (xw.max() - xw.min())/2.] # width bounded by half window
             try:
                 popt, _ = curve_fit(self.individual_gaussian, xw, yw,
                                     p0=[height, mean, stddev],
@@ -506,69 +698,102 @@ class GDGTAnalyzer:
                 except Exception as e2:
                     self._err(skip_peak_fit_fail=True, p=int(p),
                               e1=str(e1), e2=str(e2), xw_n=len(xw))
-                    continue
+                    cen = float(x_arr[p])
+                    hw = max(5 * dx_med, 1e-3)
+                    extended_boundaries[p] = (cen - hw, cen + hw)
+                    return extended_boundaries[p]
     
             amp, cen, wid = float(popt[0]), float(popt[1]), max(float(popt[2]), 1e-6)
     
-            # --- Extend Gaussian ---
+            # Extend Gaussian
             x_min, x_max = self.calculate_gaus_extension_limits(cen, wid, decay=0.0, factor=1.0)
             ext_x, ext_y = self.extrapolate_gaussian(xw, amp, cen, wid, None, x_min, x_max, step=0.01)
+            self._dbg(peak_index=int(p), cen=cen, wid=wid, x_min=x_min, x_max=x_max, ext_n=len(ext_x))
     
-            self._dbg(peak_index=int(p), cen=cen, wid=wid,
-                      x_min=x_min, x_max=x_max, ext_n=len(ext_x))
-    
-            # --- Boundaries ---
+            # Boundaries from extended curve
             try:
                 n_idx = int(np.argmin(np.abs(ext_x - cen)))
                 L, R = self.calculate_boundaries(ext_x, ext_y, n_idx)
                 L = max(int(L), 0)
                 R = min(int(R), len(ext_x) - 1)
-                if L >= R:  # fallback
+                if L >= R:
                     hw = max(5, 1)
                     L = max(n_idx - hw, 0)
-                    R = min(n_idx + hw, len(ext_x)-1)
+                    R = min(n_idx + hw, len(ext_x) - 1)
                 extended_boundaries[p] = (float(ext_x[L]), float(ext_x[R]))
             except Exception as e:
                 self._err(err="calc_boundaries_failed", p=int(p), exc=str(e),
                           ext_n=len(ext_x), cen=cen, wid=wid)
-                dx_ext = np.median(np.diff(ext_x)) if len(ext_x) > 1 else dx
-                hw = max((x_max - x_min)*0.05, dx_ext*5.0)
+                dx_ext = np.median(np.diff(ext_x)) if len(ext_x) > 1 else dx_med
+                hw = max((x_max - x_min) * 0.05, dx_ext * 5.0)
                 extended_boundaries[p] = (float(cen - hw), float(cen + hw))
     
+            return extended_boundaries[p]
+    
         # ---- Ensure POI has bounds ----
-        poi_left, poi_right = extended_boundaries.get(peak_idx, (None, None))
-        if poi_left is None or poi_right is None:
-            cen = float(x_arr[peak_idx])
-            dx = np.median(np.diff(x_arr)) if len(x_arr) > 1 else 0.01
-            hw = max(5 * dx, 1e-3)
-            poi_left, poi_right = cen - hw, cen + hw
-            extended_boundaries[peak_idx] = (poi_left, poi_right)
-            self._dbg(poi_fallback=True, cen=cen, hw=hw)
+        poi_L, poi_R = fit_extend_peak(peak_idx)
     
-        # ---- Overlap check ----
-        def intervals_overlap(aL, aR, bL, bR, eps=0.0):
-            if aL > aR: aL, aR = aR, aL
-            if bL > bR: bL, bR = bR, aL
-            return (aL <= bR - eps) and (bL <= aR - eps)
+        # ---- Expand transitively left/right by overlap ----
+        # Sort peaks by x so we can walk neighbors
+        order = np.argsort(x_arr[peaks])
+        peaks_sorted = peaks[order]
+        # index of POI within sorted peaks
+        try:
+            poi_pos = int(np.where(peaks_sorted == peak_idx)[0][0])
+        except Exception:
+            # If not found, just return POI interval
+            self._dbg(poi_not_in_sorted=True, peak_idx=int(peak_idx))
+            return poi_L, poi_R, []
     
-        overlapping_peaks = []
-        for p, (L, R) in extended_boundaries.items():
-            if p == peak_idx: continue
-            if L is None or R is None: continue
-            if intervals_overlap(L, R, poi_left, poi_right):
-                overlapping_peaks.append(p)
+        left_pos = right_pos = poi_pos
+        included = {int(peak_idx)}
+        safety_limit = max(max_peaks, 3)  # ensure at least a few are allowed
     
-        # ---- Final neighborhood ----
-        if overlapping_peaks:
-            left_most = min(overlapping_peaks, key=lambda q: extended_boundaries[q][0])
-            right_most = max(overlapping_peaks, key=lambda q: extended_boundaries[q][1])
-            neighborhood_left_boundary = extended_boundaries[left_most][0]
-            neighborhood_right_boundary = extended_boundaries[right_most][1]
+        # Walk left
+        while left_pos > 0 and len(included) < safety_limit:
+            p_curr = int(peaks_sorted[left_pos])
+            p_left = int(peaks_sorted[left_pos - 1])
+            Lc, Rc = fit_extend_peak(p_curr)
+            Ll, Rl = fit_extend_peak(p_left)
+            if intervals_overlap(Lc, Rc, Ll, Rl, eps=0.0):
+                included.add(p_left)
+                left_pos -= 1
+            else:
+                break
+    
+        # Walk right
+        while right_pos < len(peaks_sorted) - 1 and len(included) < safety_limit:
+            p_curr = int(peaks_sorted[right_pos])
+            p_right = int(peaks_sorted[right_pos + 1])
+            Lc, Rc = fit_extend_peak(p_curr)
+            Lr, Rr = fit_extend_peak(p_right)
+            if intervals_overlap(Lc, Rc, Lr, Rr, eps=0.0):
+                included.add(p_right)
+                right_pos += 1
+            else:
+                break
+    
+        # Neighborhood bounds from all included peaks
+        Ls = []
+        Rs = []
+        for p in included:
+            Lp, Rp = fit_extend_peak(p)
+            Ls.append(Lp); Rs.append(Rp)
+    
+        if len(Ls) == 0:
+            # fallback to POI interval
+            neighborhood_left_boundary  = poi_L
+            neighborhood_right_boundary = poi_R
         else:
-            neighborhood_left_boundary, neighborhood_right_boundary = poi_left, poi_right
-        self._dbg(neighborhood=True, poi=(poi_left, poi_right),
+            neighborhood_left_boundary  = float(min(Ls))
+            neighborhood_right_boundary = float(max(Rs))
+    
+        overlapping_peaks = sorted([p for p in included if p != int(peak_idx)])
+    
+        self._dbg(neighborhood=True, poi=(poi_L, poi_R),
                   bounds=(neighborhood_left_boundary, neighborhood_right_boundary),
                   overlaps=[int(v) for v in overlapping_peaks])
+    
         return neighborhood_left_boundary, neighborhood_right_boundary, overlapping_peaks
     
     
@@ -2573,7 +2798,7 @@ class GDGTAnalyzer:
                                 peak_found = False
                                 trace = self.axs_to_traces[self.axs[ax_idx]]
                                 for peak_index, peak_pos in enumerate(rel_click_pos):
-                                    if np.min(np.abs(xdata[peaks] - ref_peak)) < 0.2:  # Slightly higher threshold
+                                    if np.min(np.abs(xdata[peaks] - ref_peak)) < 0.25:  # Slightly higher threshold
                                         peak_found = True
                                         selected_peak = peaks[np.argmin(np.abs(xdata[peaks] - ref_peak))]
                                         self.handle_peak_selection(ax, ax_idx, xdata, y_bcorr, selected_peak, peaks, trace)
