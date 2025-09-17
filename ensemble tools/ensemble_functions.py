@@ -550,7 +550,9 @@ import pandas as pd
 #     upper_err = upper_bound - mean_val
     
 #     return {"mean": mean_val, "lower_ci": lower_err, "upper_ci": upper_err}
-def percentile95_to_sigma_stats(data):
+namer = "H1801000259"
+gdgty = "GDGT-3"
+def percentile95_to_sigma_stats(data, name, gdgt):
     """
     Returns the mean and the 1σ-equivalent lower/upper errors
     derived from the 95% confidence interval (2.5th and 97.5th percentiles),
@@ -569,7 +571,11 @@ def percentile95_to_sigma_stats(data):
     data = np.array(data, dtype=float)
     if np.any(data < 0):
         print_tick = True
-    data = data[data >= 0]
+    data = data[data > 0]
+    if gdgt == "IIa":
+        print(data)
+    # if name ==namer and gdgt==gdgty:
+    #     print(data)
 
     # Handle empty case
     if data.size == 0:
@@ -578,17 +584,14 @@ def percentile95_to_sigma_stats(data):
     mean_val = np.nanmedian(data)
     median_val = np.nanmedian(data)
     lower_bound = np.nanpercentile(data, 2.5)
-    # print(lower_bound)
-    
     upper_bound = np.nanpercentile(data, 97.5)
-    # print(upper_bound)
     
     lower_err_95 = mean_val - lower_bound
     upper_err_95 = upper_bound - mean_val
 
     # Here we keep the 95% CI half-widths directly (not converting to actual sigma scaling factor)
     out_dict = {
-        "mean": mean_val,
+        "mean": median_val,
         "lower_sigma": lower_err_95,
         "upper_sigma": upper_err_95}
     return out_dict, print_tick
@@ -615,10 +618,6 @@ def compile_mean_percentile95_errors(folder_path):
                 for gdgt_key, gdgt_info in sample_data[group].items():
                     if isinstance(gdgt_info, dict) and "area_ensemble" in gdgt_info:
                         ensemble = gdgt_info["area_ensemble"]
-                        if sample_name=="H1801000119":
-                            if gdgt_key=="IIb'":
-                                print(gdgt_key)
-                                print(ensemble)
                         if ensemble and len(ensemble) > 0:
                             if isinstance(ensemble[0], list):
                                 data = ensemble[0]
@@ -626,7 +625,7 @@ def compile_mean_percentile95_errors(folder_path):
                                 data = ensemble
                         else:
                             data = []
-                        stats, print_tick = percentile95_to_sigma_stats(data)
+                        stats, print_tick = percentile95_to_sigma_stats(data, sample_name, gdgt_key)
                         row[gdgt_key] = stats["mean"]
                         row[f"{gdgt_key}_lower_ci"] = stats["lower_sigma"]
                         row[f"{gdgt_key}_upper_ci"] = stats["upper_sigma"]
@@ -639,9 +638,14 @@ def compile_mean_percentile95_errors(folder_path):
     return df
 
 # Example usage:
-folder_path = '/Users/gerard/Desktop/redo/isogdgts/Largest peak/Output_chromatoPy/Individual Samples'
+folder_path = '/Users/gerard/Documents/GitHub/chromatoPy_manuscript/Data/Sudip Comparison/August 19 2025/Chromatopy-selected/Output_chromatoPy_isoGDGTS_new_august_19/Individual Samples'
 output_csv = os.path.join(folder_path, "output_FINAL.csv")
 df_compiled = compile_mean_percentile95_errors(folder_path)
 df_compiled.to_csv(output_csv, index=False)
 
 
+# %%
+df = pd.read_csv('/Users/gerard/Documents/GitHub/chromatoPy_manuscript/Data/Gerard Raw/Individual samples/output_FINAL.csv')
+su = pd.read_csv('/Users/gerard/Documents/GitHub/Otiniano-et-al.-chromatoPy-SI/data/user_2_peak_areas.csv')
+
+su[~su['Sample Name'].isin(df['Sample Name'])]
