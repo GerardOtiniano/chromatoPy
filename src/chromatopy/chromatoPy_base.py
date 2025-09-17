@@ -572,7 +572,7 @@ class GDGTAnalyzer:
         return neighborhood_left_boundary, neighborhood_right_boundary, overlapping_peaks
     
     
-    def calculate_boundaries(self, x, y, ind_peak, tolerance=0.01, w_factor=3.0):
+    def calculate_boundaries(self, x, y, ind_peak, tolerance=0.02, w_factor=3.0):
         """
         Minimal, *local* derivative method:
           - Smooth y, compute smoothed derivative.
@@ -1264,60 +1264,59 @@ class GDGTAnalyzer:
     #         )
     
     #     return best_x, best_fit_y, area_smooth, area_ensemble
+    def _sigma_from_curvature(self, xv, yv, i_local, eps=1e-12):
+         """Estimate local sigma from smoothed 2nd derivative at a local apex index i_local."""
+         import numpy as np
+     
+         # >>> Make sure we index positionally, not by pandas labels
+         xv = np.asarray(xv)
+         yv = np.asarray(yv)
+     
+         if i_local < 1 or i_local > len(xv) - 2:
+             return None
+     
+         # Smooth y (your smoother can accept arrays)
+         ys = self.smoother(yv)
+     
+         dx1 = xv[i_local]   - xv[i_local - 1]
+         dx2 = xv[i_local+1] - xv[i_local]
+         ypp = 2.0 * ((ys[i_local + 1] - ys[i_local]) / (dx2 + eps)
+                      - (ys[i_local] - ys[i_local - 1]) / (dx1 + eps)) / (dx1 + dx2 + eps)
+     
+         A = max(ys[i_local], eps)
+         if not np.isfinite(ypp) or ypp >= -eps:
+             return None
+         return float(np.sqrt(A / (-ypp + eps)))
+    def _width_seed_and_bounds(self, x_seg, y_seg, c0, cL, cR, w_min_abs, w_max_abs, gap_gamma=0.6):
+         """Seed width from curvature and cap by nearest gap in *segment* x-units."""
+         import numpy as np
+         # >>> Ensure positional math
+         x_arr = np.asarray(x_seg)
+         y_arr = np.asarray(y_seg)
+         
+         # positional index of c0 in the segment
+         i_loc = int(np.argmin(np.abs(x_arr - c0)))
+         
+         s_curv = self._sigma_from_curvature(x_arr, y_arr, i_loc)
+         
+         gapL = abs(c0 - cL) if cL is not None else np.inf
+         gapR = abs(c0 - cR) if cR is not None else np.inf
+         nearest_gap = np.nanmin([gapL, gapR])
+         cap = gap_gamma * nearest_gap if np.isfinite(nearest_gap) else np.inf
+         
+         hi = np.nanmin([cap, w_max_abs]) if np.isfinite(cap) else w_max_abs
+         w0 = hi if (s_curv is None or not np.isfinite(s_curv)) else min(s_curv, hi)
+         w0 = float(np.clip(w0, w_min_abs, hi))
+         return w0, float(w_min_abs), float(hi)
     
-    
-    def fit_gaussians(self, x_full, y_full, ind_peak, trace, peaks, ax):
+    def fit_gaussians(self, x_full, y_full, ind_peak, trace, peaks, ax, valleys):
        """
        Fits single or multi-Gaussian models to the provided data to determine the best-fit parameters
        for the peak of interest. (Structure preserved; multi-Gaussian seeding/bounds improved.)
        """
     
        # curvature-based sigma + gap cap
-       def _sigma_from_curvature(xv, yv, i_local, eps=1e-12):
-            """Estimate local sigma from smoothed 2nd derivative at a local apex index i_local."""
-            import numpy as np
-        
-            # >>> Make sure we index positionally, not by pandas labels
-            xv = np.asarray(xv)
-            yv = np.asarray(yv)
-        
-            if i_local < 1 or i_local > len(xv) - 2:
-                return None
-        
-            # Smooth y (your smoother can accept arrays)
-            ys = self.smoother(yv)
-        
-            dx1 = xv[i_local]   - xv[i_local - 1]
-            dx2 = xv[i_local+1] - xv[i_local]
-            ypp = 2.0 * ((ys[i_local + 1] - ys[i_local]) / (dx2 + eps)
-                         - (ys[i_local] - ys[i_local - 1]) / (dx1 + eps)) / (dx1 + dx2 + eps)
-        
-            A = max(ys[i_local], eps)
-            if not np.isfinite(ypp) or ypp >= -eps:
-                return None
-            return float(np.sqrt(A / (-ypp + eps)))
-       def _width_seed_and_bounds(x_seg, y_seg, x0, cL, cR, w_min_abs, w_max_abs, gap_gamma=0.6):
-            """Seed width from curvature and cap by nearest gap in *segment* x-units."""
-            import numpy as np
-            x0 = x0
-            # >>> Ensure positional math
-            x_arr = np.asarray(x_seg)
-            y_arr = np.asarray(y_seg)
-            
-            # positional index of c0 in the segment
-            i_loc = int(np.argmin(np.abs(x_arr - c0)))
-            
-            s_curv = _sigma_from_curvature(x_arr, y_arr, i_loc)
-            
-            gapL = abs(c0 - cL) if cL is not None else np.inf
-            gapR = abs(c0 - cR) if cR is not None else np.inf
-            nearest_gap = np.nanmin([gapL, gapR])
-            cap = gap_gamma * nearest_gap if np.isfinite(nearest_gap) else np.inf
-            
-            hi = np.nanmin([cap, w_max_abs]) if np.isfinite(cap) else w_max_abs
-            w0 = hi if (s_curv is None or not np.isfinite(s_curv)) else min(s_curv, hi)
-            w0 = float(np.clip(w0, w_min_abs, hi))
-            return w0, float(w_min_abs), float(hi)
+
     
        # detect overlapping peaks
        current_peaks = np.array(peaks)
@@ -1373,8 +1372,8 @@ class GDGTAnalyzer:
                h0 = float(h0[0]); c0 = float(c0[0]); w_est = float(w_est[0])
     
                # curvature+gap width (for sandwiched peaks); edges still allowed to be broader
-               w0, w_lo, w_hi = _width_seed_and_bounds(
-                   x_seg=x, y_seg=y, x0=c0,
+               w0, w_lo, w_hi = self._width_seed_and_bounds(
+                   x_seg=x, y_seg=y, c0=c0,
                    cL=neighbors_L[k], cR=neighbors_R[k],
                    w_min_abs=w_min_abs, w_max_abs=w_max_abs,
                    gap_gamma=0.6)
@@ -1422,39 +1421,131 @@ class GDGTAnalyzer:
            iteration += 1
     
        # Single gaussian fit with decay
+       # if len(current_peaks) == 1:
+       #     left_boundary, right_boundary = self.calculate_boundaries(x_full, y_full, ind_peak)
+       #     x = x_full[left_boundary : right_boundary + 1]
+       #     y = y_full[left_boundary : right_boundary + 1]
+       #     height, center, width = self.estimate_initial_gaussian_params(x, y, ind_peak)
+       #     height = float(height[0]); center = float(center[0]); width = float(width[0])
+       #     # initial_decay = 0.1
+       #     # p0 = [height, center, width, initial_decay]
+       #     p0 = [height, center, width]
+       #     try:
+       #         single_popt, single_pcov = curve_fit(
+       #             # lambda xv, amp, cen, wid, dec: self.gaussian_decay(xv, amp, cen, wid, dec),
+       #             # x, y, p0=p0, method="trf", maxfev=self.gi)
+       #             lambda xv, amp, cen, wid: self.individual_gaussian(xv, amp, cen, wid),
+       #             x, y, p0=p0, method="trf", maxfev=self.gi)
+       #         # single_fitted_y = self.gaussian_decay(x, *single_popt)
+       #         single_fitted_y = self.individual_gaussian(x, *single_popt)
+       #         error = float(np.sqrt(((single_fitted_y - y) ** 2).mean()))  # RMSE
+       #         # print(f"single error: {error}")
+       #         if error < best_error/1.02:
+       #             multi_gauss_flag = False
+       #             best_error = error
+       #             best_fit_params = single_popt
+       #             best_fit_params_error = single_pcov
+       #             best_fit_y = single_fitted_y
+       #             best_x = x
+       #             best_idx_interest = 0  # single component
+       #     except RuntimeError:
+       #         pass
+# ------------------ Single gaussian fit (use full-trace peaks for valleys; choose closer of boundary vs valley) -----------------
        if len(current_peaks) == 1:
-           left_boundary, right_boundary = self.calculate_boundaries(x_full, y_full, ind_peak)
-           x = x_full[left_boundary : right_boundary + 1]
-           y = y_full[left_boundary : right_boundary + 1]
-           height, center, width = self.estimate_initial_gaussian_params(x, y, ind_peak)
-           height = float(height[0]); center = float(center[0]); width = float(width[0])
-           # initial_decay = 0.1
-           # p0 = [height, center, width, initial_decay]
-           p0 = [height, center, width]
-           try:
-               single_popt, single_pcov = curve_fit(
-                   # lambda xv, amp, cen, wid, dec: self.gaussian_decay(xv, amp, cen, wid, dec),
-                   # x, y, p0=p0, method="trf", maxfev=self.gi)
-                   lambda xv, amp, cen, wid: self.individual_gaussian(xv, amp, cen, wid),
-                   x, y, p0=p0, method="trf", maxfev=self.gi)
-               # single_fitted_y = self.gaussian_decay(x, *single_popt)
-               single_fitted_y = self.individual_gaussian(x, *single_popt)
-               error = float(np.sqrt(((single_fitted_y - y) ** 2).mean()))  # RMSE
-               # print(f"single error: {error}")
-               if error < best_error:
-                   multi_gauss_flag = False
-                   best_error = error
-                   best_fit_params = single_popt
-                   best_fit_params_error = single_pcov
-                   best_fit_y = single_fitted_y
-                   best_x = x
-                   best_idx_interest = 0  # single component
-           except RuntimeError:
-               pass
-    
+            apex_x   = float(x_full[ind_peak])
+            full_peaks = np.asarray(self.peaks[trace])
+        
+            # 1) Start with your original derivative-based boundaries
+            left_b1, right_b1 = self.calculate_boundaries(x_full, y_full, ind_peak)
+            L_idx, R_idx = int(left_b1), int(right_b1)
+
+            v2v = self.find_valleys(y_full, full_peaks, peak_oi = ind_peak)
+            vL_idx = None
+            vR_idx = None
+            
+            if isinstance(v2v, (list, tuple)) and len(v2v) == 2:
+                vL_candidate, vR_candidate = int(v2v[0]), int(v2v[1])
+            
+                # keep only if they exist and are on the correct sides of the apex
+                if 0 <= vL_candidate < ind_peak:
+                    vL_idx = vL_candidate
+                if ind_peak < vR_candidate < len(x_full):
+                    vR_idx = vR_candidate
+        
+            def _closer(idx_a, idx_b, apex_x_val):
+                """Return whichever index is closer in x to apex; if one is None, return the other."""
+                if idx_a is None and idx_b is None:
+                    return None
+                if idx_a is None:
+                    return idx_b
+                if idx_b is None:
+                    return idx_a
+                xa = float(x_full[idx_a]); xb = float(x_full[idx_b])
+                return idx_a if abs(xa - apex_x_val) <= abs(xb - apex_x_val) else idx_b
+            
+            # left side (must be strictly < apex)
+            cand_left = _closer(L_idx, vL_idx, apex_x)
+            if cand_left is not None and cand_left < ind_peak:
+                L_idx = int(cand_left)
+            
+            # right side (must be strictly > apex)
+            cand_right = _closer(R_idx, vR_idx, apex_x)
+            if cand_right is not None and cand_right > ind_peak:
+                R_idx = int(cand_right)
+            
+            # final sanity: valid span; otherwise fall back to original derivative bounds
+            if not (0 <= L_idx < R_idx < len(x_full)):
+                L_idx, R_idx = int(left_b1), int(right_b1)
+            
+            # ---------------- window chosen; proceed to fit ----------------
+            x = x_full[L_idx : R_idx + 1]
+            y = y_full[L_idx : R_idx + 1]
+            
+            x_vals = np.asarray(x)  # works for Series or ndarray
+            i_loc = int(np.argmin(np.abs(x_vals - apex_x)))
+            peak_key = x.index[i_loc] if hasattr(x, "index") else i_loc
+            # estimator needs Series (uses .iloc), so pass x,y as-is here
+            height, center, width = self.estimate_initial_gaussian_params(x, y, peak_key)
+            amp0 = float(height[0]); wid0 = float(width[0])
+            
+            # NOW convert to NumPy for curve_fit and downstream numeric ops
+            if hasattr(x, "to_numpy"): x = x.to_numpy()
+            if hasattr(y, "to_numpy"): y = y.to_numpy()
+            
+            # 6) Width bounds (rest of your code unchanged below)
+            dx = np.diff(x)
+            dx_med = np.median(dx[np.isfinite(dx)]) if dx.size else 1.0
+            w_min_abs = max(1.5 * dx_med, 1e-3)
+            w_max_abs = max((x.max() - x.min()) / 3.0, 2 * w_min_abs)
+            wid0 = float(np.clip(wid0, w_min_abs, w_max_abs))
+            a_hi = max(1.0 + float(y_full[ind_peak]), amp0 * 3.0)
+            c_pad = 1e-2
+            p0 = [amp0, apex_x, wid0]
+            lb = [0.0,        apex_x - c_pad, w_min_abs]
+            ub = [a_hi,       apex_x + c_pad, w_max_abs]
+        
+            try:
+                single_popt, single_pcov = curve_fit(
+                    lambda xv, a, c, w: self.individual_gaussian(xv, a, c, w),
+                    x, y, p0=p0, bounds=(lb, ub), method="trf", maxfev=self.gi
+                )
+                single_fitted_y = self.individual_gaussian(x, *single_popt)
+                error = float(np.sqrt(((single_fitted_y - y) ** 2).mean()))
+        
+                # keep single only if it beats multi by your margin
+                if error < best_error / 1.02:
+                    multi_gauss_flag = False
+                    best_error = error
+                    best_fit_params = single_popt
+                    best_fit_params_error = single_pcov
+                    best_fit_y = single_fitted_y
+                    best_x = x
+                    best_idx_interest = 0
+            except RuntimeError:
+                pass
        # post-processing: extend -> boundaries -> slice -> area
        if multi_gauss_flag is True:
-           # print(f"Selected multi: {trace}")
+           print(f"Selected multi: {trace}")
            amp = best_fit_params[best_idx_interest * 3 + 0]
            cen = best_fit_params[best_idx_interest * 3 + 1]
            wid = best_fit_params[best_idx_interest * 3 + 2]
@@ -1474,7 +1565,7 @@ class GDGTAnalyzer:
                best_x, x_full, ax, ind_peak, best_fit_y, step = 0.001, min_pts = 21)
     
        else:
-           # print(f"Selected single: {trace}")
+           print(f"Selected single: {trace}")
            # amp, cen, wid, dec = best_fit_params[0], best_fit_params[1], best_fit_params[2], best_fit_params[3]
            amp, cen, wid  = best_fit_params[0], best_fit_params[1], best_fit_params[2]
            # x_min, x_max = self.calculate_gaus_extension_limits(cen, wid, dec, factor=2)
@@ -1867,7 +1958,7 @@ class GDGTAnalyzer:
         try:
             valleys = self.find_valleys(y_bcorr, peaks)
             A, B, peak_neighborhood = self.find_peak_neighborhood_boundaries(xdata, y_bcorr, self.peaks[trace], valleys, peak_idx, ax, self.max_peaks_for_neighborhood, trace)
-            x_fit, y_fit_smooth, area_smooth, area_ensemble = self.fit_gaussians(xdata, y_bcorr, peak_idx, trace, peak_neighborhood, ax)
+            x_fit, y_fit_smooth, area_smooth, area_ensemble = self.fit_gaussians(xdata, y_bcorr, peak_idx, trace, peak_neighborhood, ax, valleys)
             fill = ax.fill_between(x_fit, 0, y_fit_smooth, color="grey", alpha=0.5)
             rt_of_peak = xdata[peak_idx]
             area_text = f"Area: {area_smooth:.0f}\nRT: {rt_of_peak:.0f}"
@@ -2325,14 +2416,10 @@ class GDGTAnalyzer:
         dx = np.median(np.diff(np.asarray(x, float))) if len(x) > 1 else 1.0
         span = (x.max() - x.min()) if len(x) else 1.0
     
-        # Rule of thumb:
-        # - lam controls smoothness (bigger = smoother). Start 1e6–1e7 for LC.
-        # - p << 0.5 protects positive peaks; 0.001–0.01 typical.
-        # If sampling is very fine (small dx), increase lam.
-        lam = 1e6 * max(1.0, (span / max(dx, 1e-6)) / 200.0)   # scale with samples per span
-        p   = 0.01                                            # aggressive protection of positives
+        lam = 1e6 * max(1.0, (span / max(dx, 1e-6)) / 200.0)  
+        p   = 0.01                                          
     
-        b, info = self.asls(y, lam=lam, p=p, max_iter=50)           # smooth, valley-preserving
+        b, info = self.asls(y, lam=lam, p=p, max_iter=50)
         b = np.maximum(b, 0.0)
         c = np.clip(y - b, 0, None)
     
