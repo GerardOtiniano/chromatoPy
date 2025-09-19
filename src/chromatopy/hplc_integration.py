@@ -129,7 +129,7 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=10, smo
             sample[gdgt_group[0]] = {}
             for gdgt in all_gdgt_names:
                 if gdgt in peaks:
-                    peak_data[gdgt] = peaks[gdgt]["areas"][0]  # Assume there is only one area per compound
+                    peak_data[gdgt] = peaks[gdgt]["Area"][0]  # Assume there is only one area per compound
                     sample[gdgt_group[0]][gdgt] = peaks[gdgt]
                 else:
                     peak_data[gdgt] = 0  # Use NaN if the GDGT is missing
