@@ -37,7 +37,7 @@ def assign_indices():
     None
         The function saves the results to CSV files but does not return any values.
     """
-    df_path = input("Enter location of integrated data: ")
+    df_path = input("Enter location of integrated data: ").strip('"').strip("'")
     df = pd.read_csv(df_path)
     df_fa = calculate_fa(df)
     df_meth, df_cyc = calculate_raberg2021(df)
