@@ -274,7 +274,7 @@ def output_csv(data, output_directory):
         for peak in all_peaks:
             peak_data = processed.get(peak, None)
             if peak_data and isinstance(peak_data, dict):
-                row_area[peak] = peak_data.get("Peak Area - median", np.nan)
+                row_area[peak] = peak_data.get("Peak Area - best fit", np.nan)
                 row_ret[peak] = peak_data.get("Retention Time", np.nan)
             else:
                 row_area[peak] = np.nan

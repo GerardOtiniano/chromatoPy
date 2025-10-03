@@ -82,7 +82,7 @@ def find_peak_neighborhood_boundaries(x, y_smooth, peaks, valleys, peak_idx, max
         except RuntimeError:
             popt, _ = curve_fit(individual_gaussian, x, y_smooth, p0=[height, mean, stddev], maxfev=gi*100)
         # Extend Gaussian fit limits
-        x_min, x_max = calculate_gaus_extension_limits(popt[1], popt[2], 0, factor=3)
+        x_min, x_max = calculate_gaus_extension_limits(popt[1], popt[2], factor=3)
         extended_x, extended_y = extrapolate_gaussian(x, popt[0], popt[1], popt[2], None, x_min - 2, x_max + 2)
         # Find the boundaries based on the derivative test
         peak_x_value = x[peak]
@@ -114,13 +114,17 @@ def find_peak_neighborhood_boundaries(x, y_smooth, peaks, valleys, peak_idx, max
 
 
 # Gaussian fitting
-def calculate_gaus_extension_limits(cen, wid, decay, factor=2, max_tail_sigma=2):#5):
-    sigma_effective = wid * factor  # Adjust factor for tail thinness
-    if decay <= 0:
-        tail = sigma_effective * max_tail_sigma
-    else:
-        tail = min(1/decay, sigma_effective * max_tail_sigma)
-    return cen - sigma_effective-tail, cen+sigma_effective+tail
+# def calculate_gaus_extension_limits(cen, wid, decay, factor=2, max_tail_sigma=2):#5):
+#     sigma_effective = wid * factor  # Adjust factor for tail thinness
+#     if decay <= 0:
+#         tail = sigma_effective * max_tail_sigma
+#     else:
+#         tail = min(1/decay, sigma_effective * max_tail_sigma)
+#     return cen - sigma_effective-tail, cen+sigma_effective+tail
+def calculate_gaus_extension_limits(cen, wid, factor=2, max_tail_sigma=2):
+    sigma_effective = wid * factor
+    tail = sigma_effective * max_tail_sigma
+    return cen - sigma_effective - tail, cen + sigma_effective + tail
 
 def extrapolate_gaussian(x, amp, cen, wid, skew=None, x_min=None, x_max=None, step=0.0001):
     if x_min is None: x_min = cen - 3 * wid
@@ -132,14 +136,14 @@ def extrapolate_gaussian(x, amp, cen, wid, skew=None, x_min=None, x_max=None, st
         extended_y = skewed_gaussian(extended_x, amp, cen, wid, skew)
     return extended_x, extended_y
 
-def extrapolate_gaussian_decay(amp, cen, wid, dec, x_min=None, x_max=None, step=1e-4):
-    if x_min is None:
-        x_min = cen - 3 * wid
-    if x_max is None:
-        x_max = cen + 3 * wid
-    xs = np.arange(x_min, x_max, step)
-    ys = gaussian_decay(xs, amp, cen, wid, dec)
-    return xs, ys
+# def extrapolate_gaussian_decay(amp, cen, wid, dec, x_min=None, x_max=None, step=1e-4):
+#     if x_min is None:
+#         x_min = cen - 3 * wid
+#     if x_max is None:
+#         x_max = cen + 3 * wid
+#     xs = np.arange(x_min, x_max, step)
+#     ys = gaussian_decay(xs, amp, cen, wid, dec)
+#     return xs, ys
 
 def calculate_boundaries(x, y, ind_peak, smoothing_params, pk_sns):
     smooth_y = smoother(y, smoothing_params[0], smoothing_params[1])
@@ -306,18 +310,21 @@ def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi,
         if model_used == "asymmetric":
             # skewed Gaussian (alpha)
             alpha = best_fit_params[3]
-            x_min, x_max = calculate_gaus_extension_limits(cen, wid, 0, factor=tail_factor)
+            x_min, x_max = calculate_gaus_extension_limits(cen, wid, factor=tail_factor)
             best_x, best_fit_y = extrapolate_gaussian(
                 best_x, amp, cen, wid, alpha, x_min, x_max, step=0.0001)
         elif model_used == "single":
             # gaussian_decay (dec)
-            dec = best_fit_params[3]
-            x_min, x_max = calculate_gaus_extension_limits(cen, wid, dec, factor=tail_factor)
-            best_x, best_fit_y = extrapolate_gaussian_decay(
-                amp, cen, wid, dec, x_min, x_max, step=0.0001)
+            # dec = best_fit_params[3]
+            # x_min, x_max = calculate_gaus_extension_limits(cen, wid, dec, factor=tail_factor)
+            x_min, x_max = calculate_gaus_extension_limits(cen, wid, factor=tail_factor)
+            # best_x, best_fit_y = extrapolate_gaussian_decay(
+            #     amp, cen, wid, dec, x_min, x_max, step=0.0001)
+            best_x, best_fit_y = extrapolate_gaussian(
+                amp, cen, wid, x_min, x_max, step=0.0001)
         else:
             # pure symmetric Gaussian fallback
-            x_min, x_max = calculate_gaus_extension_limits(cen, wid, 0, factor=tail_factor)
+            x_min, x_max = calculate_gaus_extension_limits(cen, wid, factor=tail_factor)
             best_x, best_fit_y = extrapolate_gaussian(
                 best_x, amp, cen, wid, None, x_min, x_max, step=0.0001)
         new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
@@ -383,17 +390,19 @@ def _fit_single_gaussian(x_full, y_full, ind_peak, smoothing_params, pk_sns, gi,
     y = y_full[left:right + 1]
     h, c, w = estimate_initial_gaussian_params(x, y, ind_peak)
     center_idx = (np.abs(x - c[0])).argmin()
-    decay_init = estimate_initial_decay(x, y, center_idx)
-    p0 = [h[0], c[0], w[0], decay_init]
+    # decay_init = estimate_initial_decay(x, y, center_idx)
+    p0 = [h[0], c[0], w[0]]#, decay_init]
     # p0 = [h[0], c[0], w[0], 0.1]
-    bounds = ([0.9 * y_full[ind_peak], x_full[ind_peak] - 0.1, 0.5 * w[0], 0.01],
-              [1 + y_full[ind_peak], x_full[ind_peak] + 0.1, 1.5 * w[0], 2])
+    bounds = ([0.9 * y_full[ind_peak], x_full[ind_peak] - 0.1, 0.5 * w[0]],
+              [1 + y_full[ind_peak], x_full[ind_peak] + 0.1, 1.5 * w[0]])
 
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            popt, pcov = curve_fit(gaussian_decay, x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=gi)
-        fitted_y = gaussian_decay(x, *popt)
+            # popt, pcov = curve_fit(gaussian_decay, x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=gi)
+            popt, pcov = curve_fit(individual_gaussian, x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=gi)
+        # fitted_y = gaussian_decay(x, *popt)
+        fitted_y = individual_gaussian(x, *popt)
         error = np.sqrt(np.mean((fitted_y - y) ** 2))
         if error < current_best_error:
             return x, fitted_y, popt, pcov, error
@@ -401,8 +410,10 @@ def _fit_single_gaussian(x_full, y_full, ind_peak, smoothing_params, pk_sns, gi,
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                popt, pcov = curve_fit(gaussian_decay, x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=gi * 1000)
-            fitted_y = gaussian_decay(x, *popt)
+                # popt, pcov = curve_fit(gaussian_decay, x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=gi * 1000)
+                popt, pcov = curve_fit(individual_gaussian, x, y, p0=p0, method="dogbox", bounds=bounds, maxfev=gi * 1000)
+            # fitted_y = gaussian_decay(x, *popt)
+            fitted_y = individual_gaussian(x, *popt)
             error = np.sqrt(np.mean((fitted_y - y) ** 2))
             if error < current_best_error:
                 return x, fitted_y, popt, pcov, error
@@ -498,44 +509,153 @@ def draw_positive_mvnorm3(mu3, cov3, n_samples, max_attempts=10000):
     return np.array(out[:n_samples])
 
 
-def peak_area_distribution( params, params_uncertainty, ind, x, x_full, ind_peak, multi, smoothing_params, pk_sns, n_samples= 100):
+# def peak_area_distribution( params, params_uncertainty, ind, x, x_full, ind_peak, multi, smoothing_params, pk_sns, n_samples= 100):
+#     area_ensemble = []
+#     if multi:
+#         amp_i, cen_i, wid_i = params[ind * 3], params[ind * 3 + 1], params[ind * 3 + 2]
+#         start = 3*ind
+#         end = start+3
+#         pcov = params_uncertainty[start:end, start:end]
+#         samples = draw_positive_mvnorm3( np.array([amp_i, cen_i, wid_i]), pcov, n_samples)
+#         for i in range(n_samples):
+#             amp, cen, wid = samples[i]
+#             wid = max(wid, 1e-6)  # numerical safety
+#             # generate the curve for this component
+#             best_fit_y = individual_gaussian(x, amp, cen, wid)
+#             best_x, best_fit_y = extrapolate_gaussian(x, amp, cen, wid, None, x.min() - 1, x.max() + 1, step=1e-4)
+#             new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
+#             left_boundary, right_boundary = calculate_boundaries(best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
+#             best_x = best_x[left_boundary - 1 : right_boundary + 1]
+#             best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
+#             # clip tiny negatives
+#             best_fit_y = np.maximum(best_fit_y, 0)
+#             area_ensemble.append(simpson(y=best_fit_y, x=best_x))
+#     else:
+#         p = np.asarray(params)
+#         C = np.asarray(params_uncertainty)
+#         p3 = p[:3]
+#         C3 = C[:3, :3]
+#         alpha = p[3] if p.size >= 4 else None  # asymmetric shape if provided
+    
+#         samples = draw_positive_mvnorm(p3, C3, n_samples)
+#         for i in range(n_samples):
+#             amp, cen, wid = samples[i]
+#             wid = max(abs(wid), 1e-6)
+#             x_min, x_max = calculate_gaus_extension_limits(cen, wid, factor=2)
+#             if alpha is not None:
+#                 best_x, best_fit_y = extrapolate_gaussian(
+#                     x=x, amp=amp, cen=cen, wid=wid, skew=alpha, x_min=x_min, x_max=x_max, step=1e-4)
+#             else:
+#                 best_x, best_fit_y = extrapolate_gaussian(
+#                     # x, amp, cen, wid, x_min, x_max, step=1e-4)
+#                     x=x, amp=amp, cen=cen, wid=wid, skew=None, x_min=x_min, x_max=x_max, step=1e-4)
+    
+#             new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
+#             left_boundary, right_boundary = calculate_boundaries_acceleration(
+#                 best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
+    
+#             best_x = best_x[left_boundary - 1: right_boundary + 1]
+#             best_fit_y = best_fit_y[left_boundary - 1: right_boundary + 1]
+    
+#             area_ensemble.append(simpson(y=best_fit_y, x=best_x))
+    
+#     return np.median(area_ensemble), area_ensemble
+
+def _clamped_segment(x_arr, y_arr, L, R):
+    n = len(x_arr)
+    # clamp
+    L = max(L, 0)
+    R = min(R, n - 1)
+    if R < L:
+        return None, None
+    # expand by 1 safely
+    L = max(L - 1, 0)
+    R = min(R + 1, n - 1)
+    xs = x_arr[L:R + 1]
+    ys = y_arr[L:R + 1]
+    if xs.size == 0 or ys.size == 0:
+        return None, None
+    return xs, ys
+
+
+
+
+def peak_area_distribution(params, params_uncertainty, ind, x, x_full, ind_peak,
+                           multi, smoothing_params, pk_sns, n_samples=100):
+    def _integrate_segment(best_x, best_y, multi_flag):
+        import numpy as np
+        from scipy.integrate import simpson
+
+        # locate peak index in *current* window
+        # (if best_x is empty, bail)
+        if best_x.size == 0 or best_y.size == 0:
+            return 0.0
+
+        new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
+        if multi_flag:
+            L, R = calculate_boundaries(best_x, best_y, new_ind_peak, smoothing_params, pk_sns)
+        else:
+            L, R = calculate_boundaries_acceleration(best_x, best_y, new_ind_peak, smoothing_params, pk_sns)
+
+        xs, ys = _clamped_segment(best_x, best_y, L, R)
+        if xs is None:
+            return 0.0  # safe fallback; alternatively return np.nan
+
+        ys = np.maximum(ys, 0.0)
+        if xs.size < 2:
+            return 0.0
+        return simpson(y=ys, x=xs)
     area_ensemble = []
     if multi:
-        amp_i, cen_i, wid_i = params[ind * 3], params[ind * 3 + 1], params[ind * 3 + 2]
-        start = 3*ind
-        end = start+3
+        start, end = 3 * ind, 3 * ind + 3
+        amp_i, cen_i, wid_i = params[start:end]
         pcov = params_uncertainty[start:end, start:end]
-        samples = draw_positive_mvnorm3( np.array([amp_i, cen_i, wid_i]), pcov, n_samples)
-        for i in range(n_samples):
-            amp, cen, wid = samples[i]
-            wid = max(wid, 1e-6)  # numerical safety
-            # generate the curve for this component
-            best_fit_y = individual_gaussian(x, amp, cen, wid)
-            best_x, best_fit_y = extrapolate_gaussian(x, amp, cen, wid, None, x.min() - 1, x.max() + 1, step=1e-4)
-            new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
-            left_boundary, right_boundary = calculate_boundaries(best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
-            best_x = best_x[left_boundary - 1 : right_boundary + 1]
-            best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
-            # clip tiny negatives
-            best_fit_y = np.maximum(best_fit_y, 0)
-            area_ensemble.append(simpson(y=best_fit_y, x=best_x))
+        wid0 = max(wid_i, 1e-6)
+        _ = individual_gaussian(x, amp_i, cen_i, wid0)  
+        best_x0, best_y0 = extrapolate_gaussian(
+            x=x, amp=amp_i, cen=cen_i, wid=wid0, skew=None,
+            x_min=x.min() - 1, x_max=x.max() + 1, step=1e-4)
+        area_nominal = _integrate_segment(best_x0, best_y0, multi)
+        samples = draw_positive_mvnorm3(np.array([amp_i, cen_i, wid_i]), pcov, n_samples)
+        for amp, cen, wid in samples:
+            wid = max(wid, 1e-6)
+            _ = individual_gaussian(x, amp, cen, wid)
+            bx, by = extrapolate_gaussian(
+                x=x, amp=amp, cen=cen, wid=wid, skew=None,
+                x_min=x.min() - 1, x_max=x.max() + 1, step=1e-4)
+            area_ensemble.append(_integrate_segment(bx, by, multi))
     else:
-        samples = draw_positive_mvnorm(params, params_uncertainty,n_samples)
-        for i in range(n_samples): 
-            amp, cen, wid, decay = samples[i]
-            decay_eff = np.clip(decay, 0.0, 15.0)
+        p = np.asarray(params)
+        C = np.asarray(params_uncertainty)
+        amp0, cen0, wid0 = p[:3]
+        C3 = C[:3, :3]
+        alpha = p[3] if p.size >= 4 else None
+        wid00 = max(abs(wid0), 1e-6)
+        x_min0, x_max0 = calculate_gaus_extension_limits(cen0, wid00, factor=2)
+        if alpha is not None:
+            best_x0, best_y0 = extrapolate_gaussian(
+                x=x, amp=amp0, cen=cen0, wid=wid00, skew=alpha,
+                x_min=x_min0, x_max=x_max0, step=1e-4)
+        else:
+            best_x0, best_y0 = extrapolate_gaussian(
+                x=x, amp=amp0, cen=cen0, wid=wid00, skew=None,
+                x_min=x_min0, x_max=x_max0, step=1e-4)
+        area_nominal = _integrate_segment(best_x0, best_y0, multi)
+
+        samples = draw_positive_mvnorm(np.array([amp0, cen0, wid0]), C3, n_samples)
+        for amp, cen, wid in samples:
             wid = max(abs(wid), 1e-6)
-            x_min, x_max = calculate_gaus_extension_limits(cen, wid, decay_eff, factor=2)#3)
-            # Use decay extrapolator
-            best_x, best_fit_y = extrapolate_gaussian_decay(
-                amp, cen, wid, decay_eff, x_min, x_max, step=1e-4)
-            new_ind_peak = (np.abs(best_x - x_full[ind_peak])).argmin()
-            left_boundary, right_boundary = calculate_boundaries_acceleration(
-                best_x, best_fit_y, new_ind_peak, smoothing_params, pk_sns)
-            best_x = best_x[left_boundary - 1 : right_boundary + 1]
-            best_fit_y = best_fit_y[left_boundary - 1 : right_boundary + 1]
-            area_ensemble.append(simpson(y=best_fit_y, x=best_x))
-    return np.median(area_ensemble), area_ensemble
+            x_min, x_max = calculate_gaus_extension_limits(cen, wid, factor=2)
+            if alpha is not None:
+                bx, by = extrapolate_gaussian(
+                    x=x, amp=amp, cen=cen, wid=wid, skew=alpha,
+                    x_min=x_min, x_max=x_max, step=1e-4)
+            else:
+                bx, by = extrapolate_gaussian(
+                    x=x, amp=amp, cen=cen, wid=wid, skew=None,
+                    x_min=x_min, x_max=x_max, step=1e-4)
+            area_ensemble.append(_integrate_segment(bx, by, multi))
+    return area_nominal, area_ensemble
     
 def debug_param_distribution(mu, cov, n_draw=5000):
     """
@@ -767,23 +887,18 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
                     smoothing_params=smoothing_params, pk_sns=pk_sns)
             else:
                 peak_neighborhood = [peak_idx]
-        
             x_fit, y_fit_smooth, area_smooth, area_ensemble, model_parameters = fit_gaussians(
                 xdata, y_bcorr, peak_idx, peak_neighborhood,
                 smoothing_params, pk_sns, gi=gi, mode=gaussian_fit_mode)
             plt.fill_between(x_fit, 0, y_fit_smooth, color="red", alpha=0.5, zorder=1)
-            
-            # Label
             x_peak_label = x_fit[np.argmax(y_fit_smooth)]
             y_peak_label = max(y_fit_smooth)
             plt.text(x_peak_label, y_peak_label * 1.05, label,
             ha='center', va='bottom',
             fontsize=8, color='black', rotation=0,
             zorder=2, bbox=dict(facecolor='white', edgecolor='none', alpha=0))
-            # plt.axhline(0, c = 'k')
-            
-            # Assign data to output
             data['Samples'][key]['Processed Data'][label] = {
+                 'Peak Area - best fit': area_smooth,
                  'Peak Area - median': np.median(area_ensemble),
                  'Peak Area - mean': np.mean(area_ensemble),
                  'Peak Area - standard deviation': np.std(area_ensemble, ddof=1),
