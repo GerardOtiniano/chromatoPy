@@ -321,7 +321,7 @@ def fit_gaussians(x_full, y_full, ind_peak, peaks, smoothing_params, pk_sns, gi,
             # best_x, best_fit_y = extrapolate_gaussian_decay(
             #     amp, cen, wid, dec, x_min, x_max, step=0.0001)
             best_x, best_fit_y = extrapolate_gaussian(
-                amp, cen, wid, x_min, x_max, step=0.0001)
+                best_x, amp, cen, wid, None, x_min, x_max, step=0.0001)
         else:
             # pure symmetric Gaussian fallback
             x_min, x_max = calculate_gaus_extension_limits(cen, wid, factor=tail_factor)
