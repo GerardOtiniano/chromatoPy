@@ -46,6 +46,7 @@ class GDGTAnalyzer:
         self.max_peak_amp = max_PA
         self.debug = debug
         self.cheers = cheers
+        self.baseline_threshold=0
         
 
     def run(self):
@@ -1262,14 +1263,24 @@ class GDGTAnalyzer:
             valleys = self.find_valleys(y_bcorr, peaks)
             A, B, peak_neighborhood = self.find_peak_neighborhood_boundaries(xdata, y_bcorr, self.peaks[trace], valleys, peak_idx, ax, self.max_peaks_for_neighborhood, trace)
             x_fit, y_fit_smooth, area_smooth, model_params, model_params_unc, model_type = self.fit_gaussians(xdata, y_bcorr, peak_idx, trace, peak_neighborhood, ax, valleys)
+            rt_of_peak = xdata[peak_idx]
+            # Test for peak amplitude
+            amp = None
+            if model_params is not None:
+                try:
+                    amp = float(model_params[0])  # [Amplitude, Center, Width]
+                except Exception:
+                    amp = None
+            threshold = getattr(self, "baseline_threshold", 0.0)
+            subthreshold = (amp is None) or np.isnan(amp) or (amp < threshold)
+            if subthreshold:
+                self._register_no_peak(ax, ax_idx, rt_of_peak, trace)
+                return
             fill = ax.fill_between(x_fit, 0, y_fit_smooth, color="grey", alpha=0.5)
             rt_of_peak = xdata[peak_idx]
             area_text = f"Area: {area_smooth:.0f}\nRT: {rt_of_peak:.0f}"
             text_annotation = ax.annotate(area_text, xy=(rt_of_peak + 1.5, y_fit_smooth.max() * 0.5), textcoords="offset points", xytext=(0, 10), ha="center", fontsize=8, color="grey")
-            # self.integrated_peaks contains eventual output information
-            # self.integrated_peaks[(ax_idx, peak_idx)] = {"fill": fill, "area": area_smooth, "rt": rt_of_peak, "text": text_annotation, "trace": trace,
-            #                                              "model_type": model_type,"params": tuple(model_params) if model_params is not None else None,
-            #                                              "params_unc": tuple(model_params_unc) if model_params_unc is not None else None,}
+
             self.integrated_peaks[(ax_idx, peak_idx)] = {
                 "fill": fill,
                 "text": text_annotation,
@@ -1336,7 +1347,6 @@ class GDGTAnalyzer:
                 a_u = c_u = w_u = float("nan")
             else:
                 a_u, c_u, w_u = (float(model_params_unc[0]), float(model_params_unc[1]), float(model_params_unc[2]))
-            
             self.peak_results[trace]["Model Parameters"]["Amplitude"].append(a)
             self.peak_results[trace]["Model Parameters"]["Center"].append(c)
             self.peak_results[trace]["Model Parameters"]["Width"].append(w)
@@ -1428,6 +1438,7 @@ class GDGTAnalyzer:
 
         # Baseline correction and smoothing on the full dataset
         y_base, min_peak_amp = self.baseline(x_values, y)
+        self.baseline_threshold=min_peak_amp
         y_bcorr = y - y_base
         y_bcorr[y_bcorr < 0] = 0
         y_filtered = self.smoother(y_bcorr)
@@ -1468,239 +1479,8 @@ class GDGTAnalyzer:
         self.peaks[trace] = peaks_total
         self.peak_properties[trace] = properties
         self.peaks_indices[trace_idx] = peaks_total
+
 # Baseline
-    # def _robust_sigma_amp(self, c):
-    #     # robust noise from first difference
-    #     d = np.diff(np.asarray(c, float))
-    #     mad = 1.4826 * np.median(np.abs(d - np.median(d)))
-    #     sigma_amp = mad / np.sqrt(2.0)
-    #     if not np.isfinite(sigma_amp) or sigma_amp <= 0:
-    #         sigma_amp = 0.0
-    #     return float(sigma_amp)
-    
-    # def _estimate_typical_width_points(self, x, y):
-    #     """
-    #     Two-pass: conservative SNIP-A -> corrected -> widths from find_peaks.
-    #     Returns median width in SAMPLES, or None if not enough peaks.
-    #     """
-    #     # SNIP-A: conservative, length-based
-    #     bA, cA = self.snip_baseline(y, peak_width_points=None, max_iter=None, pad_edges=True)
-    
-    #     # Smooth a bit for peak finding stability (you already have smoother)
-    #     cS = self.smoother(np.clip(cA, 0, None))
-    
-    #     # Prominence from noise on corrected signal
-    #     sig = self._robust_sigma_amp(cS)
-    #     prom = max(5.0 * sig, 1e-12)  # k=5 default
-    
-    #     # Find peaks and widths at 50% height
-    #     peaks, props = find_peaks(cS, prominence=prom)
-    #     if peaks.size < 3:
-    #         # Try a touch less strict if nothing shows
-    #         peaks, props = find_peaks(cS, prominence=max(3.0 * sig, 1e-12))
-    #     if peaks.size < 3:
-    #         return None
-    
-    #     w, _, _, _ = peak_widths(cS, peaks, rel_height=0.5)  # width in samples
-    #     w = w[np.isfinite(w) & (w > 1)]
-    #     if w.size == 0:
-    #         return None
-    
-    #     # Robust typical width = median with clipping
-    #     n = len(y)
-    #     w_med = np.median(w)
-    #     w_med = int(np.clip(w_med, 10, max(20, n // 10)))  # guardrails
-    #     return w_med
-        
-    # def _lls(self, x):
-    #     # Log-Log-Sqrt compression; assumes x >= 0 (clip small negatives to 0)
-    #     x = np.clip(x, 0, None)
-    #     return np.log(np.log(np.sqrt(x + 1.0) + 1.0) + 1.0)
-
-    # def _inv_lls(self, y):
-    #     # Inverse of Log-Log-Sqrt
-    #     return (np.exp(np.exp(y) - 1.0) - 1.0)**2 - 1.0
-
-    # def snip_baseline(self, y, *, peak_width_points=None, max_iter=None, pad_edges=True):
-    #     y = np.asarray(y, dtype=float)
-    
-    #     # Fill NaNs
-    #     if np.isnan(y).any():
-    #         yy = y.copy()
-    #         mask = np.isnan(yy)
-    #         idx = np.where(~mask, np.arange(len(yy)), 0)
-    #         np.maximum.accumulate(idx, out=idx)
-    #         yy[mask] = yy[idx[mask]]
-    #         if np.isnan(yy[0]):
-    #             first = np.flatnonzero(~np.isnan(y))[0]
-    #             yy[:first] = yy[first]
-    #         y = yy
-    
-    #     # Compress
-    #     z  = self._lls(y)
-    #     n  = z.size
-    
-    #     # Iterations (priority: explicit max_iter > width-based > conservative fallback)
-    #     if max_iter is None:
-    #         if peak_width_points is not None:
-    #             req = int(max(10, round(0.6 * peak_width_points)))   # α=0.6
-    #         else:
-    #             req = max(20, int(0.002 * n))                        # conservative SNIP-A fallback
-    #         max_iter = min(req, max(1, n // 2 - 1))
-    
-    #     # Optional reflect padding to stabilize edges
-    #     if pad_edges and max_iter > 0:
-    #         zf = np.pad(z, (max_iter, max_iter), mode="reflect").copy()
-    #         Np = zf.size
-    #         for m in range(1, max_iter + 1):
-    #             interior = Np - 2*m
-    #             if interior <= 0: break
-    #             left   = zf[:interior]
-    #             right  = zf[2*m:2*m+interior]
-    #             center = zf[m:m+interior]
-    #             zf[m:m+interior] = np.minimum(center, 0.5*(left + right))
-    #         zf = zf[max_iter:-max_iter]  # unpad
-    #     else:
-    #         zf = z.copy()
-    #         for m in range(1, max_iter + 1):
-    #             interior = n - 2*m
-    #             if interior <= 0: break
-    #             left   = zf[:interior]
-    #             right  = zf[2*m:2*m+interior]
-    #             center = zf[m:m+interior]
-    #             zf[m:m+interior] = np.minimum(center, 0.5*(left + right))
-    
-    #     baseline  = self._inv_lls(zf)
-    #     baseline  = np.clip(baseline, 0, np.max(y))
-    #     corrected = y - baseline
-    #     return baseline, corrected
-
-    
-    # def baseline(self, x, y, *args, **kwargs):
-    #     y = np.asarray(y, float)
-    
-    #     # choose lam and p from data
-    #     dx = np.median(np.diff(np.asarray(x, float))) if len(x) > 1 else 1.0
-    #     span = (x.max() - x.min()) if len(x) else 1.0
-    
-    #     # Rule of thumb:
-    #     # - lam controls smoothness (bigger = smoother). Start 1e6–1e7 for LC.
-    #     # - p << 0.5 protects positive peaks; 0.001–0.01 typical.
-    #     # If sampling is very fine (small dx), increase lam.
-    #     lam = 1e6 * max(1.0, (span / max(dx, 1e-6)) / 200.0)   # scale with samples per span
-    #     p   = 0.002                                            # aggressive protection of positives
-    
-    #     b, info = asls(y, lam=lam, p=p, max_iter=50)           # smooth, valley-preserving
-    #     b = np.maximum(b, 0.0)
-    #     c = np.clip(y - b, 0, None)
-    
-    #     # robust noise on c for a defensible detection floor
-    #     d = np.diff(c)
-    #     mad = 1.4826 * np.median(np.abs(d - np.median(d)))
-    #     sigma = (mad / np.sqrt(2.0)) if (mad > 0 and np.isfinite(mad)) else 0.0
-    #     k = 5.0
-    #     dyn = np.nanpercentile(y, 99) - np.nanpercentile(y, 1)
-    #     abs_floor = 0.005 * dyn
-    #     rel_floor = 0.02 * np.nanmedian(b) if np.isfinite(np.nanmedian(b)) else 0.0
-    #     min_peak_amp = max(k * sigma, abs_floor, rel_floor)
-    #     return b, float(min_peak_amp*3)
-    
-    # def baseline(self, x, y, deg=5, max_it=1000, tol=1e-4):
-    #     """
-    #     Performs baseline correction on the input signal using an iterative polynomial fitting approach.
-
-    #     Parameters
-    #     ----------
-    #     y : numpy.ndarray or pandas.Series
-    #         The input signal (e.g., chromatographic data) that requires baseline correction.
-    #     deg : int, optional
-    #         The degree of the polynomial used for fitting the baseline. Default is 5.
-    #     max_it : int, optional
-    #         The maximum number of iterations for the baseline fitting process. Default is 50.
-    #     tol : float, optional
-    #         The tolerance for stopping the iteration when the change in coefficients becomes small. Default is 1e-4.
-
-    #     Returns
-    #     -------
-    #     base : numpy.ndarray
-    #         The estimated baseline for the input signal.
-
-    #     Notes
-    #     -----
-    #     - The function iteratively fits a polynomial baseline to the input signal, adjusting the coefficients until convergence
-    #       based on the specified tolerance (`tol`).
-    #     - If the difference between the old and new coefficients becomes smaller than the tolerance, the iteration stops early.
-    #     - Negative values in the baseline-corrected signal are set to zero to avoid unrealistic baseline values.
-    #     """
-    #     # original_y = y.copy()
-    #     # order = deg + 1
-    #     # coeffs = np.ones(order)
-    #     # cond = math.pow(abs(y).max(), 1.0 / order)
-    #     # x = np.linspace(0.0, cond, y.size)  # Ensure this generates the expected range
-    #     # base = y.copy()
-    #     # vander = np.vander(x, order)  # Could potentially generate huge matrix if misconfigured
-    #     # vander_pinv = np.linalg.pinv(vander)
-    #     # for _ in range(max_it):
-    #     #     coeffs_new = np.dot(vander_pinv, y)
-    #     #     if np.linalg.norm(coeffs_new - coeffs) / np.linalg.norm(coeffs) < tol:
-    #     #         break
-    #     #     coeffs = coeffs_new
-    #     #     base = np.dot(vander, coeffs)
-    #     #     y = np.minimum(y, base)
-    #     baseline, corrected = self.snip_baseline(y)
-
-    #     # Calculate maximum peak amplitude (3 x baseline amplitude)
-    #     N = len(y)
-    #     smooth_hw = max(5, min(N//20, 51))     # e.g., ~5% of series length
-    #     interp_hw = max(5, min(N//10, 101))
-    #     num_std = 2.5
-    #     baseline_fitter = Baseline(x)
-    #     # fit, params_mask = baseline_fitter.std_distribution(y, 45)#, smooth_half_window=10)
-    #     fit, params_mask = baseline_fitter.std_distribution(y, smooth_half_window=smooth_hw, interp_half_window=interp_hw, num_std=num_std)
-    #     mask = params_mask['mask'] #  Mask for regions of signal without peaks
-    #     if not np.any(mask):
-    #         # robust noise from first-difference
-    #         dif = np.diff(y)
-    #         mad = 1.4826 * np.median(np.abs(dif - np.median(dif))) / np.sqrt(2.0)
-    #         if mad == 0 or not np.isfinite(mad):
-    #             # last resort: take middle 60% as baseline-ish
-    #             lo, hi = int(0.2*N), int(0.8*N)
-    #             mask = np.zeros(N, bool); mask[lo:hi] = True
-    #         else:
-    #             # baseline-ish points are where |y - median| < k * mad
-    #             k = 3.0
-    #             mask = np.abs(y - np.median(y)) < k * mad
-    #     # min_peak_amp = (y[mask].max()-y[mask].min())*3
-    #     min_peak_amp = (np.std(y[mask]))*3 # 2 sigma times 3
-    #     print(f"Minimum amplitude: {min_peak_amp}")
-    #     # min_peak_amp = (base.max()-base.min())*3
-    #     # min_peak_amp = np.std(original_y-base)*3
-    #     return baseline, min_peak_amp # return base
-    
-    # def baseline(self, x, y, deg=5, max_it=1000, tol=1e-4):
-    #     # Final SNIP with width-aware iterations
-    #     w_pts = self._estimate_typical_width_points(x, y)
-    #     b, c = self.snip_baseline(y, peak_width_points=w_pts, max_iter=None, pad_edges=True)
-    
-    #     # --- minimum peak amplitude ---
-    #     c = np.clip(c, 0, None)
-    #     sigma_amp = self._robust_sigma_amp(c)
-    
-    #     # k-sigma rule (defensible)
-    #     k = 5.0
-    #     t_k = k * sigma_amp
-    
-    #     # floors to prevent silly small thresholds
-    #     dyn = np.nanpercentile(y, 99) - np.nanpercentile(y, 1)
-    #     abs_floor = 0.005 * dyn                      # 0.5% of dynamic range
-    #     rel_floor = 0.02 * (np.nanmedian(b) if np.isfinite(np.nanmedian(b)) else 0.0)  # 2% of baseline level
-    
-    #     min_peak_amp = max(t_k, abs_floor, rel_floor)
-    #     print(min_peak_amp)
-    #     min_peak_amp = min_peak_amp*3
-    #     print(min_peak_amp)
-    #     return b, float(min_peak_amp)
-
     def asls_baseline(self, y, lam=1e6, p=0.001, max_iter=50, conv_thresh=1e-6, return_info=True):
         """
         Asymmetric Least Squares baseline (Eilers & Boelens, 2005).
@@ -1899,18 +1679,33 @@ class GDGTAnalyzer:
                     self.nice()
                 break
         if not peak_found:
-            self._nopeak_id += 1
-            no_peak_key = (ax_idx, f"nopeak-{self._nopeak_id}")
-            line = ax.axvline(event.xdata, color="grey", linestyle="--", zorder=-1)
-            text = ax.text(event.xdata + 2, (ax.get_ylim()[1] / 10) * 0.7, "No peak\n" + str(np.round(event.xdata)), color="grey", fontsize=8)
-            self.no_peak_lines[no_peak_key] = (line, text)
-            self.integrated_peaks[no_peak_key] = {"area": 0, "rt": event.xdata, "text": text, "line": [line], "trace": trace}
-            self.action_stack.append(("add_nopeak", ax, no_peak_key))
-            if self.cheers:
-                self.oof()
-            plt.grid(False)
-            plt.draw()
-
+            self._register_no_peak(ax, ax_idx, event.xdata, trace, line_color='grey')
+            # self._nopeak_id += 1
+            # no_peak_key = (ax_idx, f"nopeak-{self._nopeak_id}")
+            # line = ax.axvline(event.xdata, color="grey", linestyle="--", zorder=-1)
+            # text = ax.text(event.xdata + 2, (ax.get_ylim()[1] / 10) * 0.7, "No peak\n" + str(np.round(event.xdata)), color="grey", fontsize=8)
+            # self.no_peak_lines[no_peak_key] = (line, text)
+            # self.integrated_peaks[no_peak_key] = {"area": 0, "rt": event.xdata, "text": text, "line": [line], "trace": trace}
+            # self.action_stack.append(("add_nopeak", ax, no_peak_key))
+            # if self.cheers:
+            #     self.oof()
+            # plt.grid(False)
+            # plt.draw()
+    def _register_no_peak(self, ax, ax_idx, x_pos, trace, line_color):
+        self._nopeak_id += 1
+        no_peak_key = (ax_idx, f"nopeak-{self._nopeak_id}")
+        line = ax.axvline(x_pos, color="grey", linestyle="--", zorder=-1)
+        text = ax.text(x_pos + 2, (ax.get_ylim()[1] / 10) * 0.7,
+                       "No peak\n" + str(np.round(x_pos)), color=line_color, fontsize=8)
+        self.no_peak_lines[no_peak_key] = (line, text)
+        self.integrated_peaks[no_peak_key] = {
+            "area": 0, "rt": float(x_pos), "text": text, "line": [line], "trace": trace}
+        self.action_stack.append(("add_nopeak", ax, no_peak_key))
+        if self.cheers:
+            self.oof()
+        plt.grid(False)
+        plt.draw()
+        
     def auto_select_peaks(self):
         """
         Automatically selects peaks based on reference retention times for each compound in the dataset.
@@ -1958,16 +1753,17 @@ class GDGTAnalyzer:
                                             self.nice()
                                         break
                                 if not peak_found:
-                                    self._nopeak_id += 1
-                                    no_peak_key = (ax_idx, f"nopeak-{self._nopeak_id}")
-                                    line = ax.axvline(ref_peak, color="red", linestyle="--", alpha=0.5)
-                                    text = ax.text(ref_peak + 2, ax.get_ylim()[1] * 0.5, "No peak\n" + str(np.round(ref_peak)), color="grey", fontsize=8)
-                                    self.no_peak_lines[no_peak_key] = (line, text)
-                                    self.integrated_peaks[no_peak_key] = {"area": 0, "rt": ref_peak, "trace": trace}
-                                    self.action_stack.append(("add_line", ax, no_peak_key))
-                                    if self.cheers:
-                                        self.oof()
-                                    plt.draw()
+                                    self._register_no_peak(ax, ax_idx, ref_peak, trace, line_color = 'red')
+                                    # self._nopeak_id += 1
+                                    # no_peak_key = (ax_idx, f"nopeak-{self._nopeak_id}")
+                                    # line = ax.axvline(ref_peak, color="red", linestyle="--", alpha=0.5)
+                                    # text = ax.text(ref_peak + 2, ax.get_ylim()[1] * 0.5, "No peak\n" + str(np.round(ref_peak)), color="grey", fontsize=8)
+                                    # self.no_peak_lines[no_peak_key] = (line, text)
+                                    # self.integrated_peaks[no_peak_key] = {"area": 0, "rt": ref_peak, "trace": trace}
+                                    # self.action_stack.append(("add_line", ax, no_peak_key))
+                                    # if self.cheers:
+                                    #     self.oof()
+                                    # plt.draw()
     
     def _empty_trace_bucket(self):
         return {
