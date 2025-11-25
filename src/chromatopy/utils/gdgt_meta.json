@@ -28,7 +28,7 @@
     ]
   },
   "isoGDGTs": {
-    "checked": false,
+    "checked": true,
     "traces": {
       "1302": "GDGT-0",
       "1300": "GDGT-1",

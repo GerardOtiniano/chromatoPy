@@ -1363,40 +1363,79 @@ class GDGTAnalyzer:
     ######################################################
     ################      Plot      ######################
     ######################################################
+    # def add_window_controls(self):
+    #     """
+    #     Adds interactive TextBox widgets to the existing figure so that the user can change the x-window.
+    #     This method does not re-create the entire plot.
+    #     """
+    #     # If controls already exist, do nothing or toggle visibility.
+    #     if hasattr(self, "window_controls_added") and self.window_controls_added:
+    #         return
+
+    #     fig = self.fig  # Use the stored figure
+
+    #     # Create new axes for the text boxes in normalized coordinates
+    #     axbox_min = fig.add_axes([0.25, 0.025, 0.05, 0.02])
+    #     axbox_max = fig.add_axes([0.65, 0.025, 0.05, 0.02])
+    #     text_box_min = TextBox(axbox_min, 'Window start: ', initial=str(self.window_bounds[0]))
+    #     text_box_max = TextBox(axbox_max, 'Window end: ', initial=str(self.window_bounds[1]))
+
+    #     def submit_callback(text):
+    #         try:
+    #             new_xmin = float(text_box_min.text)
+    #             new_xmax = float(text_box_max.text)
+    #             self.window_bounds = [new_xmin, new_xmax]
+    #             for i, ax in enumerate(self.axs):
+    #                 ax.set_xlim(self.window_bounds)
+                    
+    #                 # Rescale y boundaries
+    #                 ax.relim()
+    #                 ax.autoscale_view(scalex=False,         
+    #                                   scaley=True)   
+    #             fig.canvas.draw_idle()
+    #         except Exception as e:
+    #             print("Invalid input for window boundaries:", e)
+
+    #     text_box_min.on_submit(submit_callback)
+    #     text_box_max.on_submit(submit_callback)
+    #     self.window_controls_added = True
+    #     plt.draw()
+        
     def add_window_controls(self):
         """
         Adds interactive TextBox widgets to the existing figure so that the user can change the x-window.
         This method does not re-create the entire plot.
         """
-        # If controls already exist, do nothing or toggle visibility.
-        if hasattr(self, "window_controls_added") and self.window_controls_added:
+        if getattr(self, "window_controls_added", False):
             return
-
-        fig = self.fig  # Use the stored figure
-
-        # Create new axes for the text boxes in normalized coordinates
+    
+        fig = self.fig
+    
         axbox_min = fig.add_axes([0.25, 0.025, 0.05, 0.02])
         axbox_max = fig.add_axes([0.65, 0.025, 0.05, 0.02])
-        text_box_min = TextBox(axbox_min, 'Window start: ', initial=str(self.window_bounds[0]))
-        text_box_max = TextBox(axbox_max, 'Window end: ', initial=str(self.window_bounds[1]))
-
+    
+        # Keep references on self so they don't get garbage-collected
+        self.text_box_min = TextBox(axbox_min, 'Window start: ', initial=str(self.window_bounds[0]))
+        self.text_box_max = TextBox(axbox_max, 'Window end: ',  initial=str(self.window_bounds[1]))
+    
         def submit_callback(text):
             try:
-                new_xmin = float(text_box_min.text)
-                new_xmax = float(text_box_max.text)
+                new_xmin = float(self.text_box_min.text)
+                new_xmax = float(self.text_box_max.text)
                 self.window_bounds = [new_xmin, new_xmax]
-                # For each subplot, update the x-limits (and update y-limits if desired)
-                for i, ax in enumerate(self.axs):
-                    # If you are updating data based on window bounds, you can filter your full data here.
-                    # Otherwise, simply update the limits.
+    
+                for ax in self.axs:
                     ax.set_xlim(self.window_bounds)
-                    # Optionally, update y-limits based on filtered data.
+                    ax.relim()
+                    ax.autoscale_view(scalex=False, scaley=True)
+    
                 fig.canvas.draw_idle()
             except Exception as e:
                 print("Invalid input for window boundaries:", e)
-
-        text_box_min.on_submit(submit_callback)
-        text_box_max.on_submit(submit_callback)
+    
+        self.text_box_min.on_submit(submit_callback)
+        self.text_box_max.on_submit(submit_callback)
+    
         self.window_controls_added = True
         plt.draw()
 
@@ -1825,14 +1864,14 @@ class GDGTAnalyzer:
 
             # Clear the corresponding entries in self.peak_results
             if trace_to_clear in self.peak_results:
-                # for key in self.peak_results[trace_to_clear].keys():
-                #     self.peak_results[trace_to_clear][key] = []
                 self.peak_results[trace_to_clear] = self._empty_trace_bucket()
+            self.axs[-1].set_xlabel("Corrected Retention Time (minutes)")
             plt.draw()
         elif event.key == "t":
             print(f"All peaks removed from {self.sample_name}. Reference peaks will be updated.")
             self.clear_all_peaks()
             self.t_pressed = True
+            self.axs[-1].set_xlabel("Corrected Retention Time (minutes)")
         elif event.key == "w":
             print("A new view!")
             self.add_window_controls()
