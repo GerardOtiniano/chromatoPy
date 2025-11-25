@@ -24,8 +24,7 @@ def folder_handling(folder_path):
     # Retrieve and sort CSV files
     csv_files = sorted(
         [f for f in os.listdir(folder_path) if f.endswith(".csv")],
-        key=numerical_sort_key  # Ensure numerical_sort_key is defined or imported
-    )
+        key=numerical_sort_key)
     
     # Define output directories and results file path
     output_folder = os.path.join(folder_path, "Output_chromatoPy")
@@ -41,8 +40,13 @@ def folder_handling(folder_path):
     ref_pk = {}
     
     # Prompt user for GDGTs of interest
-    gdgt_oi = get_gdgt_input()  # Ensure get_gdgt_input is defined or imported
-    gdgt_meta_set = get_gdgt(gdgt_oi)  # Ensure get_gdgt is defined or imported
+    # gdgt_oi = get_gdgt_input()  # Ensure get_gdgt_input is defined or imported
+    # gdgt_meta_set = get_gdgt(gdgt_oi)  # Ensure get_gdgt is defined or imported
+    # start from whatever hard-coded choice you want, e.g. "4" (all groups)
+    gdgt_meta_default = get_gdgt("4")
+    
+    # open the PyQt editor with the card layout
+    gdgt_meta_set = edit_gdgt_meta_qt(gdgt_meta_default)
     
     # Extract needed information
     default_windows = gdgt_meta_set["window"]
@@ -58,7 +62,7 @@ def folder_handling(folder_path):
         # "results_rts_path": results_rts_path,
         # "results_area_unc_path": results_area_unc_path,
         "ref_pk": ref_pk,
-        "gdgt_oi": gdgt_oi,
+        # "gdgt_oi": gdgt_oi,
         "gdgt_meta_set": gdgt_meta_set,
         "default_windows": default_windows,
         "names": names

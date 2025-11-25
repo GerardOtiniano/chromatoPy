@@ -1,0 +1,68 @@
+{
+  "Standard": {
+    "checked": true,
+    "traces": {
+      "744": "Internal Standard"
+    },
+    "window": [
+      10.0,
+      30.0
+    ]
+  },
+  "brGDGTs": {
+    "checked": true,
+    "traces": {
+      "1050": "IIIa, IIIa'', IIIa'",
+      "1048": "IIIb, IIIb'",
+      "1046": "IIIc, IIIc'",
+      "1036": "IIa, IIa'",
+      "1034": "IIb, IIb'",
+      "1032": "IIc, IIc'",
+      "1022": "Ia",
+      "1020": "Ib",
+      "1018": "Ic"
+    },
+    "window": [
+      25.0,
+      38.0
+    ]
+  },
+  "isoGDGTs": {
+    "checked": false,
+    "traces": {
+      "1302": "GDGT-0",
+      "1300": "GDGT-1",
+      "1298": "GDGT-2",
+      "1296": "GDGT-3",
+      "1292": "GDGT-4, GDGT-4'"
+    },
+    "window": [
+      0.0,
+      25.0
+    ]
+  },
+  "OH-GDGTs": {
+    "checked": true,
+    "traces": {
+      "1300": "OH-GDGT-0",
+      "1298": "OH-GDGT-1, 2OH-GDGT-0",
+      "1296": "OH-GDGT-2"
+    },
+    "window": [
+      35.0,
+      60.0
+    ]
+  },
+  "br-H-GDGTs": {
+    "checked": true,
+    "traces": {
+      "1020": "H-1020",
+      "1034": "H-1034",
+      "1048": "H-1048"
+    },
+    "window": [
+      45.0,
+      60.0
+    ]
+  }
+}

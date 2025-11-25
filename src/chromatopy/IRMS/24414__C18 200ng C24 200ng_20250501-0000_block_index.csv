@@ -1,0 +1,67 @@
+name,offset
+AS Method,481873
+CBlockData,29
+Continious Flow Data,632
+Continious Flow Data,676
+CUserInfo,961
+CUserInfo,1099
+CUserInfo,1257
+CUserInfo,1391
+CUserInfo,1453
+CUserInfo,1611
+CUserInfo,1761
+CUserInfo,1913
+CUserInfo,2063
+CUserInfo,2201
+DetectorDataBlock,480720
+DetectorDataBlock,480758
+Dilution List,481000
+Dilution List,481030
+Dilution List,481101
+Dilution List,481131
+File Header,159
+Filename,2849
+Filename,2869
+Filename,2941
+Filename,7502
+Filename,7522
+Filename,7594
+Filename,12134
+Filename,12154
+Filename,12226
+Filename,16634
+Filename,16654
+Filename,16726
+Filename,21220
+Filename,21240
+Filename,21312
+Gas Settings,2597
+Gas Settings,7304
+Gas Settings,11870
+Gas Settings,16502
+Gas Settings,21022
+GC Method,481727
+H2 Ion Correction Method,412091
+H2 Peak Find Method,442586
+H2 Standard Method,426693
+ISL Infos,760
+ISL Infos,782
+OrigDataBlock,206407
+OrigDataBlock,206437
+Peak Data ItemList,2756
+Peak Data ItemList,7426
+Peak Data ItemList,12058
+Peak Data ItemList,16558
+Peak Data ItemList,21144
+Plot Settings,2350
+Plot Settings,2380
+Plot Settings,2451
+RawDataBlock,26022
+RawDataBlock,26050
+Result Array,457478
+Result Array,457506
+Windows Settings,2521
+Windows Settings,7244
+Windows Settings,11810
+Windows Settings,16442
+Windows Settings,20962

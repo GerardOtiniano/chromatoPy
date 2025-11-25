@@ -71,7 +71,7 @@ def hplc_integration(folder_path=None, windows=True, peak_neighborhood_n=10, smo
     # results_rts_path = folder_info["results_rts_path"]
     # results_area_unc_path = folder_info["results_area_unc_path"]
     ref_pk            = folder_info["ref_pk"]
-    gdgt_oi           = folder_info["gdgt_oi"]
+    # gdgt_oi           = folder_info["gdgt_oi"]
     gdgt_meta_set     = folder_info["gdgt_meta_set"]
     default_windows   = folder_info["default_windows"]
     gdgt_groups       = folder_info['names']

@@ -1,0 +1,1773 @@
+CBlockData
+24414__C18 200ng C24 200ng_20250501-0000.dxf
+File Header
+Date
+Date
+RW2000TemplateName
+C:\Thermo\Isodat NT\Global\User\ConFlo IV Interface\GC IsoLink Device\Result Workshop\Default Result.IRW
+3.0
+94.12
+Continious Flow Data
+Continious Flow Data
+ISL Infos
+ISL Infos
+Set Sample Dilut..
+Set Sample Dilution to 0 [%]
+CUserInfo
+Sample dilution:..
+Sample dilution: 001 0
+CUserInfo
+Set Reference Di..
+Set Reference Dilution to 34 [%]
+CUserInfo
+Activate HTC Mod..
+Activate HTC Mode...
+CUserInfo
+CUserInfo
+Sample Barcode: ..
+Sample Barcode: Barcode not read
+CUserInfo
+Peak Center foun..
+Peak Center found at [59117]
+CUserInfo
+Sample Dilution ..
+Sample Dilution found at 0 []
+CUserInfo
+Set Sample Dilut..
+Set Sample Dilution to 0 [%]
+CUserInfo
+Sample dilution:..
+Sample dilution: 001 0
+CUserInfo
+ISL Errors
+ISL Errors
+Plot Settings
+Plot Settings
+Plot Settings
+Windows Settings
+Gas Settings
+Peak Data ItemList
+Filename
+Filename
+Filename
+Peak Nr.
+Peak Nr.
+Peak Nr.
+Component
+Component
+Component
+Master Peak
+Master Peak
+Master Peak
+Ref. Name
+Ref. Name
+Ref. Name
+Start
+Start
+%.1f
+[s]
+Start
+%.1f
+[s]
+End
+End
+%.1f
+[s]
+End
+Width
+Width
+%.1f
+[s]
+Width
+Sample Dilution
+Sample Dilution
+%.3f
+[%]
+Sample Dilution
+Ampl.1
+Ampl. 2
+%.0f
+[mV]
+Ampl.1
+Ampl.2
+Ampl. 3
+%.0f
+[mV]
+Ampl.2
+BGD1
+BGD 2
+%.1f
+[mV]
+BGD1
+BGD2
+BGD 3
+%.1f
+[mV]
+BGD2
+Intensity All
+Intensity All
+%.3f
+[Vs]
+Intensity All
+Intensity1
+Intensity 2
+%.3f
+[Vs]
+Intensity1
+Intensity2
+Intensity 3
+%.3f
+[Vs]
+Intensity2
+rIntensity All
+rIntensity All
+%.0f
+[mVs]
+rIntensity All
+rIntensity1
+rIntensity 2
+%.0f
+[mVs]
+rIntensity1
+rIntensity2
+rIntensity 3
+%.0f
+[mVs]
+rIntensity2
+R 3H2/2H2
+R 3H2/2H2
+R 3H2/2H2
+rR 3H2/2H2
+rR 3H2/2H2
+rR 3H2/2H2
+rd 3H2/2H2
+rd 3H2/2H2
+rd 3H2/2H2
+d 3H2/2H2
+d 3H2/2H2
+d 3H2/2H2
+DeltaDelta 3H2/2H2
+DeltaDelta 3H2/2H2
+%.3f
+[per mil]
+DeltaDelta 3H2/2H2
+Windows Settings
+Gas Settings
+Peak Data ItemList
+Filename
+Filename
+Filename
+Peak Nr.
+Peak Nr.
+Peak Nr.
+Component
+Component
+Component
+Master Peak
+Master Peak
+Master Peak
+Ref. Name
+Ref. Name
+Ref. Name
+Start
+Start
+%.1f
+[s]
+Start
+%.1f
+[s]
+End
+End
+%.1f
+[s]
+End
+Width
+Width
+%.1f
+[s]
+Width
+Sample Dilution
+Sample Dilution
+%.3f
+[%]
+Sample Dilution
+Ampl.1
+Ampl. 2
+%.0f
+[mV]
+Ampl.1
+Ampl.2
+Ampl. 3
+%.0f
+[mV]
+Ampl.2
+BGD1
+BGD 2
+%.1f
+[mV]
+BGD1
+BGD2
+BGD 3
+%.1f
+[mV]
+BGD2
+Intensity All
+Intensity All
+%.3f
+[Vs]
+Intensity All
+Intensity1
+Intensity 2
+%.3f
+[Vs]
+Intensity1
+Intensity2
+Intensity 3
+%.3f
+[Vs]
+Intensity2
+rIntensity All
+rIntensity All
+%.0f
+[mVs]
+rIntensity All
+rIntensity1
+rIntensity 2
+%.0f
+[mVs]
+rIntensity1
+rIntensity2
+rIntensity 3
+%.0f
+[mVs]
+rIntensity2
+R 3H2/2H2
+R 3H2/2H2
+R 3H2/2H2
+rR 3H2/2H2
+rR 3H2/2H2
+rR 3H2/2H2
+rd 3H2/2H2
+rd 3H2/2H2
+rd 3H2/2H2
+d 3H2/2H2
+d 3H2/2H2
+d 3H2/2H2
+DeltaDelta 3H2/2H2
+DeltaDelta 3H2/2H2
+%.3f
+[per mil]
+DeltaDelta 3H2/2H2
+Windows Settings
+Gas Settings
+Peak Data ItemList
+Filename
+Filename
+Filename
+Peak Nr.
+Peak Nr.
+Peak Nr.
+Component
+Component
+Component
+Master Peak
+Master Peak
+Master Peak
+Ref. Name
+Ref. Name
+Ref. Name
+Start
+Start
+%.1f
+[s]
+Start
+%.1f
+[s]
+End
+End
+%.1f
+[s]
+End
+Width
+Width
+%.1f
+[s]
+Width
+Sample Dilution
+Sample Dilution
+%.3f
+[%]
+Sample Dilution
+Ampl.1
+Ampl. 2
+%.0f
+[mV]
+Ampl.1
+Ampl.2
+Ampl. 3
+%.0f
+[mV]
+Ampl.2
+BGD1
+BGD 2
+%.1f
+[mV]
+BGD1
+BGD2
+BGD 3
+%.1f
+[mV]
+BGD2
+Intensity All
+Intensity All
+%.3f
+[Vs]
+Intensity All
+Intensity1
+Intensity 2
+%.3f
+[Vs]
+Intensity1
+Intensity2
+Intensity 3
+%.3f
+[Vs]
+Intensity2
+rIntensity All
+rIntensity All
+%.0f
+[mVs]
+rIntensity All
+rIntensity1
+rIntensity 2
+%.0f
+[mVs]
+rIntensity1
+rIntensity2
+rIntensity 3
+%.0f
+[mVs]
+rIntensity2
+R 3H2/2H2
+R 3H2/2H2
+R 3H2/2H2
+rR 3H2/2H2
+rR 3H2/2H2
+rR 3H2/2H2
+rd 3H2/2H2
+rd 3H2/2H2
+rd 3H2/2H2
+d 3H2/2H2
+d 3H2/2H2
+d 3H2/2H2
+DeltaDelta 3H2/2H2
+DeltaDelta 3H2/2H2
+%.3f
+[per mil]
+DeltaDelta 3H2/2H2
+Windows Settings
+Gas Settings
+Peak Data ItemList
+Filename
+Filename
+Filename
+Peak Nr.
+Peak Nr.
+Peak Nr.
+Component
+Component
+Component
+Master Peak
+Master Peak
+Master Peak
+Ref. Name
+Ref. Name
+Ref. Name
+Start
+Start
+%.1f
+[s]
+Start
+%.1f
+[s]
+End
+End
+%.1f
+[s]
+End
+Width
+Width
+%.1f
+[s]
+Width
+Sample Dilution
+Sample Dilution
+%.3f
+[%]
+Sample Dilution
+Ampl.1
+Ampl. 2
+%.0f
+[mV]
+Ampl.1
+Ampl.2
+Ampl. 3
+%.0f
+[mV]
+Ampl.2
+BGD1
+BGD 2
+%.1f
+[mV]
+BGD1
+BGD2
+BGD 3
+%.1f
+[mV]
+BGD2
+Intensity All
+Intensity All
+%.3f
+[Vs]
+Intensity All
+Intensity1
+Intensity 2
+%.3f
+[Vs]
+Intensity1
+Intensity2
+Intensity 3
+%.3f
+[Vs]
+Intensity2
+rIntensity All
+rIntensity All
+%.0f
+[mVs]
+rIntensity All
+rIntensity1
+rIntensity 2
+%.0f
+[mVs]
+rIntensity1
+rIntensity2
+rIntensity 3
+%.0f
+[mVs]
+rIntensity2
+R 3H2/2H2
+R 3H2/2H2
+R 3H2/2H2
+rR 3H2/2H2
+rR 3H2/2H2
+rR 3H2/2H2
+rd 3H2/2H2
+rd 3H2/2H2
+rd 3H2/2H2
+d 3H2/2H2
+d 3H2/2H2
+d 3H2/2H2
+DeltaDelta 3H2/2H2
+DeltaDelta 3H2/2H2
+%.3f
+[per mil]
+DeltaDelta 3H2/2H2
+Windows Settings
+Gas Settings
+Peak Data ItemList
+Filename
+Filename
+Filename
+Peak Nr.
+Peak Nr.
+Peak Nr.
+Component
+Component
+Component
+Master Peak
+Master Peak
+Master Peak
+Ref. Name
+Ref. Name
+Ref. Name
+Start
+Start
+%.1f
+[s]
+Start
+%.1f
+[s]
+End
+End
+%.1f
+[s]
+End
+Width
+Width
+%.1f
+[s]
+Width
+Sample Dilution
+Sample Dilution
+%.3f
+[%]
+Sample Dilution
+Ampl.1
+Ampl. 2
+%.0f
+[mV]
+Ampl.1
+Ampl.2
+Ampl. 3
+%.0f
+[mV]
+Ampl.2
+BGD1
+BGD 2
+%.1f
+[mV]
+BGD1
+BGD2
+BGD 3
+%.1f
+[mV]
+BGD2
+Intensity All
+Intensity All
+%.3f
+[Vs]
+Intensity All
+Intensity1
+Intensity 2
+%.3f
+[Vs]
+Intensity1
+Intensity2
+Intensity 3
+%.3f
+[Vs]
+Intensity2
+rIntensity All
+rIntensity All
+%.0f
+[mVs]
+rIntensity All
+rIntensity1
+rIntensity 2
+%.0f
+[mVs]
+rIntensity1
+rIntensity2
+rIntensity 3
+%.0f
+[mVs]
+rIntensity2
+R 3H2/2H2
+R 3H2/2H2
+R 3H2/2H2
+rR 3H2/2H2
+rR 3H2/2H2
+rR 3H2/2H2
+rd 3H2/2H2
+rd 3H2/2H2
+rd 3H2/2H2
+d 3H2/2H2
+d 3H2/2H2
+d 3H2/2H2
+DeltaDelta 3H2/2H2
+DeltaDelta 3H2/2H2
+%.3f
+[per mil]
+DeltaDelta 3H2/2H2
+R 2H/1H
+R 2H/1H
+R 2H/1H
+ 2H/1H
+ 2H/1H
+ 2H/1H
+AT% 2H/1H
+AT% 2H/1H
+%.6f
+[%]
+AT% 2H/1H
+RawDataBlock
+RawDataBlock
+Isotope MS/Integration Unit
+IntegrationUnit
+OrigDataBlock
+OrigDataBlock
+Isotope MS/Integration Unit
+IntegrationUnit
+Calculated H3 Factor
+Calculated H3 Factor
+Prim Std
+Prim Std
+Method
+Method
+Eval@Molecule
+Eval@Molecule
+Correction Descriptors
+Correction Descriptors
+Printout
+Default Result.irw
+Single Result.irw
+External Dynamic Variables
+External Dynamic Variables
+Peak Center
+Peak Center
+Isotope MS/Integration Unit@Isotope MS/ScaleHv@
+Isotope MS/ScaleHv
+High Voltage
+Delta
+Arial
+%.4f
+Isotope MS/Integration Unit
+Integration Unit
+Isotope MS/Integration Unit
+IntegrationUnit
+Arial
+Cup 1
+Cup 1
+Cup 2
+Cup 2
+Cup 3
+Cup 3
+Cup 4
+Cup 4
+Cup 5
+Cup 5
+Cup 6
+Cup 6
+Cup 7
+Cup 7
+Cup 8
+Cup 8
+Channel 1
+Channel 1
+Channel 2
+Channel 2
+Channel 3
+Channel 3
+Isotope MS/Integration Unit
+IntegrationUnit
+Isotope MS/MagnetCurrent
+MagnetCurrent
+Isotope MS/ResistorCh0
+Resitor Channel 1
+Isotope MS/ResistorCh1
+Resitor Channel 2
+Isotope MS/ResistorCh2
+Resitor Channel 3
+Isotope MS/ResistorCh3
+Resitor Channel 4
+Isotope MS/ResistorCh4
+Resitor Channel 5
+Isotope MS/ResistorCh5
+Resitor Channel 6
+Isotope MS/ResistorCh6
+Resitor Channel 7
+Isotope MS/ResistorCh7
+Resitor Channel 8
+Isotope MS/ResistorCh8
+Resitor Channel 9
+Isotope MS/ResistorCh9
+Resitor Channel 10
+23.01.2009
+Default
+Mass 12.00
+0. Point
+Mass 28.00
+1. Point
+Mass 44.00
+2. Point
+Delta V
+Isotope MS/Emission
+Emission
+Isotope MS/Trap
+Trap
+Isotope MS/Electron Energy
+Electron Energy
+Isotope MS/Emission
+Emission
+Isotope MS/X-Deflection
+X-Deflection
+Isotope MS/SE Supressing
+SE Supressing
+Isotope MS/Retarding Lense
+Retarding Lense
+Isotope MS/Extraction
+Extraction
+Isotope MS/Extraction Symmetry
+Extraction Symmetry
+Isotope MS/X-Focus
+X-Focus
+Isotope MS/X-Focus Symmetry
+X-Focus Symmetry
+Isotope MS/Y-Deflection
+Y-Deflection
+Isotope MS/Y-Deflection Symmetry
+Y-Deflection Symmetry
+Isotope MS/Focus Quad
+Focus Quad
+Isotope MS/ScaleHv
+Isotope MS/ScaleHv
+PeakCenterOffset
+H3 Factor
+New Configuration
+GC Isolink II + Trace 1310 + RSH + Conflo IV
+GC Isolink II + Trace 1310 + RSH + Conflo IV
+Isotope MS
+Delta V Plus
+Source
+Source
+Capillary
+Capillary
+ConFlo IV Interface
+ConFlo IV Interface
+Application Mode
+ConFlo IV Interface
+Sample Dilution Port
+Sample Dilution Port
+LF Port
+GC IsoLink Node
+GC IsoLink Node
+Input
+Input
+Trace 1310
+Trace 1310
+Input
+Sampler
+TriPlus RSH
+TriPlus RSH
+TriPlusRSH
+TriPlusRSH
+TraceII
+TraceII
+HF I Port
+HF I
+HF II Port
+HF II
+Reference Port
+Reference Port
+Reference Automatic
+Reference Automatic
+Ref Extention
+Ref Extention
+Trigger Port
+Trigger Port
+Visualisation Dialogs
+MS State
+MS State
+Focus Delta
+Focus Delta
+Resistors
+Resistors
+ConFlo IV Diagnosis
+ConFlo IV Diagnosis
+ConFlo IV Interface
+ConFlo IV Interface
+GC IsoLink
+GC IsoLink
+GC IsoLink_easy
+GC IsoLink_easy
+GC IsoLink Service State
+GC IsoLink Service State
+TRACEII
+TRACEII
+TriPlusRSH
+TriPlusRSH
+Acquisition.isl
+Acquisition.isl
+Instrument
+Time Events
+GC IsoLink Node/Backflush
+Backflush
+GC IsoLink Node/Backflush
+Backflush
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+GC IsoLink Node/Backflush
+Backflush
+GC IsoLink Node/Backflush
+Backflush
+GC IsoLink Node/Backflush
+Backflush
+GC IsoLink Node/Backflush
+Backflush
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+ConFlo IV Interface/Reference Capillary
+Reference Automatic
+Instrument
+Reference Automatic/Reference Capillary
+Instrument
+ConFlo IV Interface.ini
+Instrument
+Instrument
+Compound Names
+H2 - 1
+H2 - 1
+H2 - 2
+H2 - 2
+H2 - 3
+H2 - 3
+C16
+C16
+C17
+C17
+C18
+C18
+C19
+C19
+cis-eicosenoic acid
+cis-eicosenoic acid
+C20
+C20
+C21
+C21
+C22
+C22
+C23
+C23
+C24
+C24
+C25
+C25
+C26
+C26
+C27
+C27
+C28
+C28
+C29
+C29
+C30
+C30
+C31
+C31
+C32
+C32
+H2 - 4
+H2 - 4
+H2 - 5
+H2 - 5
+H2 - 6
+H2 - 6
+H2 Ion Correction Method
+Evaluation
+CICA_H2
+Peak Center
+Peak Center
+Isotope MS/Integration Unit@Isotope MS/ScaleHv@
+Isotope MS/ScaleHv
+High Voltage
+Delta
+Arial
+%.4f
+Isotope MS/Integration Unit
+Integration Unit
+Isotope MS/Integration Unit
+IntegrationUnit
+Arial
+Cup 1
+Cup 1
+Cup 2
+Cup 2
+Cup 3
+Cup 3
+Cup 4
+Cup 4
+Cup 5
+Cup 5
+Cup 6
+Cup 6
+Cup 7
+Cup 7
+Cup 8
+Cup 8
+Channel 1
+Channel 1
+Channel 2
+Channel 2
+Channel 3
+Channel 3
+Isotope MS/Integration Unit
+IntegrationUnit
+Isotope MS/MagnetCurrent
+MagnetCurrent
+Isotope MS/ResistorCh0
+Resitor Channel 1
+Isotope MS/ResistorCh1
+Resitor Channel 2
+Isotope MS/ResistorCh2
+Resitor Channel 3
+Isotope MS/ResistorCh3
+Resitor Channel 4
+Isotope MS/ResistorCh4
+Resitor Channel 5
+Isotope MS/ResistorCh5
+Resitor Channel 6
+Isotope MS/ResistorCh6
+Resitor Channel 7
+Isotope MS/ResistorCh7
+Resitor Channel 8
+Isotope MS/ResistorCh8
+Resitor Channel 9
+Isotope MS/ResistorCh9
+Resitor Channel 10
+23.01.2009
+Default
+Mass 12.00
+0. Point
+Mass 28.00
+1. Point
+Mass 44.00
+2. Point
+Delta V
+Isotope MS/Emission
+Emission
+Isotope MS/Trap
+Trap
+Isotope MS/Electron Energy
+Electron Energy
+Isotope MS/Emission
+Emission
+Isotope MS/X-Deflection
+X-Deflection
+Isotope MS/SE Supressing
+SE Supressing
+Isotope MS/Retarding Lense
+Retarding Lense
+Isotope MS/Extraction
+Extraction
+Isotope MS/Extraction Symmetry
+Extraction Symmetry
+Isotope MS/X-Focus
+X-Focus
+Isotope MS/X-Focus Symmetry
+X-Focus Symmetry
+Isotope MS/Y-Deflection
+Y-Deflection
+Isotope MS/Y-Deflection Symmetry
+Y-Deflection Symmetry
+Isotope MS/Focus Quad
+Focus Quad
+Isotope MS/ScaleHv
+Isotope MS/ScaleHv
+PeakCenterOffset
+H3 Factor
+New Configuration
+VSMOW
+Instrument
+VSMOW
+Ratio EL1:2;EL1:1
+R 2H/1H
+%1.8f
+Ratio EL1:2;EL1:1
+R 17O/16O
+%1.7f
+Ratio EL1:3;EL1:1
+R 18O/16O
+%1.7f
+3H2/2H2
+H2 Standard Method
+Evaluation
+Instrument
+H2 Lab.Tank
+H2 Lab.Tank
+Instrument
+H2 Lab.Tank
+Delta GS1:EL1:2;GS1:EL1:1
+d 2H/1H
+%3.3f
+VSMOW
+VSMOW
+Instrument
+VSMOW
+Ratio EL1:2;EL1:1
+R 2H/1H
+%1.8f
+Ratio EL1:2;EL1:1
+R 17O/16O
+%1.7f
+Ratio EL1:3;EL1:1
+R 18O/16O
+%1.7f
+Instrument
+H2 Lab.Tank
+H2 Lab.Tank
+Instrument
+H2 Lab.Tank
+Delta GS1:EL1:2;GS1:EL1:1
+d 2H/1H
+%3.3f
+VSMOW
+VSMOW
+Instrument
+VSMOW
+Ratio EL1:2;EL1:1
+R 2H/1H
+%1.8f
+Ratio EL1:2;EL1:1
+R 17O/16O
+%1.7f
+Ratio EL1:3;EL1:1
+R 18O/16O
+%1.7f
+Peak Center
+Peak Center
+Isotope MS/Integration Unit@Isotope MS/ScaleHv@
+Isotope MS/ScaleHv
+High Voltage
+Delta
+Arial
+%.4f
+Isotope MS/Integration Unit
+Integration Unit
+Isotope MS/Integration Unit
+IntegrationUnit
+Arial
+Cup 1
+Cup 1
+Cup 2
+Cup 2
+Cup 3
+Cup 3
+Cup 4
+Cup 4
+Cup 5
+Cup 5
+Cup 6
+Cup 6
+Cup 7
+Cup 7
+Cup 8
+Cup 8
+Channel 1
+Channel 1
+Channel 2
+Channel 2
+Channel 3
+Channel 3
+Isotope MS/Integration Unit
+IntegrationUnit
+Isotope MS/MagnetCurrent
+MagnetCurrent
+Isotope MS/ResistorCh0
+Resitor Channel 1
+Isotope MS/ResistorCh1
+Resitor Channel 2
+Isotope MS/ResistorCh2
+Resitor Channel 3
+Isotope MS/ResistorCh3
+Resitor Channel 4
+Isotope MS/ResistorCh4
+Resitor Channel 5
+Isotope MS/ResistorCh5
+Resitor Channel 6
+Isotope MS/ResistorCh6
+Resitor Channel 7
+Isotope MS/ResistorCh7
+Resitor Channel 8
+Isotope MS/ResistorCh8
+Resitor Channel 9
+Isotope MS/ResistorCh9
+Resitor Channel 10
+23.01.2009
+Default
+Mass 12.00
+0. Point
+Mass 28.00
+1. Point
+Mass 44.00
+2. Point
+Delta V
+Isotope MS/Emission
+Emission
+Isotope MS/Trap
+Trap
+Isotope MS/Electron Energy
+Electron Energy
+Isotope MS/Emission
+Emission
+Isotope MS/X-Deflection
+X-Deflection
+Isotope MS/SE Supressing
+SE Supressing
+Isotope MS/Retarding Lense
+Retarding Lense
+Isotope MS/Extraction
+Extraction
+Isotope MS/Extraction Symmetry
+Extraction Symmetry
+Isotope MS/X-Focus
+X-Focus
+Isotope MS/X-Focus Symmetry
+X-Focus Symmetry
+Isotope MS/Y-Deflection
+Y-Deflection
+Isotope MS/Y-Deflection Symmetry
+Y-Deflection Symmetry
+Isotope MS/Focus Quad
+Focus Quad
+Isotope MS/ScaleHv
+Isotope MS/ScaleHv
+PeakCenterOffset
+H3 Factor
+New Configuration
+H2 Peak Find Method
+Peak Detection
+CalcSlope Default
+PeakFind Default
+IntPeak Default
+Low Pass Filtered BGD
+Standard Smoothing
+Peak Center
+Peak Center
+Isotope MS/Integration Unit@Isotope MS/ScaleHv@
+Isotope MS/ScaleHv
+High Voltage
+Delta
+Arial
+%.4f
+Isotope MS/Integration Unit
+Integration Unit
+Isotope MS/Integration Unit
+IntegrationUnit
+Arial
+Cup 1
+Cup 1
+Cup 2
+Cup 2
+Cup 3
+Cup 3
+Cup 4
+Cup 4
+Cup 5
+Cup 5
+Cup 6
+Cup 6
+Cup 7
+Cup 7
+Cup 8
+Cup 8
+Channel 1
+Channel 1
+Channel 2
+Channel 2
+Channel 3
+Channel 3
+Isotope MS/Integration Unit
+IntegrationUnit
+Isotope MS/MagnetCurrent
+MagnetCurrent
+Isotope MS/ResistorCh0
+Resitor Channel 1
+Isotope MS/ResistorCh1
+Resitor Channel 2
+Isotope MS/ResistorCh2
+Resitor Channel 3
+Isotope MS/ResistorCh3
+Resitor Channel 4
+Isotope MS/ResistorCh4
+Resitor Channel 5
+Isotope MS/ResistorCh5
+Resitor Channel 6
+Isotope MS/ResistorCh6
+Resitor Channel 7
+Isotope MS/ResistorCh7
+Resitor Channel 8
+Isotope MS/ResistorCh8
+Resitor Channel 9
+Isotope MS/ResistorCh9
+Resitor Channel 10
+23.01.2009
+Default
+Mass 12.00
+0. Point
+Mass 28.00
+1. Point
+Mass 44.00
+2. Point
+Delta V
+Isotope MS/Emission
+Emission
+Isotope MS/Trap
+Trap
+Isotope MS/Electron Energy
+Electron Energy
+Isotope MS/Emission
+Emission
+Isotope MS/X-Deflection
+X-Deflection
+Isotope MS/SE Supressing
+SE Supressing
+Isotope MS/Retarding Lense
+Retarding Lense
+Isotope MS/Extraction
+Extraction
+Isotope MS/Extraction Symmetry
+Extraction Symmetry
+Isotope MS/X-Focus
+X-Focus
+Isotope MS/X-Focus Symmetry
+X-Focus Symmetry
+Isotope MS/Y-Deflection
+Y-Deflection
+Isotope MS/Y-Deflection Symmetry
+Y-Deflection Symmetry
+Isotope MS/Focus Quad
+Focus Quad
+Isotope MS/ScaleHv
+Isotope MS/ScaleHv
+PeakCenterOffset
+H3 Factor
+New Configuration
+H3 Factor
+New Configuration
+Evaluation
+Evaluation
+20231128 Added compound names
+20240408 Start with backflush ON
+20240802 Changed ref from (-370.00 per mil) to (-292.545 per mil)
+Results
+Results
+Result Array
+Result Array
+Overwritten
+Overwritten
+Overwritten
+Nr.
+Nr.
+rIntensity1
+rIntensity 2
+%.0f
+[mVs]
+rIntensity2
+rIntensity 3
+%.0f
+[mVs]
+rIntensity All
+rIntensity All
+%.0f
+[mVs]
+Intensity1
+Intensity 2
+%.3f
+[Vs]
+Intensity2
+Intensity 3
+%.3f
+[Vs]
+Intensity All
+Intensity All
+%.3f
+[Vs]
+Sample Dilution
+Sample Dilution
+%.3f
+[%]
+List First Peak
+List First Peak
+Component
+Component
+H2 - 1
+rRatio GS1:MC2;GS1:MC1
+rR 3H2/2H2
+%.7f
+Reset Standard
+Reset Standard
+Reset Standard
+Reset Standard
+Is Ref.?
+Is Ref.?
+Reset Standard
+Reset Standard
+Reset Standard
+Reset Standard
+Ratio GS1:MC2;GS1:MC1
+R 3H2/2H2
+%.7f
+Ref. Name
+Ref. Name
+H2 Lab.Tank
+rDelta GS1:MC2;GS1:MC1
+rd 3H2/2H2
+%.3f
+[per mil]
+H2 Lab.Tank
+Delta GS1:MC2;GS1:MC1
+d 3H2/2H2
+%.3f
+[per mil]
+VSMOW
+R 2H/1H
+R 2H/1H
+%.7f
+ 2H/1H
+ 2H/1H
+%.3f
+[per mil]
+VSMOW
+AT% 2H/1H
+AT% 2H/1H
+%.6f
+[%]
+H2 - 1
+Nr.
+Nr.
+rIntensity1
+rIntensity 2
+%.0f
+[mVs]
+rIntensity2
+rIntensity 3
+%.0f
+[mVs]
+rIntensity All
+rIntensity All
+%.0f
+[mVs]
+Intensity1
+Intensity 2
+%.3f
+[Vs]
+Intensity2
+Intensity 3
+%.3f
+[Vs]
+Intensity All
+Intensity All
+%.3f
+[Vs]
+Sample Dilution
+Sample Dilution
+%.3f
+[%]
+Component
+Component
+H2 - 2
+rRatio GS1:MC2;GS1:MC1
+rR 3H2/2H2
+%.7f
+Reset Standard
+Reset Standard
+Reset Standard
+Reset Standard
+Rps 3H2/2H2
+Rps 3H2/2H2
+%.7f
+Is Ref.?
+Is Ref.?
+Ratio GS1:MC2;GS1:MC1
+R 3H2/2H2
+%.7f
+Ref. Name
+Ref. Name
+H2 Lab.Tank
+rDelta GS1:MC2;GS1:MC1
+rd 3H2/2H2
+%.3f
+[per mil]
+H2 Lab.Tank
+Delta GS1:MC2;GS1:MC1
+d 3H2/2H2
+%.3f
+[per mil]
+VSMOW
+R 2H/1H
+R 2H/1H
+%.7f
+ 2H/1H
+ 2H/1H
+%.3f
+[per mil]
+VSMOW
+AT% 2H/1H
+AT% 2H/1H
+%.6f
+[%]
+H2 - 2
+Overwritten
+Overwritten
+Overwritten
+Nr.
+Nr.
+rIntensity1
+rIntensity 2
+%.0f
+[mVs]
+rIntensity2
+rIntensity 3
+%.0f
+[mVs]
+rIntensity All
+rIntensity All
+%.0f
+[mVs]
+Intensity1
+Intensity 2
+%.3f
+[Vs]
+Intensity2
+Intensity 3
+%.3f
+[Vs]
+Intensity All
+Intensity All
+%.3f
+[Vs]
+Sample Dilution
+Sample Dilution
+%.3f
+[%]
+Component
+Component
+H2 - 3
+rRatio GS1:MC2;GS1:MC1
+rR 3H2/2H2
+%.7f
+Reset Standard
+Reset Standard
+Reset Standard
+Reset Standard
+Is Ref.?
+Is Ref.?
+Ratio GS1:MC2;GS1:MC1
+R 3H2/2H2
+%.7f
+Ref. Name
+Ref. Name
+H2 Lab.Tank
+rDelta GS1:MC2;GS1:MC1
+rd 3H2/2H2
+%.3f
+[per mil]
+H2 Lab.Tank
+Delta GS1:MC2;GS1:MC1
+d 3H2/2H2
+%.3f
+[per mil]
+VSMOW
+R 2H/1H
+R 2H/1H
+%.7f
+ 2H/1H
+ 2H/1H
+%.3f
+[per mil]
+VSMOW
+AT% 2H/1H
+AT% 2H/1H
+%.6f
+[%]
+Reset Standard
+Reset Standard
+Reset Standard
+Reset Standard
+H2 - 3
+Overwritten
+Overwritten
+Overwritten
+Nr.
+Nr.
+rIntensity1
+rIntensity 2
+%.0f
+[mVs]
+rIntensity2
+rIntensity 3
+%.0f
+[mVs]
+rIntensity All
+rIntensity All
+%.0f
+[mVs]
+Intensity1
+Intensity 2
+%.3f
+[Vs]
+Intensity2
+Intensity 3
+%.3f
+[Vs]
+Intensity All
+Intensity All
+%.3f
+[Vs]
+Sample Dilution
+Sample Dilution
+%.3f
+[%]
+Component
+Component
+H2 - 4
+rRatio GS1:MC2;GS1:MC1
+rR 3H2/2H2
+%.7f
+Reset Standard
+Reset Standard
+Reset Standard
+Reset Standard
+Is Ref.?
+Is Ref.?
+Ratio GS1:MC2;GS1:MC1
+R 3H2/2H2
+%.7f
+Ref. Name
+Ref. Name
+H2 Lab.Tank
+rDelta GS1:MC2;GS1:MC1
+rd 3H2/2H2
+%.3f
+[per mil]
+H2 Lab.Tank
+Delta GS1:MC2;GS1:MC1
+d 3H2/2H2
+%.3f
+[per mil]
+VSMOW
+R 2H/1H
+R 2H/1H
+%.7f
+ 2H/1H
+ 2H/1H
+%.3f
+[per mil]
+VSMOW
+AT% 2H/1H
+AT% 2H/1H
+%.6f
+[%]
+Reset Standard
+Reset Standard
+Reset Standard
+Reset Standard
+H2 - 4
+Nr.
+Nr.
+rIntensity1
+rIntensity 2
+%.0f
+[mVs]
+rIntensity2
+rIntensity 3
+%.0f
+[mVs]
+rIntensity All
+rIntensity All
+%.0f
+[mVs]
+Intensity1
+Intensity 2
+%.3f
+[Vs]
+Intensity2
+Intensity 3
+%.3f
+[Vs]
+Intensity All
+Intensity All
+%.3f
+[Vs]
+Sample Dilution
+Sample Dilution
+%.3f
+[%]
+Component
+Component
+H2 - 5
+rRatio GS1:MC2;GS1:MC1
+rR 3H2/2H2
+%.7f
+Reset Standard
+Reset Standard
+Reset Standard
+Reset Standard
+Rps 3H2/2H2
+Rps 3H2/2H2
+%.7f
+Is Ref.?
+Is Ref.?
+Ratio GS1:MC2;GS1:MC1
+R 3H2/2H2
+%.7f
+Ref. Name
+Ref. Name
+H2 Lab.Tank
+rDelta GS1:MC2;GS1:MC1
+rd 3H2/2H2
+%.3f
+[per mil]
+H2 Lab.Tank
+Delta GS1:MC2;GS1:MC1
+d 3H2/2H2
+%.3f
+[per mil]
+VSMOW
+R 2H/1H
+R 2H/1H
+%.7f
+ 2H/1H
+ 2H/1H
+%.3f
+[per mil]
+VSMOW
+AT% 2H/1H
+AT% 2H/1H
+%.6f
+[%]
+H2 - 5
+Nr.
+Nr.
+rIntensity1
+rIntensity 2
+%.0f
+[mVs]
+rIntensity2
+rIntensity 3
+%.0f
+[mVs]
+rIntensity All
+rIntensity All
+%.0f
+[mVs]
+Intensity1
+Intensity 2
+%.3f
+[Vs]
+Intensity2
+Intensity 3
+%.3f
+[Vs]
+Intensity All
+Intensity All
+%.3f
+[Vs]
+Sample Dilution
+Sample Dilution
+%.3f
+[%]
+Component
+Component
+H2 - 6
+rRatio GS1:MC2;GS1:MC1
+rR 3H2/2H2
+%.7f
+Reset Standard
+Reset Standard
+Reset Standard
+Reset Standard
+Is Ref.?
+Is Ref.?
+Ratio GS1:MC2;GS1:MC1
+R 3H2/2H2
+%.7f
+Ref. Name
+Ref. Name
+H2 Lab.Tank
+rDelta GS1:MC2;GS1:MC1
+rd 3H2/2H2
+%.3f
+[per mil]
+H2 Lab.Tank
+Delta GS1:MC2;GS1:MC1
+d 3H2/2H2
+%.3f
+[per mil]
+VSMOW
+R 2H/1H
+R 2H/1H
+%.7f
+ 2H/1H
+ 2H/1H
+%.3f
+[per mil]
+VSMOW
+AT% 2H/1H
+AT% 2H/1H
+%.6f
+[%]
+H2 - 6
+DetectorDataBlock
+DetectorDataBlock
+Detector Results
+Detector Results
+Detector Methods
+Detector Methods
+Dilution List
+Dilution List
+Dilution List
+Dilution List
+Errors
+Errors
+Sequence Line Information
+Row
+Peak Center
+Check Ref. Dilution
+H3 Stability
+H3 Factor
+Conditioning
+Seed Oxidation
+Trace GC\LeafwaxFaster_20171011.tr2.meth
+GC Method
+AS Sample
+TriPlus AS\20220804_1-0uL.rsh.meth
+AS Method
+C18 200ng C24 200ng_20250501
+Identifier 1
+STANDARD
+Identifier 2
+24414
+Analysis
+Comment
+Preparation
+H2_LeafWaxFaster.met
+Method
+Visualisation Informations
+Infos
+Infos
+Errors
+Errors

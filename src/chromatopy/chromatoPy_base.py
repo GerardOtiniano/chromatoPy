@@ -1918,8 +1918,9 @@ class GDGTAnalyzer:
 
             # Clear the corresponding entries in self.peak_results
             if trace_to_clear in self.peak_results:
-                for key in self.peak_results[trace_to_clear].keys():
-                    self.peak_results[trace_to_clear][key]=[]
+                # for key in self.peak_results[trace_to_clear].keys():
+                #     self.peak_results[trace_to_clear][key]=[]
+                self.peak_results[trace_to_clear] = self._empty_trace_bucket()
 
         # Clear the action stack since all actions are undone
         self.action_stack.clear()
