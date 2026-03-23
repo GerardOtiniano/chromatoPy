@@ -28,7 +28,7 @@
     ]
   },
   "isoGDGTs": {
-    "checked": true,
+    "checked": false,
     "traces": {
       "1302": "GDGT-0",
       "1300": "GDGT-1",
@@ -42,7 +42,7 @@
     ]
   },
   "OH-GDGTs": {
-    "checked": true,
+    "checked": false,
     "traces": {
       "1300": "OH-GDGT-0",
       "1298": "OH-GDGT-1, 2OH-GDGT-0",
@@ -54,7 +54,7 @@
     ]
   },
   "br-H-GDGTs": {
-    "checked": true,
+    "checked": false,
     "traces": {
       "1020": "H-1020",
       "1034": "H-1034",

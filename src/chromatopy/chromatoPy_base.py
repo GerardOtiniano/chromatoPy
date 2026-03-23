@@ -231,10 +231,27 @@ class GDGTAnalyzer:
             for i in range(1, len(peaks)):
                 valley_point = np.argmin(y[peaks[i - 1] : peaks[i]]) + peaks[i - 1]
                 valleys.append(valley_point)
+        # else:
+        #     poi = np.where(peaks == peak_oi)[0][0]
+        #     valleys.append(np.argmin(y[peaks[poi - 1] : peaks[poi]]) + peaks[poi - 1])
+        #     valleys.append(np.argmin(y[peaks[poi] : peaks[poi + 1]]) + peaks[poi])
         else:
             poi = np.where(peaks == peak_oi)[0][0]
-            valleys.append(np.argmin(y[peaks[poi - 1] : peaks[poi]]) + peaks[poi - 1])
-            valleys.append(np.argmin(y[peaks[poi] : peaks[poi + 1]]) + peaks[poi])
+            # First peak: no left neighbor
+            if poi == 0:
+                left_valley = peaks[poi]
+                right_valley = np.argmin(y[peaks[poi]:peaks[poi + 1]]) + peaks[poi]
+                valleys.extend([left_valley, right_valley])
+            # Last peak: no right neighbor
+            elif poi == len(peaks) - 1:
+                left_valley = np.argmin(y[peaks[poi - 1]:peaks[poi]]) + peaks[poi - 1]
+                right_valley = peaks[poi]
+                valleys.extend([left_valley, right_valley])
+            # Interior peak: both neighbors exist
+            else:
+                left_valley = np.argmin(y[peaks[poi - 1]:peaks[poi]]) + peaks[poi - 1]
+                right_valley = np.argmin(y[peaks[poi]:peaks[poi + 1]]) + peaks[poi]
+                valleys.extend([left_valley, right_valley])
         return valleys
     
     
@@ -920,7 +937,7 @@ class GDGTAnalyzer:
             apex_x   = float(x_full[ind_peak])
             full_peaks = np.asarray(self.peaks[trace])
         
-            # 1) Start with your original derivative-based boundaries
+            # 1) Original derivative-based boundaries
             left_b1, right_b1 = self.calculate_boundaries(x_full, y_full, ind_peak)
             L_idx, R_idx = int(left_b1), int(right_b1)
 
