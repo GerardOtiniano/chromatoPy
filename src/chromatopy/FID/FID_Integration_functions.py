@@ -836,7 +836,6 @@ def run_peak_integrator(data, key, gi, pk_sns, smoothing_params, max_peaks_for_n
     ydata[ydata<0] = 0
     peak_timing = data['Integration Metadata']['peak dictionary'].values()
     data['Samples'][key]['Processed Data'] = {}
-    
     base, min_peak_amp = baseline(xdata, ydata, deg=5, max_it=1000, tol=1e-4)
     y_bcorr = ydata-base
     y_bcorr = np.clip(ydata - base, 0, None)

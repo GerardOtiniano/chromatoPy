@@ -64,9 +64,24 @@ def import_data(): # folder_path=None):
         has_signal = signal_column is not None
 
         # Numeric dataframe
-        df[time_column] = pd.to_numeric(df[time_column], errors='coerce')
-        df[signal_column] = pd.to_numeric(df[signal_column], errors='coerce')
-        df[signal_column] = df[signal_column]#.fillna(0)
+        # df[time_column] = pd.to_numeric(df[time_column], errors='coerce')
+        # # df[signal_column] = pd.to_numeric(df[signal_column], errors='coerce')
+        # df[signal_column] = (df[signal_column].astype(str)
+        # df[signal_column] = df[signal_column]#.fillna(0)
+
+        df[time_column] = (
+            df[time_column]
+            .astype(str)
+            .str.strip()
+            .str.replace(",", "", regex=False))
+        
+        df[signal_column] = (
+            df[signal_column]
+            .astype(str)
+            .str.strip()
+            .str.replace(",", "", regex=False))
+        df[time_column] = pd.to_numeric(df[time_column], errors="coerce")
+        df[signal_column] = pd.to_numeric(df[signal_column], errors="coerce")
 
         if not has_time:
             no_time_col.append(filename)
