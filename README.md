@@ -1,16 +1,27 @@
-[![ChromatoPy Logo](misc/chromatoPy.png)](https://github.com/GerardOtiniano/chromatoPy/blob/2b36a74ed639d5c30ae1e143843c1532b0a84237/misc/chromatoPy.png)
+<!-- [![ChromatoPy Logo](misc/chromatoPy.png)](https://github.com/GerardOtiniano/chromatoPy/blob/2b36a74ed639d5c30ae1e143843c1532b0a84237/misc/chromatoPy.png) -->
+<p align="center">
+  <a href="https://github.com/GerardOtiniano/chromatoPy/blob/2b36a74ed639d5c30ae1e143843c1532b0a84237/misc/chromatoPy.png">
+    <img src="misc/chromatoPy.png" alt="ChromatoPy Logo" width="300">
+  </a>
+</p>
 
 # chromatoPy (2.3.3)
 
 chromatoPy is an open-source Python package designed to streamline the integration and analysis of High-Performance Liquid Chromatography (HPLC) and Gas Chromatograph Flame Ionization Detector (GC-FID) data. It features flexible multi-Gaussian and single Gaussian fitting algorithms to detect, fit, and integrate peaks from chromatographic data, enabling efficient analysis and processing of complex datasets. Note, interactive integration requires internal spike standard (Trace 744).
+
 **Update 2.3.1:** User-modifiable GDGT groups (including reference peak assignment)
 
-## Application
+# Application
 
 [![Latest app release](https://img.shields.io/github/v/release/GerardOtiniano/chromatoPy_App?label=latest%20app%20version)](https://github.com/GerardOtiniano/chromatoPy_App/releases/latest)
 
 The chromatoPy package is available as a standalone desktop application:
 * Download chromatoPy app for [macOS (ARM)](https://github.com/GerardOtiniano/chromatoPy_App/releases/latest/download/chromatoPy-desktop-macos-apple-silicon.dmg)
+  * **Installation Note** - if macOS says the app is damaged, open the .dmg, move chromatoPy.app to the Applications folder, then, in terminal, run:
+  ```python
+  xattr -dr com.apple.quarantine /Applications/chromatoPy-desktop.app
+  ```
+
 
 * Download chromatoPy app for [Windows](https://github.com/GerardOtiniano/chromatoPy_App/releases/latest/download/chromatoPy-desktop-windows.zip)
 
@@ -35,6 +46,7 @@ The chromatoPy package is available as a standalone desktop application:
     * Delete unwanted samples via `chromatopy.FID.delete_samples(json_path, to_delete=[...])`.
 
 
+# Package
 ## Installation
 
 To install chromatoPy from the GitHub repository, you can use the following pip command:
