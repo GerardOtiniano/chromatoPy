@@ -148,6 +148,24 @@ The `FID_output.json` has two top‑level keys:
    * `x limits`: \[xmin, xmax] (when using stored labels)
    * `time_column` & `signal_column`
 
+## Citation
+If you use chromatoPy, please cite the original manuscript:
+
+```bibtex
+@article{Otiniano2025chromatoPy,
+  author = {Otiniano, Gerard A. and Thomas, Elizabeth K. and Casta{\~n}eda, Isla S. and Acharya, Saurav and Sharma, Yashpal and Mark, Samuel Z.},
+  title = {chromatoPy: An Open-Source Tool for Chromatographic Peak Deconvolution and Integration Applied to Glycerol Dialkyl Glycerol Tetraethers},
+  journal = {Paleoceanography and Paleoclimatology},
+  volume = {40},
+  number = {12},
+  pages = {e2025PA005316},
+  year = {2025},
+  doi = {10.1029/2025PA005316}
+}
+```
+
+
+
 ## Versioning
 
 Version numbers are reported in an "X.Y.Z" format.
