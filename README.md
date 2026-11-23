@@ -9,7 +9,9 @@
 
 chromatoPy is an open-source Python package designed to streamline the integration and analysis of High-Performance Liquid Chromatography (HPLC) and Gas Chromatograph Flame Ionization Detector (GC-FID) data. It features flexible multi-Gaussian and single Gaussian fitting algorithms to detect, fit, and integrate peaks from chromatographic data, enabling efficient analysis and processing of complex datasets. Note, interactive integration requires internal spike standard (Trace 744).
 
-**Update 2.3.1:** User-modifiable GDGT groups (including reference peak assignment)
+
+[Tutorial videos for using chromatoPy](https://www.youtube.com/playlist?list=PLfmEdgUuoheI)
+
 
 # Application
 
@@ -163,8 +165,6 @@ If you use chromatoPy, please cite the original manuscript:
   doi = {10.1029/2025PA005316}
 }
 ```
-
-
 
 ## Versioning
 
